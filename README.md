@@ -10,27 +10,15 @@ Privacy policy: [PRIVACY.md](PRIVACY.md)
 
 ## 🚀 Quick Start on Mac
 
-**New to macOS and Terminal?** Follow the complete step-by-step guide with copy-paste instructions: **[Mac Setup Guide for Beginners →](docs/MAC-STEP-BY-STEP.md)**
+**New to Mac?** **[→ 5-step beginner guide](docs/MAC-STEP-BY-STEP.md)** with copy-paste commands.
 
-**Requirements:** macOS with Xcode 26+ installed.
-
-### For experienced developers
+**Requirements:** macOS with Xcode 26+.
 
 ```bash
-# 1. Get the code
-git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git
-cd SoleCount
-
-# 2. One-time setup (installs tools, asks for API keys, generates project)
+cd ~/Desktop && git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git && cd SoleCount
 make setup
-
-# 3. Create app in App Store Connect
 make appstore-setup
-
-# 4. Run tests
 make test
-
-# 5. Deploy (tests → TestFlight → App Review)
 make deploy
 ```
 
