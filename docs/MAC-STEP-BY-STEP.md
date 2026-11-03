@@ -6,6 +6,24 @@ Complete setup from zero to App Store in **5 steps**. For someone brand new to M
 
 ---
 
+## Never used a Mac? Start here
+
+Do all of this on the Mac, so you copy and paste on the same computer.
+
+1. **Open this page in Safari.** Click the compass icon in the row of icons at the bottom of the screen (the Dock). That's Safari. Click the address bar at the top, type `github.com/KrishnaDistributedcomputing/SoleCount` and press Return. Scroll down to the steps.
+
+2. **Open Terminal.** Hold the Cmd key (⌘, next to the space bar) and press the space bar. In the search box that appears, type `Terminal` and press Return. A window with a blinking cursor opens; that's where commands go.
+
+3. **Copy a command.** Hover over a grey command box and click the copy icon (two squares) in its top-right corner. Or drag your mouse across the command to highlight it and press Cmd + C.
+
+4. **Paste and run it.** Click inside the Terminal window, press Cmd + V, then press Return.
+
+5. **Wait, then do the next one.** When the blinking cursor comes back on a new line, the command is finished. If it asks for your Mac password, type it and press Return. Nothing shows on screen while you type, and that's normal.
+
+**Tips:** Press Cmd + Tab to switch between Safari and Terminal. If something goes wrong, take a photo of the screen and ask for help, or use the Claude Code prompt section.
+
+---
+
 ## How to copy and paste commands
 
 Throughout this guide:
