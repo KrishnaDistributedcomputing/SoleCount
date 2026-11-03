@@ -8,62 +8,32 @@ An iPhone app that counts how often you wear each pair of sneakers and shows you
 
 Privacy policy: [PRIVACY.md](PRIVACY.md)
 
-## Quick start on Mac
+## 🚀 Quick Start on Mac
 
-**Requirements:** macOS with Xcode 26+ installed. This guide is for beginners.
+**New to Mac?** **[→ 5-step beginner guide](docs/MAC-STEP-BY-STEP.md)** with copy-paste commands.
 
-### 1. Open Terminal
-Press `Cmd + Space`, type `Terminal`, and press Return.
+**Requirements:** macOS with Xcode 26+.
 
-### 2. Get the code
 ```bash
-git clone https://github.com/yourusername/SoleCount.git
-cd SoleCount
-```
-
-### 3. Run setup (one time)
-This installs Homebrew, XcodeGen, and fastlane, and asks for your App Store Connect API keys.
-```bash
+cd ~/Desktop && git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git && cd SoleCount
 make setup
-```
-
-The setup script will:
-- Check that Xcode 26+ is installed
-- Install Homebrew if needed (may ask for your Mac password)
-- Install XcodeGen and fastlane via Homebrew
-- Ask for your App Store Connect credentials (Team ID, API Key ID, Issuer ID, and .p8 key file)
-- Generate the Xcode project from `project.yml`
-- Open the project in Xcode
-
-### 4. Create the app in App Store Connect (one time)
-After setup completes, run:
-```bash
-fastlane setup
-```
-
-This creates the bundle ID, app record, sets pricing ($0.99 Pro IAP), and configures privacy settings.
-
-### 5. Run tests
-```bash
+make appstore-setup
 make test
-```
-
-Or press `Cmd + U` in Xcode.
-
-### 6. Deploy to TestFlight and App Store
-```bash
 make deploy
 ```
 
-This runs all tests, builds the app, uploads to TestFlight, and submits for App Review (goes live automatically when approved).
+### Available commands
 
-**Deploy options:**
-- `bash scripts/deploy.sh --beta-only` — stop after TestFlight
-- `bash scripts/deploy.sh --setup` — run `fastlane setup` first
-
-### Other commands
+- `make setup` — One-time Mac setup (Homebrew, XcodeGen, fastlane, API keys, generate project)
+- `make test` — Run all tests
+- `make deploy` — Full deployment (tests → TestFlight → App Review)
 - `make open` — Regenerate the Xcode project and open it
 - `make clean` — Remove build artifacts
+- `make help` — Show all available commands
+
+**Deploy options:**
+- `bash scripts/deploy.sh --beta-only` — Upload to TestFlight only (skip App Review)
+- `bash scripts/deploy.sh --setup` — Run `fastlane setup` first, then deploy
 
 ---
 
