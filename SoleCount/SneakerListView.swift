@@ -97,11 +97,8 @@ struct SneakerListView: View {
             Text("Add your first pair and tap \"Wore today\" whenever you wear them.")
                 .multilineTextAlignment(.center)
         } actions: {
-            Button {
+            Button("Add a pair") {
                 addTapped()
-            } label: {
-                Label("Add Your First Pair", systemImage: "plus.circle.fill")
-                    .font(.headline)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)

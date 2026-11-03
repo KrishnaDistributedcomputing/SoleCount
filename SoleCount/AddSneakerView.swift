@@ -60,7 +60,7 @@ struct AddSneakerView: View {
                         Image(systemName: "tag.fill")
                             .foregroundStyle(Color.accentColor)
                             .frame(width: 24)
-                        TextField("Name", text: $name, prompt: Text("Air Max 90"))
+                        TextField("Name (e.g. Air Max 90)", text: $name)
                             .font(.body)
                     }
 
@@ -68,7 +68,7 @@ struct AddSneakerView: View {
                         Image(systemName: "building.2.fill")
                             .foregroundStyle(Color.accentColor)
                             .frame(width: 24)
-                        TextField("Brand", text: $brand, prompt: Text("Nike"))
+                        TextField("Brand (e.g. Nike)", text: $brand)
                             .font(.body)
                     }
 
@@ -76,7 +76,7 @@ struct AddSneakerView: View {
                         Image(systemName: "dollarsign.circle.fill")
                             .foregroundStyle(.green)
                             .frame(width: 24)
-                        TextField("Price", value: $price, format: .number, prompt: Text("129.99"))
+                        TextField("Price paid (e.g. 129.99)", value: $price, format: .number)
                             .keyboardType(.decimalPad)
                             .font(.body)
                     }
