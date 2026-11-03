@@ -76,45 +76,67 @@ make setup
 
 ### What make setup does, and why SoleCount needs it
 
-The script performs these steps in order:
+`make setup` only runs `scripts/setup_mac.sh`. These are the steps that script actually does, in order. It is safe to run again: if a tool or answer is already there, it keeps it.
 
-1. **Checks for Xcode 26+**  
-   Xcode is Apple's app-building program. Apple only accepts apps built with Xcode 26 or newer (as of April 2026), so SoleCount can't be uploaded without it.
+1. **Checks Xcode 26**
+   - What it does: Looks for Xcode, Apple's app-building program, and checks that it is version 26 or newer.
+   - Why SoleCount needs it: Apple only accepts App Store uploads built with Xcode 26. Without it, SoleCount cannot be sent to Apple.
 
-2. **Installs Homebrew (if needed)**  
-   Homebrew is a tool that installs other developer tools for you. It's used to install XcodeGen and fastlane. May ask for your Mac password.
+2. **Installs Homebrew if it is missing**
+   - What it does: Installs Homebrew, a helper that installs other developer tools. On a new Apple-chip Mac it also tells Terminal where Homebrew lives. It may ask for your Mac password.
+   - Why SoleCount needs it: The next step uses Homebrew to install XcodeGen and fastlane.
 
-3. **Installs XcodeGen**  
-   XcodeGen builds the `SoleCount.xcodeproj` file from `project.yml`. The project file isn't stored on GitHub, so it has to be generated on your Mac.
+3. **Installs XcodeGen**
+   - What it does: Installs XcodeGen, the tool that builds an Xcode project from a settings file.
+   - Why SoleCount needs it: SoleCount's project file (`SoleCount.xcodeproj`) is not stored on GitHub. XcodeGen makes it on your Mac from `project.yml`.
 
-4. **Installs fastlane**  
-   fastlane automates screenshots, the TestFlight upload, the $0.99 Pro IAP setup, and the App Review submission. This is what `make deploy` and `make appstore-setup` use behind the scenes.
+4. **Installs fastlane**
+   - What it does: Installs fastlane with Homebrew. Fastlane is written in the Ruby language. This script does not install Ruby packages with bundler, and it does not run `bundle install`. (The project has a `Gemfile` that lists fastlane, but `make setup` uses the Homebrew copy.)
+   - Why SoleCount needs it: `make appstore-setup` and `make deploy` use fastlane to set up the $0.99 Pro upgrade, take screenshots, upload to TestFlight, and send the app to App Review.
 
-5. **Asks for your Team ID**  
-   Found at [developer.apple.com/account](https://developer.apple.com/account) → Membership details. A 10-character code like `A1B2C3D4E5`. Identifies your Apple Developer account.
+5. **Creates a private settings file**
+   - What it does: Copies `fastlane/.env.example` to `fastlane/.env` if that file is not there yet, and locks it so only your Mac user can read it.
+   - Why SoleCount needs it: Your Team ID and API details are saved in that file. It is ignored by Git, so it is never uploaded to the public GitHub repo.
 
-6. **Asks for your API Key ID**  
-   Found at [App Store Connect → Integrations → API](https://appstoreconnect.apple.com/access/integrations/api). A 10-character code like `ABCD123456`. Part of the credentials that let tools sign in without a password.
+6. **Asks for your Team ID**
+   - What it does: Asks for the 10-character Team ID and saves it in `fastlane/.env`. Find it at [developer.apple.com/account](https://developer.apple.com/account) → Membership details.
+   - Why SoleCount needs it: It tells Xcode which Apple Developer account is allowed to build SoleCount.
 
-7. **Asks for your Issuer ID**  
-   Found on the same API page, above the keys table. A long UUID like `12345678-1234-1234-1234-123456789abc`. Another part of the API credentials.
+7. **Asks for your API Key ID**
+   - What it does: Asks for the 10-character Key ID and saves it. Find it at [App Store Connect → Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api). Click **+** to make a key if you do not have one.
+   - Why SoleCount needs it: Together with the next two items, it lets SoleCount's tools sign in to your Apple account without your Apple ID password.
 
-8. **Asks for your .p8 key file**  
-   When you created the API key, you downloaded a file like `AuthKey_ABCD123456.p8`. The script moves it to `~/.appstoreconnect/private_keys/` (outside the project folder) so it's never uploaded to the public GitHub repository.
+8. **Asks for your Issuer ID**
+   - What it does: Asks for the long Issuer ID shown above the keys table on that same API page, and saves it.
+   - Why SoleCount needs it: Apple uses it with the Key ID and the `.p8` file to confirm the login is yours.
 
-9. **Asks for App Review contact (phone & email)**  
-   Apple requires a contact for their review team to reach you if they have questions about the app.
+9. **Stores the .p8 key outside the project**
+   - What it does: Takes the downloaded `AuthKey_XXXXXXXXXX.p8` file (from Downloads, or you drag it into Terminal) and saves it at `~/.appstoreconnect/private_keys/`, which is in your home folder, not inside SoleCount.
+   - Why SoleCount needs it: That file is the private half of the API login. Keeping it outside the project means it never goes to the public GitHub.
 
-10. **Saves your Team ID to the project settings**  
-    Writes your Team ID into `Config/Team.xcconfig` so Xcode knows which developer account to use when building.
+10. **Asks for your Apple ID email (you can skip this)**
+    - What it does: Asks for the email on your Apple ID. Press Return to skip.
+    - Why SoleCount needs it: If you fill it in, fastlane can create the App Store listing and the privacy answers for you. If you skip it, you do that once on the Apple website instead.
 
-11. **Generates SoleCount.xcodeproj**  
-    Runs `xcodegen generate` to create the Xcode project from `project.yml`.
+11. **Writes the Team ID into the Xcode settings**
+    - What it does: Puts the Team ID into `Config/Team.xcconfig`.
+    - Why SoleCount needs it: When Xcode builds SoleCount, it reads that file to know which developer team to use.
 
-12. **Opens the project in Xcode**  
-    Launches Xcode so you can see the app's code, run it in the simulator, or install it on your iPhone.
+12. **Asks for an App Review phone number and email**
+    - What it does: If those two files still contain the placeholder `REPLACE_ME`, it asks for a phone number (with country code) and an email, then saves them.
+    - Why SoleCount needs it: Apple requires a person they can contact while they review SoleCount.
 
-All of these credentials and tools are required for Apple's iOS app development process. Without them, you can't build, test, or submit SoleCount to the App Store.
+13. **Builds the Xcode project**
+    - What it does: Runs XcodeGen to create `SoleCount.xcodeproj` from `project.yml`.
+    - Why SoleCount needs it: Xcode opens a project file, and that file is created on your Mac rather than downloaded from GitHub.
+
+14. **Downloads the iPhone Simulator if it is missing**
+    - What it does: Checks for an iPhone simulator. If none is installed, it downloads the iOS simulator. A simulator is a pretend iPhone that runs on your Mac.
+    - Why SoleCount needs it: `make test` and the App Store screenshots run SoleCount in that simulator.
+
+15. **Opens SoleCount in Xcode**
+    - What it does: Opens `SoleCount.xcodeproj`.
+    - Why SoleCount needs it: You can then run the app in the simulator or on your real iPhone.
 
 ---
 
@@ -122,7 +144,7 @@ The script then asks for:
 
 - **Team ID** (10 chars): [developer.apple.com/account](https://developer.apple.com/account) → Membership details
 - **API Key ID** (10 chars): [App Store Connect → API](https://appstoreconnect.apple.com/access/integrations/api) → Generate key, copy Key ID
-- **Issuer ID** (UUID): Same page, above the keys table
+- **Issuer ID** (a long code): Same page, above the keys table
 - **.p8 file**: Drag `AuthKey_*.p8` from Downloads into Terminal when prompted
 - **Phone & email**: For App Review contact
 
