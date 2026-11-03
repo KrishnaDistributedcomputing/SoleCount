@@ -1,0 +1,6 @@
+# Which app fastlane works on. The API key (not an Apple ID) is used for everything it can.
+app_identifier("com.krishnav.SoleCount")
+# Optional: your Apple ID email, only for the two steps Apple keeps behind a web login
+# (creating the app record, privacy answers). Set APPLE_ID in fastlane/.env.
+apple_id(ENV["APPLE_ID"]) if ENV["APPLE_ID"].to_s != ""
+team_id(ENV["TEAM_ID"]) if ENV["TEAM_ID"].to_s != ""

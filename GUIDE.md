@@ -4,7 +4,7 @@
 
 **What you're building:** SoleCount, an iPhone app that counts how often you wear each pair of sneakers and shows your **cost per wear** (price ÷ number of wears).
 
-| Free | SoleCount Pro (one-time $4.99) |
+| Free | SoleCount Pro (one-time $0.99) |
 |---|---|
 | Up to 3 pairs | Unlimited pairs |
 | "Wore today" button, wear count, cost per wear | Wear history chart for every pair |
@@ -1140,7 +1140,7 @@ and shows the cost per wear (price ÷ number of wears).
 
 ## Business rules
 - Free: up to 3 pairs (StoreManager.freePairLimit). Chart is Pro only.
-- Pro: one-time non-consumable, product ID `com.krishnav.SoleCount.pro`, $4.99.
+- Pro: one-time non-consumable, product ID `com.krishnav.SoleCount.pro`, $0.99.
 - Paywall must always show: price from StoreKit (displayPrice), Restore Purchases,
   Privacy Policy and Terms links. Never hard-code the price in text.
 
@@ -1242,7 +1242,7 @@ This lets you "buy" Pro for free while testing, with no App Store account needed
 5. Fill in:
    - **Reference Name:** `SoleCount Pro`
    - **Product ID:** `com.krishnav.SoleCount.pro` (must match exactly, including capital S and C)
-   - **Price:** `4.99`
+   - **Price:** `0.99`
    - Under **Localizations**, click **+** (or double-click the English row): **Display Name** `SoleCount Pro`, **Description** `Unlimited pairs and wear history chart`
 6. Press **Cmd+S**.
 7. Tell Xcode to use it: **Product > Scheme > Edit Scheme…** > click **Run** on the left > **Options** tab > **StoreKit Configuration** > choose **SoleCount.storekit** > **Close**.
@@ -1251,7 +1251,7 @@ This lets you "buy" Pro for free while testing, with no App Store account needed
 
 1. Press **▶ Run**.
 2. Tap **+** until the Pro screen appears (after 3 pairs), or tap the gear icon and choose **Unlock Pro**.
-3. The button should say **Unlock Pro for $4.99**. Tap it and confirm the test purchase.
+3. The button should say **Unlock Pro for $0.99**. Tap it and confirm the test purchase.
 4. The screen closes. You can now add a 4th pair, and each pair shows its chart.
 5. **To test again from zero:** in Xcode choose **Debug > StoreKit > Manage Transactions…**, select the purchase, and click the **Delete** (trash) button. Then stop and run the app again.
 6. **Test Restore:** after deleting the purchase, buy it again, then tap **Settings > Restore Purchases**. It should say Pro is unlocked.
@@ -1437,10 +1437,10 @@ After Claude finishes, press **▶ Run** in Xcode to test, then commit and push 
 
 ## Part 6: Getting ready for the App Store (summary)
 
-1. **Join the Apple Developer Program** ($99 USD/year, once for all your apps): **developer.apple.com/programs**. Then join the **App Store Small Business Program**, so Apple takes 15% instead of 30%.
+1. **Join the Apple Developer Program** ($99 USD/year, once for all your apps): **developer.apple.com/programs**. Then join the **App Store Small Business Program**, so Apple takes 15% instead of 30%. At $0.99 that leaves you about $0.84 per sale, so about 600 sales a year nets roughly $500.
 2. **Sign the Paid Apps Agreement:** in **App Store Connect > Business**, add your bank and tax info. Without it, the purchase won't work in the real store.
 3. **Create the app** in App Store Connect: **Apps > + > New App**, with bundle ID `com.krishnav.SoleCount`.
-4. **Create the in-app purchase:** **Monetization > In-App Purchases > +** > **Non-Consumable**, Product ID `com.krishnav.SoleCount.pro`, price $4.99, display name and description, and a **review screenshot** of your Pro screen. Attach it to your first app version when you submit.
+4. **Create the in-app purchase:** **Monetization > In-App Purchases > +** > **Non-Consumable**, Product ID `com.krishnav.SoleCount.pro`, price $0.99, display name and description, and a **review screenshot** of your Pro screen. Attach it to your first app version when you submit.
 5. **App Privacy:** answer **"Data Not Collected"**. Privacy Policy URL: `https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/PRIVACY.md`.
 6. **Screenshots:** take them on your iPhone or the simulator (**Cmd+S** in the simulator). Use real app screens, not mockups. You need at least one 6.9" or 6.3" size (e.g. 1320×2868, 1206×2622 or 1179×2556 pixels).
 7. **Upload:** set the device menu to **Any iOS Device (arm64)**, then **Product > Archive** > **Distribute App** > **App Store Connect** > **Upload**. When asked about encryption, choose **None of the algorithms mentioned above** (the app only uses Apple's standard HTTPS through StoreKit).

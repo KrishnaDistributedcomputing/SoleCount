@@ -8,7 +8,7 @@ import Observation
 @Observable
 final class StoreManager {
     static let proProductID = "com.krishnav.SoleCount.pro"
-    static let freePairLimit = 3
+    nonisolated static let freePairLimit = 3
     private static let isProKey = "isPro"
 
     private(set) var proProduct: Product?
@@ -21,7 +21,18 @@ final class StoreManager {
 
     @ObservationIgnored private var updatesTask: Task<Void, Never>?
 
-    init() {
+    /// The free-tier rule in one place, so unit tests can check it.
+    nonisolated static func canAddPair(currentCount: Int, isPro: Bool) -> Bool {
+        isPro || currentCount < freePairLimit
+    }
+
+    /// - Parameter demoPro: only used by automated screenshots (DEBUG builds).
+    ///   It pretends Pro is unlocked without touching the real purchase state.
+    init(demoPro: Bool = false) {
+        if demoPro {
+            isPro = true
+            return
+        }
         // Listen for purchases that happen outside the app
         // (e.g. Ask to Buy approved later, refunds, purchases on another device).
         updatesTask = Task { [weak self] in

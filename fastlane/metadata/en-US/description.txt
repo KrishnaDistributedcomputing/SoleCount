@@ -1,0 +1,27 @@
+How much did that last pair really cost you? SoleCount turns your sneaker collection into simple numbers: how often you wear each pair and what every wear costs.
+
+TAP ONCE, SEE THE VALUE
+• Add a pair with a photo, brand, price and purchase date
+• Tap "Wore today" whenever you wear them
+• Cost per wear updates instantly (price ÷ wears)
+• Undo a tap if you made a mistake
+
+KNOW YOUR ROTATION
+• See wears and cost per wear for every pair at a glance
+• Set an optional wear limit and get a reminder to retire a worn-out pair
+• Keep retired pairs in their own section
+
+PRIVATE BY DESIGN
+• No account, no sign-up, no ads, no tracking
+• Everything stays on your iPhone
+
+FREE AND SOLECOUNT PRO
+SoleCount is free for up to 3 pairs. SoleCount Pro is a one-time purchase (no subscription) that unlocks:
+• Unlimited pairs
+• A wear history chart for every pair (last 6 months)
+Already bought Pro? Use Restore Purchases in Settings.
+
+Made by an independent developer. Questions or ideas? Tap Support in the app's Settings.
+
+Terms of Use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/PRIVACY.md

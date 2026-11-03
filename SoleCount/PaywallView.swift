@@ -58,7 +58,7 @@ struct PaywallView: View {
                         .controlSize(.large)
                         .disabled(store.proProduct == nil || store.isLoading)
 
-                        if store.proProduct == nil {
+                        if store.proProduct == nil && !LaunchFlags.screenshots {
                             Button("Try loading the price again") {
                                 Task { await store.loadProducts() }
                             }
@@ -107,6 +107,10 @@ struct PaywallView: View {
         if let product = store.proProduct {
             return "Unlock Pro for \(product.displayPrice)"
         }
+        #if DEBUG
+        // Automated screenshots run without the App Store, so show the real price text.
+        if LaunchFlags.screenshots { return "Unlock Pro for $0.99" }
+        #endif
         return "Loading price…"
     }
 }
