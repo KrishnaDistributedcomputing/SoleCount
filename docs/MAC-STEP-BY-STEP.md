@@ -29,6 +29,98 @@ Do all of this on the Mac, so you copy and paste on the same computer.
 
 ---
 
+## No Apple Developer membership yet? (waiting up to 48 hrs)
+
+You already paid, and Apple's email can take up to 48 hours. Until that email arrives you have no Team ID, no Key ID, no Issuer ID, and no `.p8` key. You can still set up, test, and run SoleCount.
+
+### Do now, no membership needed
+
+**1. Get the code**
+
+```bash
+cd ~/Desktop && git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git && cd SoleCount
+```
+
+**Why:** Gets a copy of SoleCount's code onto your Mac.
+
+**2. Set up the Mac without Apple questions**
+
+```bash
+make setup-local
+```
+
+**Why:** Installs Homebrew, XcodeGen, and fastlane, creates the Xcode project, downloads the iPhone Simulator, and opens Xcode. It skips every Apple question.
+
+If you run `make setup` instead, press Return on each Apple question. The script prints what it skipped.
+
+**3. Run the tests**
+
+```bash
+make test
+```
+
+**Why:** Runs SoleCount in the iPhone Simulator. No Team ID is required. This catches bugs before Apple's reviewers do.
+
+**4. Run the app**
+
+```bash
+make open
+```
+
+Xcode opens. Press Cmd + R.
+
+**Why:** Cmd + R builds SoleCount and shows it in the simulator on your Mac.
+
+**5. Optional: your own iPhone, with a free Apple ID**
+
+In Xcode, open the Settings menu, then Accounts, and add your Apple ID. Click the SoleCount project in the left sidebar, open Signing & Capabilities, and choose Personal Team.
+
+**Why:** A free Apple ID can install SoleCount on your own phone. The free install expires after 7 days. It cannot use the In-App Purchase sandbox, and it cannot upload to TestFlight. You can still try the $0.99 purchase inside the simulator.
+
+### Do after Apple's welcome email
+
+**1. Copy your Team ID**
+
+Open [developer.apple.com/account](https://developer.apple.com/account), then Membership details. Copy the 10-character Team ID.
+
+**Why:** SoleCount's upload tools need this to show Apple which developer account is yours.
+
+**2. Create the App Store Connect API key**
+
+Open [App Store Connect → Integrations → API](https://appstoreconnect.apple.com/access/integrations/api). Create a key. Copy the Key ID and the Issuer ID (the long code above the keys table). Download the `.p8` file. Apple only lets you download that file once.
+
+**Why:** The Key ID, Issuer ID, and `.p8` file let SoleCount sign in to your Apple account without your Apple ID password. The setup script stores the `.p8` file in `~/.appstoreconnect/private_keys`, outside the project, so it never goes to the public GitHub.
+
+**3. Save those answers on your Mac**
+
+```bash
+make setup
+```
+
+Answer the questions this time. Press Return only if you still do not have that one item.
+
+**Why:** Writes the Team ID into the project and saves the API key outside the project folder.
+
+**4. Create the App Store listing**
+
+```bash
+make appstore-setup
+```
+
+**Why:** Creates SoleCount's listing and the $0.99 upgrade in Apple's system.
+
+**5. Send the app to Apple**
+
+```bash
+make deploy
+```
+
+**Why:** Builds SoleCount and sends it to Apple for review.
+
+If you run `make appstore-setup` or `make deploy` before the membership details are saved, they stop with: "Your Apple Developer membership isn't active yet. Run make appstore-setup once Apple emails you."
+
+---
+
 ## How to copy and paste commands
 
 Throughout this guide:
@@ -68,85 +160,112 @@ Your prompt now shows `SoleCount`.
 
 ## Step 2: Run setup and answer the questions
 
+While Apple is still processing your membership, use this. It skips every Apple question:
+
+```bash
+make setup-local
+```
+
+**Why:** Installs the tools, creates the project, downloads the simulator, and opens Xcode. SoleCount can run with no Team ID.
+
+When Apple has emailed you, use this instead and answer the questions:
+
 ```bash
 make setup
 ```
 
-**Why:** Installs the tools Apple's build needs and saves your App Store keys safely.
+**Why:** Same tool install, and it saves your Team ID, Key ID, Issuer ID, and `.p8` key. Press Return to skip any question you still do not have.
 
 ### What make setup does, and why SoleCount needs it
 
-`make setup` only runs `scripts/setup_mac.sh`. These are the steps that script actually does, in order. It is safe to run again: if a tool or answer is already there, it keeps it.
+`make setup` and `make setup-local` only run `scripts/setup_mac.sh`. These are the steps that script actually does, in order. It is safe to run again: if a tool or answer is already there, it keeps it. Steps marked "Skip for now: Yes" are the Apple membership questions. `make setup-local` skips all of them. The simulator still works.
 
 1. **Checks Xcode 26**
    - What it does: Looks for Xcode, Apple's app-building program, and checks that it is version 26 or newer.
    - Why SoleCount needs it: Apple only accepts App Store uploads built with Xcode 26. Without it, SoleCount cannot be sent to Apple.
+   - Skip for now: No.
 
 2. **Installs Homebrew if it is missing**
    - What it does: Installs Homebrew, a helper that installs other developer tools. On a new Apple-chip Mac it also tells Terminal where Homebrew lives. It may ask for your Mac password.
    - Why SoleCount needs it: The next step uses Homebrew to install XcodeGen and fastlane.
+   - Skip for now: No.
 
 3. **Installs XcodeGen**
    - What it does: Installs XcodeGen, the tool that builds an Xcode project from a settings file.
    - Why SoleCount needs it: SoleCount's project file (`SoleCount.xcodeproj`) is not stored on GitHub. XcodeGen makes it on your Mac from `project.yml`.
+   - Skip for now: No.
 
 4. **Installs fastlane**
    - What it does: Installs fastlane with Homebrew. Fastlane is written in the Ruby language. This script does not install Ruby packages with bundler, and it does not run `bundle install`. (The project has a `Gemfile` that lists fastlane, but `make setup` uses the Homebrew copy.)
-   - Why SoleCount needs it: `make appstore-setup` and `make deploy` use fastlane to set up the $0.99 Pro upgrade, take screenshots, upload to TestFlight, and send the app to App Review.
+   - Why SoleCount needs it: Later, `make appstore-setup` and `make deploy` use fastlane for the $0.99 upgrade, screenshots, TestFlight, and App Review. You do not need fastlane to run the simulator today.
+   - Skip for now: No. The script installs it now so it is ready after Apple's email.
 
 5. **Creates a private settings file**
    - What it does: Copies `fastlane/.env.example` to `fastlane/.env` if that file is not there yet, and locks it so only your Mac user can read it.
-   - Why SoleCount needs it: Your Team ID and API details are saved in that file. It is ignored by Git, so it is never uploaded to the public GitHub repo.
+   - Why SoleCount needs it: Your Team ID and API details will be saved in that file later. It is ignored by Git, so it is never uploaded to the public GitHub repo. A blank file is fine today.
+   - Skip for now: No. Creating the blank file is not the same as filling in Apple's details.
 
 6. **Asks for your Team ID**
-   - What it does: Asks for the 10-character Team ID and saves it in `fastlane/.env`. Find it at [developer.apple.com/account](https://developer.apple.com/account) → Membership details.
-   - Why SoleCount needs it: It tells Xcode which Apple Developer account is allowed to build SoleCount.
+   - What it does: Asks for the 10-character Team ID and saves it in `fastlane/.env`. Find it at [developer.apple.com/account](https://developer.apple.com/account) → Membership details, after Apple's email.
+   - Why SoleCount needs it: It tells Xcode which paid Apple Developer account is allowed to upload SoleCount.
+   - Skip for now: Yes. Press Return, or run `make setup-local`. The simulator does not need a Team ID.
 
 7. **Asks for your API Key ID**
-   - What it does: Asks for the 10-character Key ID and saves it. Find it at [App Store Connect → Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api). Click **+** to make a key if you do not have one.
+   - What it does: Asks for the 10-character Key ID and saves it. Find it at [App Store Connect → Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api), after the membership is active.
    - Why SoleCount needs it: Together with the next two items, it lets SoleCount's tools sign in to your Apple account without your Apple ID password.
+   - Skip for now: Yes.
 
 8. **Asks for your Issuer ID**
    - What it does: Asks for the long Issuer ID shown above the keys table on that same API page, and saves it.
    - Why SoleCount needs it: Apple uses it with the Key ID and the `.p8` file to confirm the login is yours.
+   - Skip for now: Yes.
 
 9. **Stores the .p8 key outside the project**
-   - What it does: Takes the downloaded `AuthKey_XXXXXXXXXX.p8` file (from Downloads, or you drag it into Terminal) and saves it at `~/.appstoreconnect/private_keys/`, which is in your home folder, not inside SoleCount.
+   - What it does: Takes the downloaded `AuthKey_` file (from Downloads, or you drag it into Terminal) and saves it at `~/.appstoreconnect/private_keys/`, which is in your home folder, not inside SoleCount.
    - Why SoleCount needs it: That file is the private half of the API login. Keeping it outside the project means it never goes to the public GitHub.
+   - Skip for now: Yes. You cannot download this file until the membership is active.
 
-10. **Asks for your Apple ID email (you can skip this)**
+10. **Asks for your Apple ID email**
     - What it does: Asks for the email on your Apple ID. Press Return to skip.
-    - Why SoleCount needs it: If you fill it in, fastlane can create the App Store listing and the privacy answers for you. If you skip it, you do that once on the Apple website instead.
+    - Why SoleCount needs it: If you fill it in later, fastlane can create the App Store listing and the privacy answers for you. If you skip it, you do that once on the Apple website instead.
+    - Skip for now: Yes.
 
 11. **Writes the Team ID into the Xcode settings**
-    - What it does: Puts the Team ID into `Config/Team.xcconfig`.
-    - Why SoleCount needs it: When Xcode builds SoleCount, it reads that file to know which developer team to use.
+    - What it does: Puts the Team ID into `Config/Team.xcconfig` when you have one. If you skipped it, the line stays blank.
+    - Why SoleCount needs it: When you later upload SoleCount, Xcode reads that file to know which developer team to use. A blank line is what the simulator build uses.
+    - Skip for now: Yes.
 
 12. **Asks for an App Review phone number and email**
     - What it does: If those two files still contain the placeholder `REPLACE_ME`, it asks for a phone number (with country code) and an email, then saves them.
     - Why SoleCount needs it: Apple requires a person they can contact while they review SoleCount.
+    - Skip for now: Yes.
 
 13. **Builds the Xcode project**
     - What it does: Runs XcodeGen to create `SoleCount.xcodeproj` from `project.yml`.
     - Why SoleCount needs it: Xcode opens a project file, and that file is created on your Mac rather than downloaded from GitHub.
+    - Skip for now: No.
 
 14. **Downloads the iPhone Simulator if it is missing**
     - What it does: Checks for an iPhone simulator. If none is installed, it downloads the iOS simulator. A simulator is a pretend iPhone that runs on your Mac.
-    - Why SoleCount needs it: `make test` and the App Store screenshots run SoleCount in that simulator.
+    - Why SoleCount needs it: `make test` and pressing Cmd + R run SoleCount in that simulator, with no Team ID.
+    - Skip for now: No.
 
 15. **Opens SoleCount in Xcode**
     - What it does: Opens `SoleCount.xcodeproj`.
-    - Why SoleCount needs it: You can then run the app in the simulator or on your real iPhone.
+    - Why SoleCount needs it: You can then press Cmd + R to run the app in the simulator, or on your iPhone with a free Personal Team.
+    - Skip for now: No.
 
 ---
 
-The script then asks for:
+If you run `make setup` before Apple's email, press Return to skip each of these:
 
-- **Team ID** (10 chars): [developer.apple.com/account](https://developer.apple.com/account) → Membership details
-- **API Key ID** (10 chars): [App Store Connect → API](https://appstoreconnect.apple.com/access/integrations/api) → Generate key, copy Key ID
+- **Team ID** (10 characters): [developer.apple.com/account](https://developer.apple.com/account) → Membership details
+- **API Key ID** (10 characters): [App Store Connect → API](https://appstoreconnect.apple.com/access/integrations/api)
 - **Issuer ID** (a long code): Same page, above the keys table
-- **.p8 file**: Drag `AuthKey_*.p8` from Downloads into Terminal when prompted
-- **Phone & email**: For App Review contact
+- **.p8 file**: Drag the file into Terminal, or press Return to skip
+- **Phone and email**: For App Review. Press Return to skip
+
+`make setup-local` skips that whole list for you.
 
 **Note:** When typing your Mac password, you won't see any characters. That's normal—just type it and press Return.
 

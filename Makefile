@@ -1,21 +1,27 @@
-.PHONY: setup appstore-setup test deploy open clean help
+.PHONY: setup setup-local appstore-setup test deploy open clean help
 
 help:
 	@echo "SoleCount — Quick commands"
 	@echo ""
-	@echo "  make setup           One-time Mac setup (Homebrew, XcodeGen, fastlane, keys, generate project)"
-	@echo "  make appstore-setup  Create app in App Store Connect (bundle ID, pricing, IAP)"
-	@echo "  make test            Run all tests"
-	@echo "  make deploy          Full deployment (tests → TestFlight → App Review)"
+	@echo "  make setup-local     Setup with no Apple membership (tools, project, simulator, Xcode)"
+	@echo "  make setup           Same setup, and it asks for your Apple Team ID and API key"
+	@echo "  make test            Run all tests in the iPhone Simulator (no Team ID needed)"
 	@echo "  make open            Generate project and open in Xcode"
+	@echo "  make appstore-setup  Create the app in App Store Connect (after Apple emails you)"
+	@echo "  make deploy          Tests, TestFlight, and App Review (after Apple emails you)"
 	@echo "  make clean           Remove build artifacts and generated project"
 	@echo ""
-	@echo "First-time setup: make setup, then make appstore-setup"
+	@echo "Waiting on Apple? Run: make setup-local"
+	@echo "After Apple's email:  make setup, then make appstore-setup"
 
 setup:
 	@bash scripts/setup_mac.sh
 
+setup-local:
+	@bash scripts/setup_mac.sh --no-apple
+
 appstore-setup:
+	@bash scripts/require_apple.sh
 	@fastlane setup
 
 open:
@@ -23,6 +29,7 @@ open:
 	@open SoleCount.xcodeproj
 
 test:
+	@echo "Running tests in the iPhone Simulator. No Apple Team ID is needed."
 	@fastlane ios test
 
 deploy:

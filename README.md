@@ -33,40 +33,62 @@ Do all of this on the Mac, so you copy and paste on the same computer.
 
 ---
 
-**New to Mac?** **[→ 5-step beginner guide](docs/MAC-STEP-BY-STEP.md)** with copy-paste commands.
+### No Apple Developer membership yet? (waiting up to 48 hrs)
 
-**Requirements:** macOS with Xcode 26+.
+You paid, and Apple is still processing it. You can build, test, and run SoleCount on this Mac today. The Team ID, Key ID, Issuer ID, and `.p8` key do not exist until Apple finishes. Full detail: **[Mac setup guide](docs/MAC-STEP-BY-STEP.md#no-apple-developer-membership-yet-waiting-up-to-48-hrs)**.
+
+**Do now, no membership needed**
 
 ```bash
 cd ~/Desktop && git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git && cd SoleCount
 ```
-**Why:** Gets a copy of the app's code onto your Mac.
+**Why:** Gets a copy of SoleCount's code onto your Mac.
 
 ```bash
-make setup
+make setup-local
 ```
-**Why:** Installs the tools Apple's build needs and saves your App Store keys safely. ([What this does step-by-step](docs/MAC-STEP-BY-STEP.md#step-2-run-setup-and-answer-the-questions))
-
-```bash
-make appstore-setup
-```
-**Why:** Creates the app's listing and the $0.99 upgrade in Apple's system.
+**Why:** Installs the tools, creates the Xcode project, downloads the iPhone Simulator, and opens Xcode. It does not ask for any Apple membership details.
 
 ```bash
 make test
 ```
-**Why:** Catches bugs before Apple's reviewers do, which helps avoid rejection.
+**Why:** Runs SoleCount in the iPhone Simulator. No Team ID is required, so you can catch bugs before you send the app to Apple.
+
+```bash
+make open
+```
+**Why:** Opens SoleCount in Xcode. Press Cmd + R to run it in the simulator.
+
+To run it on your own iPhone with a free Apple ID: in Xcode open Settings, then Accounts, and add your Apple ID. Click the SoleCount project, open Signing & Capabilities, and choose Personal Team. A free install lasts 7 days. It cannot use the In-App Purchase sandbox or TestFlight. The $0.99 purchase can still be tried in the simulator.
+
+**Do after Apple's welcome email**
+
+Find your Team ID at [developer.apple.com/account](https://developer.apple.com/account) → Membership details. Create an App Store Connect API key (Key ID, Issuer ID, and the `.p8` file) at [App Store Connect → Integrations](https://appstoreconnect.apple.com/access/integrations/api).
+
+```bash
+make setup
+```
+**Why:** Saves the Team ID, Key ID, Issuer ID, and `.p8` key so SoleCount can sign in to your Apple account. Press Return only for a question you still do not have.
+
+```bash
+make appstore-setup
+```
+**Why:** Creates SoleCount's App Store listing and the $0.99 upgrade in Apple's system.
 
 ```bash
 make deploy
 ```
-**Why:** Builds the app and sends it to Apple for review.
+**Why:** Builds SoleCount and sends it to Apple for review.
+
+If you run those last two commands before the membership is ready, they stop and tell you to wait for Apple's email.
 
 ### Available commands
 
-- `make setup` — One-time Mac setup (Homebrew, XcodeGen, fastlane, API keys, generate project)
-- `make test` — Run all tests
-- `make deploy` — Full deployment (tests → TestFlight → App Review)
+- `make setup-local` — Setup while Apple is still processing your membership
+- `make setup` — Setup, and type your Team ID and API key when you have them
+- `make test` — Run all tests in the iPhone Simulator (no Team ID)
+- `make appstore-setup` — Create the App Store listing after Apple's email
+- `make deploy` — Full deployment after Apple activates your membership
 - `make open` — Regenerate the Xcode project and open it
 - `make clean` — Remove build artifacts
 - `make help` — Show all available commands

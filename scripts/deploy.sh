@@ -10,9 +10,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-if [ ! -f fastlane/.env ] && [ -z "${ASC_KEY_ID:-}" ]; then
-  echo "fastlane/.env not found. Run: bash scripts/setup_mac.sh."; exit 1
-fi
+# App Store upload needs the paid membership. Stop here with a plain message if it is not ready.
+bash "$(dirname "$0")/require_apple.sh"
 
 RUN_SETUP=0; BETA_ONLY=0
 for arg in "$@"; do

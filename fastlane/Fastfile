@@ -194,6 +194,10 @@ platform :ios do
   # (A helper method, because Ruby already has a built-in method called `test`.)
   private_lane :run_test_suite do
     generate
+    # No Team ID is required. Config/Team.xcconfig can leave DEVELOPMENT_TEAM
+    # blank, and the iPhone Simulator still runs these tests (this is the same
+    # setup the GitHub macOS runner uses). Do not force CODE_SIGN_IDENTITY=-
+    # here: a bare "-" is easy for xcodebuild to misread.
     run_tests(
       project: PROJECT,
       scheme: SCHEME,

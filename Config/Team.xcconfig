@@ -1,4 +1,6 @@
 // Your Apple Developer Team ID (10 characters, e.g. AB12CD34EF).
 // Find it at https://developer.apple.com/account -> Membership details -> Team ID.
-// scripts/setup_mac.sh fills this in for you. The Team ID is not a secret.
+// Leave this blank until Apple finishes your membership. The iPhone Simulator
+// does not need a Team ID. scripts/setup_mac.sh fills this in later.
+// The Team ID is not a secret.
 DEVELOPMENT_TEAM =
