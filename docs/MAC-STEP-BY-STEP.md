@@ -107,15 +107,103 @@ Answer the questions this time. Press Return only if you still do not have that 
 make appstore-setup
 ```
 
-**Why:** Creates SoleCount's listing and the $0.99 upgrade in Apple's system.
+**Why:** Registers the bundle ID `com.krishnav.SoleCount` and, after the app exists, sets up the $0.99 upgrade. Apple does not let the API key create the app record by itself. If the command stops and says the app record does not exist yet, fill in the New App form in the next section before you deploy.
 
-**5. Send the app to Apple**
+<a id="new-app-form"></a>
+
+## Create the SoleCount app in App Store Connect (New App form)
+
+Do this only after Apple emails you that the paid membership is active. You need it before `make deploy`. If SoleCount is already in the Apps list, skip this form.
+
+This is the empty form. Yours should look the same before you type:
+
+![New App form in App Store Connect. Platforms, Name, Primary Language, Bundle ID, SKU, and User Access are empty, and Create is grey.](images/appstoreconnect-new-app.png)
+
+**0. Open the form**
+
+In Safari, open [https://appstoreconnect.apple.com](https://appstoreconnect.apple.com). Click **Apps**. Click the blue **+** next to Apps, then **New App**.
+
+**Why:** This creates the App Store record for SoleCount. The paid membership has to be active, or the + button will not let you add an iOS app.
+
+**1. Platforms**
+
+Tick **iOS** only. Leave macOS, tvOS, and visionOS unticked.
+
+**Why:** SoleCount is an iPhone app.
+
+**2. Name**
+
+Type `SoleCount`. The number under the box must stay at 30 or less. This is the name people see on the App Store. If Apple says the name is already being used, type `SoleCount: Sneaker Tracker` instead. You can change the name later, before the app is released.
+
+**Why:** This is the public name of this app. The project file `fastlane/metadata/en-US/name.txt` already says `SoleCount: Sneaker Tracker`, which is the name fastlane uses if it creates the record for you.
+
+**3. Primary Language**
+
+Choose **English (U.S.)**.
+
+**Why:** SoleCount's App Store text is written in that language.
+
+**4. Bundle ID**
+
+Pick `com.krishnav.SoleCount` in the dropdown. It must match `project.yml` and `fastlane/Fastfile` exactly. Those files both use `com.krishnav.SoleCount`.
+
+**Why:** Apple ties the installed app, the $0.99 upgrade, and this listing to that one ID. A different ID would be a different app.
+
+If `com.krishnav.SoleCount` is not in the list, register it, then come back:
+
+1. Click the **Certificates, Identifiers & Profiles** link under the Bundle ID menu.
+2. Click **Identifiers**, then the **+** button.
+3. Choose **App IDs**, then **App**. Continue.
+4. Description: `SoleCount`.
+5. Bundle ID: choose **Explicit** and type `com.krishnav.SoleCount`.
+6. If **In-App Purchase** is in the capability list, tick it. On a new App ID it is already on.
+7. Click **Continue**, then **Register**.
+8. Go back to the New App form and refresh the page. The bundle ID should now be in the menu.
+
+`make appstore-setup` can do this bundle-ID step for you. It calls fastlane, which uses your API key to register `com.krishnav.SoleCount` if it is missing. The script says In-App Purchase is on by default for that new ID. It does not fill in this website form. Refresh the form after that command if the ID was missing.
+
+That same command does **not** create this New App record with the API key. Apple blocks that. Two things can happen:
+
+- You left Apple ID blank in `fastlane/.env`. The command stops and tells you to fill in this form. Its example name is `SoleCount: Sneaker Tracker` and its example SKU is `solecount-ios`. Use the values in this section instead. `solecount001` is fine.
+- You put your Apple ID email in `fastlane/.env`. Fastlane signs in as you, asks for a verification code, and creates the app itself. The name it sends is the text in `fastlane/metadata/en-US/name.txt` (`SoleCount: Sneaker Tracker`). The SKU it sends is `solecount-ios`. If the Apps list already shows SoleCount, do not fill this form again.
+
+**5. SKU**
+
+Type `solecount001`.
+
+**Why:** SKU is a private ID. Only you see it. It can be any text that you have not used before, and you cannot change it later. SoleCount's tools find the app by the bundle ID, not by this SKU, so `solecount001` matches this app. If fastlane created the app for you, it stored `solecount-ios` instead. Leave that one alone.
+
+**6. User Access**
+
+Choose **Full Access**.
+
+**Why:** You are the only developer. Full Access means every person on your Apple team can see SoleCount. Limited Access is for a big team that should hide the app from some members.
+
+**7. Click Create**
+
+Create stays grey until every box above is filled. After it turns blue, click **Create**.
+
+**Why:** This saves the SoleCount record so the later upload has somewhere to go.
+
+What to do on the next screens, still before `make deploy`:
+
+- The $0.99 upgrade is an in-app purchase with the product ID `com.krishnav.SoleCount.pro`. In the app's sidebar, open **Monetization**, then **In-App Purchases**. `make appstore-setup` creates that purchase when the app record already exists. The first time, Apple requires that purchase to be attached to version 1.0 before you submit. In the purchase, choose **Add for Review** and select iOS version 1.0.
+- Screenshots and the privacy answers still have to be filled in. `make deploy` uploads screenshots and the description. Privacy is set on the app's **App Privacy** page: SoleCount does not collect data.
+- Then run `make deploy`. That builds SoleCount and sends version 1.0 to Apple. Do not submit until the Pro purchase is attached to that version.
+
+**If something goes wrong**
+
+- **"The app name you entered is already being used."** Someone else already took `SoleCount`. Type `SoleCount: Sneaker Tracker` instead. That name is still under 30 characters.
+- **"Bundle ID not in the list."** It has not been registered yet. Use the Certificates, Identifiers & Profiles steps above, or run `make appstore-setup` so the API key registers `com.krishnav.SoleCount`, then refresh this form.
+- **Create stays grey.** A required field is empty. Check iOS, the name, English (U.S.), the bundle ID, the SKU, and Full Access.
+
+**6. Send the app to Apple**
 
 ```bash
 make deploy
 ```
 
-**Why:** Builds SoleCount and sends it to Apple for review.
+**Why:** Builds SoleCount and sends it to Apple for review. Run this only after the New App record exists and the $0.99 purchase is attached to version 1.0.
 
 If you run `make appstore-setup` or `make deploy` before the membership details are saved, they stop with: "Your Apple Developer membership isn't active yet. Run make appstore-setup once Apple emails you."
 

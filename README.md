@@ -73,7 +73,7 @@ make setup
 ```bash
 make appstore-setup
 ```
-**Why:** Creates SoleCount's App Store listing and the $0.99 upgrade in Apple's system. It needs the `.p8` file from **[How to get and find your AuthKey_XXXXXXXXXX.p8 file](docs/MAC-STEP-BY-STEP.md#find-the-p8-file)**.
+**Why:** Registers the bundle ID and sets up the $0.99 upgrade. It needs the `.p8` file from **[How to get and find your AuthKey_XXXXXXXXXX.p8 file](docs/MAC-STEP-BY-STEP.md#find-the-p8-file)**. If it says the app record does not exist yet, fill in **[Create the SoleCount app in App Store Connect (New App form)](docs/MAC-STEP-BY-STEP.md#new-app-form)** before `make deploy`.
 
 ```bash
 make deploy
