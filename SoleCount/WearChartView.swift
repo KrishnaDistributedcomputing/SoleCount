@@ -25,21 +25,67 @@ struct WearChartView: View {
         return result
     }
 
+    private var maxCount: Int {
+        data.map(\.count).max() ?? 1
+    }
+
     var body: some View {
-        Chart(data) { item in
-            BarMark(
-                x: .value("Month", item.month, unit: .month),
-                y: .value("Wears", item.count)
-            )
-            .foregroundStyle(Color.accentColor.gradient)
-            .cornerRadius(4)
-        }
-        .chartXAxis {
-            AxisMarks(values: .stride(by: .month)) { _ in
-                AxisValueLabel(format: .dateTime.month(.abbreviated))
+        VStack(alignment: .leading, spacing: 16) {
+            if data.allSatisfy({ $0.count == 0 }) {
+                VStack(spacing: 12) {
+                    Image(systemName: "chart.bar")
+                        .font(.largeTitle)
+                        .foregroundStyle(.secondary)
+                    Text("No wears in the last 6 months")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
+            } else {
+                Chart(data) { item in
+                    BarMark(
+                        x: .value("Month", item.month, unit: .month),
+                        y: .value("Wears", item.count)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .cornerRadius(8)
+                    .annotation(position: .top) {
+                        if item.count > 0 {
+                            Text("\(item.count)")
+                                .font(.caption2.bold())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .chartXAxis {
+                    AxisMarks(values: .stride(by: .month)) { _ in
+                        AxisValueLabel(format: .dateTime.month(.abbreviated), centered: true)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading) { value in
+                        AxisValueLabel {
+                            if let intValue = value.as(Int.self) {
+                                Text("\(intValue)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .chartYScale(domain: 0...max(maxCount + 1, 5))
+                .frame(height: 220)
             }
         }
-        .frame(height: 200)
-        .accessibilityLabel("Wear history chart")
+        .accessibilityLabel("Wear history chart showing wears per month for the last 6 months")
     }
 }

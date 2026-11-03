@@ -48,15 +48,28 @@ struct SneakerPhoto: View {
                     .scaledToFill()
             } else {
                 ZStack {
-                    Rectangle().fill(Color.secondary.opacity(0.15))
+                    LinearGradient(
+                        colors: [
+                            Color.accentColor.opacity(0.2),
+                            Color.accentColor.opacity(0.1)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                     Image(systemName: "shoe.fill")
                         .font(.system(size: size * 0.4))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                 }
             }
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: size * 0.2))
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
         .accessibilityHidden(true)
     }
 }
@@ -67,18 +80,23 @@ struct StatCard: View {
     let value: String
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             Text(value)
                 .font(.title3.bold())
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .minimumScaleFactor(0.5)
             Text(title)
-                .font(.caption)
+                .font(.caption2)
                 .foregroundStyle(.secondary)
+                .textCase(.uppercase)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        )
         .accessibilityElement(children: .combine)
     }
 }
