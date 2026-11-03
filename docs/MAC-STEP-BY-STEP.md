@@ -209,6 +209,50 @@ If you run `make appstore-setup` or `make deploy` before the membership details 
 
 ---
 
+<a id="get-updates"></a>
+
+## Get the latest updates (merge a branch and git pull)
+
+New SoleCount changes are saved on a branch first. A branch is a separate copy of the project. `main` is the copy that `git clone` downloads. These steps put a finished branch into `main`, then download that copy onto your Mac.
+
+**1. Merge the branch on the GitHub website**
+
+Open this page in Safari:
+
+[https://github.com/KrishnaDistributedcomputing/SoleCount/compare/main...cursor/setup-without-apple-043d](https://github.com/KrishnaDistributedcomputing/SoleCount/compare/main...cursor/setup-without-apple-043d)
+
+For a later branch, replace `cursor/setup-without-apple-043d` at the end of that address with the new branch name. Or open [the SoleCount page](https://github.com/KrishnaDistributedcomputing/SoleCount) and click the yellow **Compare & pull request** banner when GitHub shows one.
+
+Click the green **Create pull request** button. On the next page, click **Create pull request** again. Wait until the checks finish. Then click **Merge pull request**, and click **Confirm merge**.
+
+**Why:** `main` is the version everyone gets by default, including a new `git clone`. New work stays on a branch until this merge copies it into `main`.
+
+**2. Download that update on the Mac**
+
+If you already switched this folder to the update branch, download the latest commit of that branch:
+
+```bash
+cd ~/Desktop/SoleCount && git pull
+```
+
+**Why:** `git pull` downloads the newest saved copy of the branch you are on and puts it in this SoleCount folder.
+
+After the GitHub merge, switch back to `main` and download it:
+
+```bash
+git checkout main && git pull
+```
+
+**Why:** `git checkout main` switches this folder from the side branch back to `main`. The second command, `git pull`, then downloads the merged `main` from GitHub onto your Mac. Your next `make setup-local`, `make test`, or `make open` uses that copy.
+
+**If something goes wrong**
+
+- **"There isn't anything to compare."** GitHub is saying this branch is already in `main`. You can skip the merge and run `git checkout main && git pull` on the Mac.
+- **`git pull` says "Your local changes would be overwritten."** You edited a file on the Mac, and the download would replace that edit. Run `git stash`, then `git pull`. `git stash` sets your Mac-only edits aside so the download can finish. The project files match GitHub after that. Your stashed edits are not deleted. They sit in a side pile, and you do not need them for SoleCount's normal setup.
+- **"not a git repository."** Terminal is not inside the SoleCount folder. Run `cd ~/Desktop/SoleCount` first, then run the `git` command again.
+
+---
+
 <a id="find-the-p8-file"></a>
 
 ## How to get and find your AuthKey_XXXXXXXXXX.p8 file

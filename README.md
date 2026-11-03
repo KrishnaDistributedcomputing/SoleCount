@@ -82,6 +82,18 @@ make deploy
 
 If you run those last two commands before the membership is ready, they stop and tell you to wait for Apple's email.
 
+**Get a newer copy of the code**
+
+When a branch such as `cursor/setup-without-apple-043d` should become the normal copy, follow **[Get the latest updates (merge a branch and git pull)](docs/MAC-STEP-BY-STEP.md#get-updates)**. On the Mac, after that merge:
+
+```bash
+cd ~/Desktop/SoleCount && git checkout main && git pull
+```
+
+**Why:** `git checkout main` switches to the default copy, and `git pull` downloads the merged updates into this folder.
+
+The `.p8` key steps stay in **[How to get and find your AuthKey_XXXXXXXXXX.p8 file](docs/MAC-STEP-BY-STEP.md#find-the-p8-file)**.
+
 ### Available commands
 
 - `make setup-local` — Setup while Apple is still processing your membership
