@@ -30,7 +30,7 @@ and shows the cost per wear (price ÷ number of wears).
 
 ## Business rules
 - Free: up to 3 pairs (StoreManager.freePairLimit). Chart is Pro only.
-- Pro: one-time non-consumable, product ID `com.krishnav.SoleCount.pro`, $4.99.
+- Pro: one-time non-consumable, product ID `com.krishnav.SoleCount.pro`, $0.99.
 - Paywall must always show: price from StoreKit (displayPrice), Restore Purchases,
   Privacy Policy and Terms links. Never hard-code the price in text.
 
@@ -43,3 +43,8 @@ and shows the cost per wear (price ÷ number of wears).
 ## Testing
 - Local purchases use SoleCount.storekit (Scheme > Run > Options > StoreKit Configuration).
 - Test on the iPhone 17 simulator and on my real iPhone.
+
+## Project generation and deployment
+- The Xcode project is generated from `project.yml` (XcodeGen). Edit project.yml, not the .xcodeproj.
+- Deployment is automated with fastlane (`fastlane/Fastfile`) and GitHub Actions (`.github/workflows/ios.yml`). See AUTOMATION.md.
+- Never commit `*.p8`, `fastlane/.env`, or any key. The repo is public.

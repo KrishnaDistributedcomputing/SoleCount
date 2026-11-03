@@ -1,0 +1,130 @@
+# SoleCount CI/CD
+#  - Every push to main (and every pull request): build + run all tests.
+#  - Push a tag like v1.0.0: tests -> TestFlight -> submit to App Review.
+#  - Actions tab > "iOS" > Run workflow: tests -> TestFlight, and App Review if you tick "release".
+#
+# Required repository secrets (Settings > Secrets and variables > Actions > New repository secret):
+#   ASC_KEY_ID      App Store Connect API Key ID (10 characters)
+#   ASC_ISSUER_ID   Issuer ID (a long UUID on the same page)
+#   ASC_KEY_P8      The .p8 file, base64-encoded:  base64 -i AuthKey_XXXX.p8 | pbcopy
+# Optional secret:
+#   TEAM_ID         10-character Team ID (otherwise read from Config/Team.xcconfig)
+name: iOS
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Also submit to App Review after TestFlight"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SIM_DEVICE: iPhone 17 Pro Max
+  FASTLANE_SKIP_UPDATE_CHECK: "1"
+  FASTLANE_HIDE_CHANGELOG: "1"
+  FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: "180"
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -n 1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install tools
+        run: |
+          brew install xcodegen
+          command -v fastlane || brew install fastlane
+          fastlane --version
+
+      - name: Run tests
+        run: fastlane ios test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: fastlane/test_output
+          if-no-files-found: ignore
+
+  deploy:
+    name: TestFlight / App Store
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      TEAM_ID: ${{ secrets.TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -n 1)
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install tools
+        run: |
+          brew install xcodegen
+          command -v fastlane || brew install fastlane
+
+      - name: Check secrets
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8; do
+            if [ -z "${!v}" ]; then echo "::error::Secret $v is missing"; exit 1; fi
+          done
+
+      - name: Write API key to a temporary file (never committed)
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          KEY_FILE="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          echo "$ASC_KEY_P8" | base64 --decode > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          echo "ASC_KEY_PATH=$KEY_FILE" >> "$GITHUB_ENV"
+
+      - name: Upload to TestFlight
+        run: fastlane ios beta
+
+      - name: Submit to App Review
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release
+        run: fastlane ios release
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: fastlane/screenshots
+          if-no-files-found: ignore
+
+      - name: Remove API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8

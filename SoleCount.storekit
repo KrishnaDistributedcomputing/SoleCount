@@ -1,0 +1,31 @@
+{
+  "identifier" : "8C1F3E2A-5B7D-4E61-9A3C-2D4F6B8E0A11",
+  "nonRenewingSubscriptions" : [ ],
+  "products" : [
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "6740000001",
+      "localizations" : [
+        {
+          "description" : "Unlimited pairs and wear history chart",
+          "displayName" : "SoleCount Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.krishnav.SoleCount.pro",
+      "referenceName" : "SoleCount Pro",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6740000000",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [ ]
+  },
+  "subscriptionGroups" : [ ],
+  "version" : { "major" : 4, "minor" : 0 }
+}

@@ -1,0 +1,11 @@
+# fastlane snapshot settings: App Store screenshots for the 6.9" iPhone size (1320 x 2868).
+# The Fastfile's `screenshots` lane passes the project path; these are the rest.
+scheme("SoleCount")
+devices([ENV.fetch("SNAPSHOT_DEVICE", "iPhone 17 Pro Max")])
+languages(["en-US"])
+only_testing(["SoleCountUITests/ScreenshotTests"])
+output_directory("./fastlane/screenshots")
+clear_previous_screenshots(true)
+override_status_bar(true)       # 9:41, full battery, full signal
+concurrent_simulators(false)
+stop_after_first_error(true)

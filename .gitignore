@@ -1,7 +1,10 @@
 # macOS
 .DS_Store
 
-# Xcode user-specific files
+# Xcode project is generated from project.yml by XcodeGen (run: xcodegen generate)
+*.xcodeproj
+*.xcworkspace
+SoleCount/Info.plist
 xcuserdata/
 *.xcuserstate
 *.xcscmblueprint
@@ -13,13 +16,28 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+*.xcresult
 
 # Swift Package Manager
 .build/
 .swiftpm/
 
-# Secrets (never commit these)
+# fastlane output
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/screenshots.html
+fastlane/test_output/
+fastlane/README.md
+fastlane/*.first-release
+fastlane/metadata/en-US/*.first-release
+
+# Secrets (NEVER commit these: this repo is public)
 *.p8
+AuthKey_*
 *.p12
+*.cer
 *.mobileprovision
 .env
+.env.*
+!.env.example
+fastlane/.env

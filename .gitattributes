@@ -1,0 +1,10 @@
+# Keep Unix line endings for scripts, even when committed from Windows
+*.sh      text eol=lf
+*.rb      text eol=lf
+Fastfile  text eol=lf
+Appfile   text eol=lf
+Snapfile  text eol=lf
+Gemfile   text eol=lf
+*.yml     text eol=lf
+*.png     binary
+*.pdf     binary

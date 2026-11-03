@@ -1,0 +1,321 @@
+# SoleCount automation. Plain-English summary of each lane:
+#
+#   fastlane setup        One time: bundle ID, app record, price, countries, age rating, IAP, privacy
+#   fastlane test         Unit tests + UI tests in the Simulator
+#   fastlane screenshots  6.9" App Store screenshots, generated automatically
+#   fastlane beta         New build number -> build -> sign -> upload to TestFlight
+#   fastlane release      Metadata + screenshots + IAP -> submit for review (automatic release)
+#
+# Everything uses the App Store Connect API key (no Apple ID password, no 2FA), except the
+# two things Apple only allows with a website login (see AUTOMATION.md).
+
+require "json"
+require "yaml"
+require "shellwords"
+require_relative "asc_api"
+
+default_platform(:ios)
+
+APP_IDENTIFIER = "com.krishnav.SoleCount"
+SCHEME = "SoleCount"
+ROOT = File.expand_path("..", __dir__)
+PROJECT = File.join(ROOT, "SoleCount.xcodeproj")
+METADATA = File.join(ROOT, "fastlane/metadata")
+SCREENSHOTS = File.join(ROOT, "fastlane/screenshots")
+IAP_REVIEW_SHOT = File.join(ROOT, "fastlane/iap_review_screenshot.png")
+IAP = JSON.parse(File.read(File.join(ROOT, "fastlane/iap.json")))
+SIM_DEVICE = ENV.fetch("SIM_DEVICE", "iPhone 17 Pro Max")
+
+# ---------------------------------------------------------------- helpers
+
+def require_env!(*names)
+  missing = names.select { |n| ENV[n].to_s.strip.empty? }
+  return if missing.empty?
+
+  UI.user_error!("Missing #{missing.join(', ')}. Locally: put them in fastlane/.env (run: bash scripts/setup_mac.sh). " \
+                 "On GitHub: add them under Settings > Secrets and variables > Actions.")
+end
+
+def key_path
+  path = ENV["ASC_KEY_PATH"].to_s.strip
+  path = "~/.appstoreconnect/private_keys/AuthKey_#{ENV['ASC_KEY_ID']}.p8" if path.empty?
+  path = File.expand_path(path)
+  UI.user_error!("API key file not found: #{path}. See AUTOMATION.md, step 3.") unless File.exist?(path)
+  path
+end
+
+# fastlane's own API key object (used by pilot, deliver, etc.)
+def api_key
+  require_env!("ASC_KEY_ID", "ASC_ISSUER_ID")
+  @api_key ||= app_store_connect_api_key(
+    key_id: ENV["ASC_KEY_ID"],
+    issuer_id: ENV["ASC_ISSUER_ID"],
+    key_filepath: key_path,
+    duration: 1200,
+    in_house: false
+  )
+end
+
+# Our small API client for the steps fastlane doesn't cover (fastlane/asc_api.rb)
+def asc
+  require_env!("ASC_KEY_ID", "ASC_ISSUER_ID")
+  @asc ||= SoleCountASC::Client.new(
+    key_id: ENV["ASC_KEY_ID"], issuer_id: ENV["ASC_ISSUER_ID"],
+    key_pem: File.read(key_path), log: ->(msg) { UI.message(msg) }
+  )
+end
+
+def team_id
+  return ENV["TEAM_ID"].strip unless ENV["TEAM_ID"].to_s.strip.empty?
+
+  value = File.read(File.join(ROOT, "Config/Team.xcconfig"))[/^DEVELOPMENT_TEAM\s*=\s*([A-Z0-9]{10})/, 1]
+  UI.user_error!("Team ID missing. Run scripts/setup_mac.sh, or set TEAM_ID.") if value.to_s.empty?
+  value
+end
+
+def marketing_version
+  YAML.load_file(File.join(ROOT, "project.yml")).dig("settings", "base", "MARKETING_VERSION").to_s
+end
+
+# Lets Xcode create/download certificates and profiles using the API key (cloud signing).
+def signing_xcargs
+  [
+    "-allowProvisioningUpdates",
+    "-authenticationKeyPath", key_path.shellescape,
+    "-authenticationKeyID", ENV["ASC_KEY_ID"],
+    "-authenticationKeyIssuerID", ENV["ASC_ISSUER_ID"]
+  ].join(" ")
+end
+
+def find_app!
+  asc.find_app(APP_IDENTIFIER) ||
+    UI.user_error!("No App Store Connect app for #{APP_IDENTIFIER} yet. Run `fastlane setup` first (AUTOMATION.md, step 5).")
+end
+
+def ensure_iap(app_id, with_screenshot:)
+  asc.ensure_iap(
+    app_id,
+    product_id: IAP["product_id"],
+    reference_name: IAP["reference_name"],
+    display_name: IAP["display_name"],
+    description: IAP["description"],
+    review_note: IAP["review_note"],
+    price: IAP["price_usd"],
+    review_screenshot: with_screenshot && File.exist?(IAP_REVIEW_SHOT) ? IAP_REVIEW_SHOT : nil
+  )
+end
+
+def check_review_contact!
+  %w[phone_number email_address].each do |f|
+    value = File.read(File.join(METADATA, "review_information/#{f}.txt")).strip
+    next unless value.empty? || value.include?("REPLACE_ME")
+
+    UI.user_error!("Fill in fastlane/metadata/review_information/#{f}.txt (Apple requires a contact for App Review). " \
+                   "scripts/setup_mac.sh asks for it.")
+  end
+end
+
+# Apple rejects "What's New" text on an app's very first version, so hide it for that upload.
+def without_release_notes(hide)
+  file = File.join(METADATA, "en-US/release_notes.txt")
+  parked = "#{file}.first-release"
+  File.rename(file, parked) if hide && File.exist?(file)
+  yield
+ensure
+  File.rename(parked, file) if hide && parked && File.exist?(parked)
+end
+
+# ---------------------------------------------------------------- lanes
+
+platform :ios do
+  desc "Create SoleCount.xcodeproj from project.yml"
+  lane :generate do
+    sh("cd #{ROOT.shellescape} && xcodegen generate")
+  end
+
+  desc "One-time App Store Connect setup (safe to run again)"
+  lane :setup do
+    # 1. Bundle ID (API key)
+    asc.ensure_bundle_id(APP_IDENTIFIER, "SoleCount")
+
+    # 2. App record. Apple's API does not allow creating apps with an API key,
+    #    so this one step uses your Apple ID (one 2FA prompt), or you click it on the website.
+    app = asc.find_app(APP_IDENTIFIER)
+    if app.nil?
+      if ENV["APPLE_ID"].to_s.strip.empty? || is_ci
+        UI.user_error!(<<~MSG)
+          The App Store Connect app record doesn't exist yet. Apple only allows creating it with a login.
+          Option A (2 minutes): https://appstoreconnect.apple.com > Apps > + > New App
+            Platform iOS | Name: SoleCount: Sneaker Tracker | Language: English (U.S.)
+            Bundle ID: #{APP_IDENTIFIER} | SKU: solecount-ios | User Access: Full Access > Create
+          Option B: put APPLE_ID=you@example.com in fastlane/.env and run `fastlane setup` again on your Mac.
+          Then run `fastlane setup` again.
+        MSG
+      end
+      produce(
+        username: ENV["APPLE_ID"],
+        app_identifier: APP_IDENTIFIER,
+        app_name: File.read(File.join(METADATA, "en-US/name.txt")).strip,
+        language: "en-US",
+        app_version: marketing_version,
+        sku: "solecount-ios",
+        skip_devcenter: true
+      )
+      app = find_app!
+    end
+    UI.success("App record: #{app.dig('attributes', 'name')} (Apple ID #{app['id']})")
+
+    # 3. Price, countries, age rating, In-App Purchase (API key)
+    asc.set_app_price_free(app["id"])
+    asc.set_app_availability(app["id"], exclude_eu: ENV["EXCLUDE_EU"] == "1")
+    asc.set_age_rating(app["id"])
+    ensure_iap(app["id"], with_screenshot: true)
+
+    # 4. App Privacy ("Data Not Collected"). Apple has no API-key endpoint for this.
+    if !ENV["APPLE_ID"].to_s.strip.empty? && !is_ci
+      upload_app_privacy_details_to_app_store(
+        username: ENV["APPLE_ID"],
+        app_identifier: APP_IDENTIFIER,
+        json_path: File.join(ROOT, "fastlane/app_privacy_details.json")
+      )
+    else
+      UI.important("App Privacy: open App Store Connect > SoleCount > App Privacy > Get Started > " \
+                   "'No, we do not collect data from this app' > Save > Publish. (Or set APPLE_ID and rerun.)")
+    end
+
+    UI.success("Setup done. Next: bash scripts/deploy.sh")
+  end
+
+  desc "Run unit tests and UI tests"
+  lane :test do
+    run_test_suite
+  end
+
+  # (A helper method, because Ruby already has a built-in method called `test`.)
+  private_lane :run_test_suite do
+    generate
+    run_tests(
+      project: PROJECT,
+      scheme: SCHEME,
+      device: SIM_DEVICE,
+      skip_testing: ["SoleCountUITests/ScreenshotTests"],
+      code_coverage: true,
+      result_bundle: true,
+      output_directory: File.join(ROOT, "fastlane/test_output")
+    )
+  end
+
+  desc "Take 6.9-inch App Store screenshots"
+  lane :screenshots do
+    generate
+    capture_screenshots(
+      project: PROJECT,
+      scheme: SCHEME,
+      devices: [SIM_DEVICE],
+      output_directory: SCREENSHOTS
+    )
+    paywall = Dir[File.join(SCREENSHOTS, "en-US", "*05_Paywall*.png")].first
+    if paywall
+      FileUtils.cp(paywall, IAP_REVIEW_SHOT)
+      UI.success("Saved the Pro screen as the In-App Purchase review screenshot.")
+    end
+  end
+
+  desc "Build a new version and upload it to TestFlight"
+  lane :beta do
+    api_key
+    generate
+    version = marketing_version
+    latest = latest_testflight_build_number(api_key: api_key, app_identifier: APP_IDENTIFIER,
+                                            version: version, initial_build_number: 0)
+    build_number = latest.to_i + 1
+    UI.message("Building SoleCount #{version} (#{build_number})")
+
+    build_app(
+      project: PROJECT,
+      scheme: SCHEME,
+      configuration: "Release",
+      clean: true,
+      export_method: "app-store",
+      output_directory: File.join(ROOT, "build"),
+      output_name: "SoleCount.ipa",
+      xcargs: "#{signing_xcargs} DEVELOPMENT_TEAM=#{team_id} CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=#{build_number}",
+      export_xcargs: signing_xcargs,
+      export_options: {
+        signingStyle: "automatic",
+        teamID: team_id,
+        uploadSymbols: true,
+        manageAppVersionAndBuildNumber: false
+      }
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      ipa: lane_context[SharedValues::IPA_OUTPUT_PATH],
+      skip_waiting_for_build_processing: ENV["SKIP_WAIT"] == "1",
+      distribute_external: false
+    )
+    UI.success("Build #{build_number} is on TestFlight.")
+  end
+
+  desc "Upload metadata + screenshots and submit for App Review (automatic release)"
+  lane :release do
+    api_key
+    check_review_contact!
+    app = find_app!
+
+    screenshots if Dir[File.join(SCREENSHOTS, "en-US", "*.png")].empty?
+
+    iap = ensure_iap(app["id"], with_screenshot: true)
+    iap_state = iap.to_h.dig("attributes", "state").to_s
+    first_release = asc.live_version(app["id"]).nil?
+    # Apple only lets the FIRST In-App Purchase be added to a submission on the website.
+    submit = iap_state == "APPROVED" || ENV["FORCE_SUBMIT"] == "1"
+
+    version = marketing_version
+    build_number = latest_testflight_build_number(api_key: api_key, app_identifier: APP_IDENTIFIER, version: version)
+
+    without_release_notes(first_release) do
+      deliver(
+        api_key: api_key,
+        app_identifier: APP_IDENTIFIER,
+        app_version: version,
+        build_number: build_number.to_s,
+        skip_binary_upload: true,
+        metadata_path: METADATA,
+        screenshots_path: SCREENSHOTS,
+        overwrite_screenshots: true,
+        force: true,                                  # no HTML preview prompt
+        submit_for_review: submit,
+        automatic_release: true,
+        precheck_include_in_app_purchases: false,     # precheck can't read IAPs with an API key
+        submission_information: {
+          export_compliance_uses_encryption: false,
+          add_id_info_uses_idfa: false
+        }
+      )
+    end
+
+    if submit
+      UI.success("Submitted SoleCount #{version} (#{build_number}) for review. It goes live automatically when approved.")
+    else
+      UI.important(<<~MSG)
+        Everything is uploaded (version #{version}, build #{build_number}, text, screenshots, Pro).
+        ONE click flow is left, because Apple requires the FIRST In-App Purchase to be submitted
+        together with an app version on the website:
+          1. https://appstoreconnect.apple.com > Apps > SoleCount
+          2. Sidebar: Monetization > In-App Purchases > SoleCount Pro > "Add for Review"
+          3. When asked, select iOS app version #{version} > review the list > "Submit for Review"
+        After Pro is approved once, `fastlane release` submits future versions by itself.
+      MSG
+    end
+  end
+
+  desc "test -> beta -> release"
+  lane :deploy do
+    run_test_suite
+    beta
+    release
+  end
+end

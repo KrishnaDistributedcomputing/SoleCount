@@ -84,6 +84,7 @@ struct SneakerListView: View {
                         Image(systemName: "plus")
                     }
                     .accessibilityLabel("Add sneaker")
+                    .accessibilityIdentifier("addSneakerButton")
                 }
             }
             .sheet(isPresented: $showingAdd) { AddSneakerView() }
@@ -94,7 +95,7 @@ struct SneakerListView: View {
 
     /// Free users can add up to 3 pairs. After that we show the Pro screen.
     private func addTapped() {
-        if store.isPro || sneakers.count < StoreManager.freePairLimit {
+        if StoreManager.canAddPair(currentCount: sneakers.count, isPro: store.isPro) {
             showingAdd = true
         } else {
             showingPaywall = true

@@ -1,0 +1,10 @@
+Thank you for reviewing SoleCount.
+
+- No login or account is required. All data is stored only on the device (SwiftData). The app has no servers, analytics, ads or third-party SDKs.
+- Free version: track up to 3 pairs of sneakers.
+- In-App Purchase: "SoleCount Pro" (com.krishnav.SoleCount.pro), a one-time NON-CONSUMABLE that unlocks unlimited pairs and the wear history chart.
+- How to reach the purchase screen: tap the gear icon (top left) > Unlock Pro. Or add 3 pairs with the + button, then tap + again. Or open any pair and tap "Unlock the wear history chart with Pro".
+- Restore Purchases is on the Pro screen and in Settings.
+- To test the core feature: tap + to add a pair (name and price), open it, and tap "Wore today". Cost per wear updates.
+- Photos are chosen with the system photo picker and stay on the device.
+- Export compliance: the app uses no encryption beyond Apple's standard OS-provided HTTPS (ITSAppUsesNonExemptEncryption = NO).
