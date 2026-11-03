@@ -63,17 +63,17 @@ To run it on your own iPhone with a free Apple ID: in Xcode open Settings, then 
 
 **Do after Apple's welcome email**
 
-Find your Team ID at [developer.apple.com/account](https://developer.apple.com/account) → Membership details. Create an App Store Connect API key (Key ID, Issuer ID, and the `.p8` file) at [App Store Connect → Integrations](https://appstoreconnect.apple.com/access/integrations/api).
+Find your Team ID at [developer.apple.com/account](https://developer.apple.com/account) → Membership details. Create the API key and find the downloaded file with **[How to get and find your AuthKey_XXXXXXXXXX.p8 file](docs/MAC-STEP-BY-STEP.md#find-the-p8-file)**.
 
 ```bash
 make setup
 ```
-**Why:** Saves the Team ID, Key ID, Issuer ID, and `.p8` key so SoleCount can sign in to your Apple account. Press Return only for a question you still do not have.
+**Why:** Saves the Team ID, Key ID, Issuer ID, and `.p8` key so SoleCount can sign in to your Apple account. Press Return only for a question you still do not have. When it asks for the key file, use **[How to get and find your AuthKey_XXXXXXXXXX.p8 file](docs/MAC-STEP-BY-STEP.md#find-the-p8-file)**.
 
 ```bash
 make appstore-setup
 ```
-**Why:** Creates SoleCount's App Store listing and the $0.99 upgrade in Apple's system.
+**Why:** Creates SoleCount's App Store listing and the $0.99 upgrade in Apple's system. It needs the `.p8` file from **[How to get and find your AuthKey_XXXXXXXXXX.p8 file](docs/MAC-STEP-BY-STEP.md#find-the-p8-file)**.
 
 ```bash
 make deploy

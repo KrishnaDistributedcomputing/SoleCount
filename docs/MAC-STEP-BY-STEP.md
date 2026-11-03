@@ -85,11 +85,11 @@ Open [developer.apple.com/account](https://developer.apple.com/account), then Me
 
 **Why:** SoleCount's upload tools need this to show Apple which developer account is yours.
 
-**2. Create the App Store Connect API key**
+**2. Create the App Store Connect API key, then find the file**
 
-Open [App Store Connect → Integrations → API](https://appstoreconnect.apple.com/access/integrations/api). Create a key. Copy the Key ID and the Issuer ID (the long code above the keys table). Download the `.p8` file. Apple only lets you download that file once.
+Follow **[How to get and find your AuthKey_XXXXXXXXXX.p8 file](#find-the-p8-file)** below. Do that before `make setup`. Apple lets you download the file only once.
 
-**Why:** The Key ID, Issuer ID, and `.p8` file let SoleCount sign in to your Apple account without your Apple ID password. The setup script stores the `.p8` file in `~/.appstoreconnect/private_keys`, outside the project, so it never goes to the public GitHub.
+**Why:** The Key ID, Issuer ID, and `.p8` file let SoleCount sign in to your Apple account without your Apple ID password.
 
 **3. Save those answers on your Mac**
 
@@ -121,7 +121,129 @@ If you run `make appstore-setup` or `make deploy` before the membership details 
 
 ---
 
-## How to copy and paste commands
+<a id="find-the-p8-file"></a>
+
+## How to get and find your AuthKey_XXXXXXXXXX.p8 file
+
+This is the private key file SoleCount uses to sign in to Apple. You can create it only after Apple emails you that the paid membership is active. Do these steps in Safari and Terminal on the Mac.
+
+The file name looks like `AuthKey_ABC123DEFG.p8`. The letters after `AuthKey_` are your Key ID. Setup asks for that Key ID, for the Issuer ID, and then for this file.
+
+### A. Create the key
+
+**1. Sign in to App Store Connect**
+
+Open [https://appstoreconnect.apple.com](https://appstoreconnect.apple.com) in Safari and sign in with the Apple ID that paid for the developer membership.
+
+**Why:** This is Apple's site for your app. SoleCount's upload tools use the same account.
+
+**2. Open the API keys page**
+
+Click **Users and Access**. Open the **Integrations** tab. Click **App Store Connect API**. Stay on **Team Keys**.
+
+**Why:** This is the only page that can make the key `make setup` asks for.
+
+**3. The first time, request access**
+
+If you see **Request Access**, click it and accept the terms. You only do this once.
+
+**Why:** Apple hides the key list until you accept those terms. SoleCount cannot get a key before that.
+
+**4. Generate the key**
+
+Click the **+** button (**Generate API Key**). Name it `SoleCount`. For Access, choose **App Manager** (or **Admin**). Click **Generate**.
+
+**Why:** App Manager is enough for SoleCount to upload builds and set up the $0.99 upgrade. Admin also works.
+
+**5. Copy the Key ID and the Issuer ID**
+
+The Key ID is the 10-character code in the keys list, such as `ABC123DEFG`. The Issuer ID is the long code shown above the table. Write both down.
+
+**Why:** `make setup` asks for both. The Key ID is also the middle of the file name.
+
+**6. Download the key**
+
+On that key's row, click **Download API Key**. Apple lets you download this file **only once**. If you close the download, you cannot get the same file again.
+
+**Why:** The download is `AuthKey_` plus your Key ID plus `.p8`. That file is what lets SoleCount sign in. Setup will copy it out of Downloads. It must not stay inside the SoleCount project folder.
+
+### B. Find the file on the Mac
+
+Safari saves the download in your Downloads folder.
+
+**1. Look in Finder**
+
+Click the Finder icon in the Dock. It is the blue and white face. In the left sidebar, click **Downloads**. Or, with Finder in front, press Cmd + Option + L.
+
+**Why:** You need to see the file so you can drag it into Terminal when setup asks for it.
+
+**2. Or search with Spotlight**
+
+Press Cmd + Space, type `AuthKey`, and press Return.
+
+**Why:** Spotlight finds the file even if it did not land in Downloads.
+
+**3. Or list it in Terminal**
+
+```bash
+ls ~/Downloads/AuthKey_*.p8
+```
+
+**Why:** This prints the exact file name in Downloads, which is the name setup expects.
+
+**4. Or search the whole Mac**
+
+```bash
+mdfind -name AuthKey_
+```
+
+**Why:** This searches every folder, not only Downloads, and prints the full path.
+
+**5. Give that path to setup**
+
+When `make setup` says to drag the `.p8` file into Terminal, drag it from Finder into the Terminal window and press Return. Dragging pastes the full path.
+
+Or type the path yourself. Replace the X's with your Key ID:
+
+```bash
+~/Downloads/AuthKey_XXXXXXXXXX.p8
+```
+
+**Why:** Setup copies the file to a safe folder. A wrong path means SoleCount cannot sign in later.
+
+**6. Check that setup stored it outside the project**
+
+```bash
+ls ~/.appstoreconnect/private_keys/
+```
+
+**Why:** You should see `AuthKey_` and your Key ID and `.p8`. That folder is in your home folder, not inside SoleCount, so the key is never uploaded to the public GitHub. Folders whose names start with a dot are hidden in Finder. In Finder, press Cmd + Shift + . to show them. Press it again to hide them.
+
+### C. If something goes wrong
+
+**1. Safari opened it as text, or the name looks wrong**
+
+The name must end in `.p8`, like `AuthKey_ABC123DEFG.p8`. If Safari saved it as `.p8.txt` or showed the text in a window, go back to Downloads and rename it so it ends in `.p8` only. Do not edit the text inside the file.
+
+**Why:** Setup looks for a `.p8` file. A renamed file will not match, and SoleCount cannot use a damaged key.
+
+**2. You downloaded it on the Windows PC**
+
+AirDrop does not work from a Windows PC. Put the file on the Mac with iCloud Drive, a USB stick, or an email to yourself, then save the attachment on the Mac. The file is secret. After it is on the Mac, delete the email and delete the copy on the USB stick.
+
+**Why:** `make setup` can only see files that are on this Mac. Leaving extra copies around makes it easier for someone else to get the key.
+
+**3. You lost the file**
+
+Apple will not let you download the same key again. In App Store Connect, on that key's row, revoke it. Then click **+** and generate a new one. Download the new file immediately and write down the new Key ID. The Issuer ID above the table does not change.
+
+**Why:** SoleCount needs one working `.p8` file. A revoked key cannot sign in.
+
+**4. Do not put the file in the SoleCount folder or on GitHub**
+
+The SoleCount repository is public. Never copy the `.p8` file into the project folder, and never commit it. The file `.gitignore` already ignores names that start with `AuthKey_`, which blocks an accidental commit, but do not rely on that as the only protection. Leave the file in `~/.appstoreconnect/private_keys/`.
+
+**Why:** Anyone who can read the public GitHub page could copy a key that was committed, and then act as you on App Store Connect.
 
 Throughout this guide:
 1. **Copy:** Hover over any code block and click the copy icon (two squares) in the top-right corner. Or select the text and press `Cmd + C`.
@@ -223,7 +345,7 @@ make setup
 9. **Stores the .p8 key outside the project**
    - What it does: Takes the downloaded `AuthKey_` file (from Downloads, or you drag it into Terminal) and saves it at `~/.appstoreconnect/private_keys/`, which is in your home folder, not inside SoleCount.
    - Why SoleCount needs it: That file is the private half of the API login. Keeping it outside the project means it never goes to the public GitHub.
-   - Skip for now: Yes. You cannot download this file until the membership is active.
+   - Skip for now: Yes. You cannot download this file until the membership is active. When you can, follow [How to get and find your AuthKey_XXXXXXXXXX.p8 file](#find-the-p8-file).
 
 10. **Asks for your Apple ID email**
     - What it does: Asks for the email on your Apple ID. Press Return to skip.
@@ -262,7 +384,7 @@ If you run `make setup` before Apple's email, press Return to skip each of these
 - **Team ID** (10 characters): [developer.apple.com/account](https://developer.apple.com/account) → Membership details
 - **API Key ID** (10 characters): [App Store Connect → API](https://appstoreconnect.apple.com/access/integrations/api)
 - **Issuer ID** (a long code): Same page, above the keys table
-- **.p8 file**: Drag the file into Terminal, or press Return to skip
+- **.p8 file**: See [How to get and find your AuthKey_XXXXXXXXXX.p8 file](#find-the-p8-file). Drag the file into Terminal, or press Return to skip
 - **Phone and email**: For App Review. Press Return to skip
 
 `make setup-local` skips that whole list for you.
