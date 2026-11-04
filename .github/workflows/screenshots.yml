@@ -1,0 +1,52 @@
+# Produces the real SoleCount simulator screenshots (sample shoes, not a mockup).
+# Actions tab > Screenshots > Run workflow.
+# The pictures are uploaded as an artifact named solecount-screenshots.
+# They are not committed automatically. A person can download the artifact and
+# add the PNGs under docs/images/ when they want them in the guide.
+name: Screenshots
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SIM_DEVICE: iPhone 17 Pro Max
+  FASTLANE_SKIP_UPDATE_CHECK: "1"
+  FASTLANE_HIDE_CHANGELOG: "1"
+
+jobs:
+  screenshots:
+    name: Take App Store screenshots
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -n 1)
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install tools
+        run: |
+          brew install xcodegen
+          command -v fastlane || brew install fastlane
+
+      - name: Take screenshots
+        run: fastlane ios screenshots
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: solecount-screenshots
+          path: |
+            fastlane/screenshots
+            fastlane/iap_review_screenshot.png
+          if-no-files-found: error

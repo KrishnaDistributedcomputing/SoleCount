@@ -93,7 +93,7 @@ module SoleCountASC
               raw.include?("BEGIN PRIVATE KEY") ? raw : Base64.decode64(raw)
             else
               default = File.expand_path("~/.appstoreconnect/private_keys/AuthKey_#{ENV['ASC_KEY_ID']}.p8")
-              raise Error, "No API key found. Set ASC_KEY_PATH (see AUTOMATION.md)." unless File.exist?(default)
+              raise Error, "No API key found. Set ASC_KEY_PATH (see docs/START-HERE.md)." unless File.exist?(default)
 
               File.read(default)
             end

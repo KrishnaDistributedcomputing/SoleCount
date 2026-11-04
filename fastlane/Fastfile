@@ -9,7 +9,7 @@
 #
 # The API key does every step it is allowed to do. Two steps still need an Apple ID
 # login with one 2FA code: creating the app record, and publishing App Privacy.
-# The first In-App Purchase still needs one click on the website. See AUTOMATION.md.
+# The first In-App Purchase still needs one click on the website. See docs/START-HERE.md.
 
 require "json"
 require "yaml"
@@ -42,7 +42,7 @@ def key_path
   path = ENV["ASC_KEY_PATH"].to_s.strip
   path = "~/.appstoreconnect/private_keys/AuthKey_#{ENV['ASC_KEY_ID']}.p8" if path.empty?
   path = File.expand_path(path)
-  UI.user_error!("API key file not found: #{path}. See AUTOMATION.md, step 3.") unless File.exist?(path)
+  UI.user_error!("API key file not found: #{path}. See docs/START-HERE.md.") unless File.exist?(path)
   path
 end
 
@@ -91,7 +91,7 @@ end
 
 def find_app!
   asc.find_app(APP_IDENTIFIER) ||
-    UI.user_error!("No App Store Connect app for #{APP_IDENTIFIER} yet. Run `fastlane setup` first (AUTOMATION.md, step 5).")
+    UI.user_error!("No App Store Connect app for #{APP_IDENTIFIER} yet. Run `make release` on your Mac. See docs/START-HERE.md.")
 end
 
 def ensure_iap(app_id, with_screenshot:)

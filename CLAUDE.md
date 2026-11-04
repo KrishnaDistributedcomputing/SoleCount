@@ -46,5 +46,5 @@ and shows the cost per wear (price ÷ number of wears).
 
 ## Project generation and deployment
 - The Xcode project is generated from `project.yml` (XcodeGen). Edit project.yml, not the .xcodeproj.
-- Deployment is automated with fastlane (`fastlane/Fastfile`) and GitHub Actions (`.github/workflows/ios.yml`). See AUTOMATION.md.
+- Deployment is automated with fastlane (`fastlane/Fastfile`) and GitHub Actions (`.github/workflows/ios.yml` and `.github/workflows/release.yml`). The human setup page is `docs/START-HERE.md`.
 - Never commit `*.p8`, `fastlane/.env`, or any key. The repo is public.
