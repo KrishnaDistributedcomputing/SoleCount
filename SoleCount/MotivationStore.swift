@@ -19,6 +19,8 @@ final class MotivationStore {
     static let seenReadyKey = "seenBadgesReady"
     static let gentleKey = "gentleStreak"
     static let retirementKey = "retirementAlerts"
+    static let starterQuestKey = "starterQuestDone"
+    static let celebratedLevelKey = "celebratedSoleLevel"
 
     private let defaults: UserDefaults
 
@@ -35,11 +37,19 @@ final class MotivationStore {
     /// Bumps when a new badge unlocks, so the screen can celebrate.
     var celebration = 0
     var retirementAlerts: Bool
+    /// The starter quest stays done once it is done, even in a quieter week.
+    private(set) var starterQuestDone: Bool
+    /// The last Sole Level that got a celebration. nil until the app has looked once.
+    private(set) var celebratedLevel: Int?
     private var gentle = GentleState()
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         #if DEBUG
+        if LaunchFlags.uiTesting {
+            defaults.removeObject(forKey: Self.starterQuestKey)
+            defaults.removeObject(forKey: Self.celebratedLevelKey)
+        }
         if LaunchFlags.demoData {
             Self.seedDemoDefaults(defaults: defaults)
         }
@@ -62,6 +72,8 @@ final class MotivationStore {
         eveningHour = defaults.object(forKey: Self.eveningHourKey) as? Int ?? 20
         eveningMinute = defaults.object(forKey: Self.eveningMinuteKey) as? Int ?? 0
         retirementAlerts = defaults.bool(forKey: Self.retirementKey)
+        starterQuestDone = defaults.bool(forKey: Self.starterQuestKey)
+        celebratedLevel = defaults.object(forKey: Self.celebratedLevelKey) as? Int
         if let data = defaults.data(forKey: Self.gentleKey),
            let decoded = try? JSONDecoder().decode(GentleState.self, from: data) {
             gentle = decoded
@@ -72,6 +84,16 @@ final class MotivationStore {
     func setRetirementAlerts(_ enabled: Bool) {
         retirementAlerts = enabled
         defaults.set(enabled, forKey: Self.retirementKey)
+    }
+
+    func markStarterQuestDone() {
+        starterQuestDone = true
+        defaults.set(true, forKey: Self.starterQuestKey)
+    }
+
+    func setCelebratedLevel(_ level: Int) {
+        celebratedLevel = level
+        defaults.set(level, forKey: Self.celebratedLevelKey)
     }
 
     func bestStreak() -> Int { gentle.best }
@@ -217,6 +239,8 @@ final class MotivationStore {
         defaults.set(8_000, forKey: stepGoalKey)
         defaults.set(20.0, forKey: weeklyKmKey)
         defaults.removeObject(forKey: gentleKey)
+        // Sample pairs have months of wears, so their starter quest is long done.
+        defaults.set(true, forKey: starterQuestKey)
         if let data = try? JSONEncoder().encode(seeded) {
             defaults.set(data, forKey: daysKey)
         }

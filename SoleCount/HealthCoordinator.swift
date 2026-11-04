@@ -40,7 +40,9 @@ enum HealthCoordinator {
             pairCount: sneakers.count,
             stepStreakOverride: motivation.streak()
         )
-        return MotivationEngine.badges(input)
+        var withQuest = input
+        withQuest.starterQuestDone = motivation.starterQuestDone
+        return MotivationEngine.badges(withQuest)
     }
 
     private static func followUp(motivation: MotivationStore, sneakers: [Sneaker]) async {

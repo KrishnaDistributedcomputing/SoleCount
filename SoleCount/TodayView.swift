@@ -10,6 +10,10 @@ struct TodayView: View {
     @Query(sort: \Sneaker.createdAt, order: .reverse) private var sneakers: [Sneaker]
 
     @State private var showingWalk = false
+    @State private var showingAdd = false
+    @State private var gameBurst = 0
+    @State private var cheer: String?
+    @AppStorage("feedbackNudgeDismissed") private var feedbackNudgeDismissed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var steps: Double { motivation.todaySteps() }
@@ -40,6 +44,20 @@ struct TodayView: View {
                         symbol: "figure.walk",
                         colors: ShoeTheme.today
                     )
+                    if sneakers.isEmpty {
+                        welcomeCard
+                    }
+                    if let cheer {
+                        cheerCard(cheer)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                    if !motivation.starterQuestDone && !quest.isComplete {
+                        questCard
+                    }
+                    if !sneakers.isEmpty {
+                        levelCard
+                        challengeCard
+                    }
                     rings
                     streakCard
                     weekCard
@@ -55,6 +73,9 @@ struct TodayView: View {
                         AchievementGrid(badges: Array(badges.prefix(4)), celebrate: motivation.celebration)
                     }
                     stepChart
+                    if showFeedbackNudge {
+                        feedbackNudge
+                    }
                 }
                 .padding()
             }
@@ -65,6 +86,12 @@ struct TodayView: View {
                 ConfettiBurst(trigger: motivation.celebration)
                     .padding(.top, 40)
             }
+            .overlay(alignment: .top) {
+                ConfettiBurst(trigger: gameBurst)
+                    .padding(.top, 120)
+            }
+            .task(id: gameKey) { checkGame() }
+            .sheet(isPresented: $showingAdd) { AddSneakerView() }
             .sheet(isPresented: $showingWalk) {
                 WalkNowSheet(
                     plan: MotionMath.walkPlan(
@@ -92,19 +119,19 @@ struct TodayView: View {
         HStack(alignment: .top, spacing: 12) {
             ProgressRing(
                 progress: motivation.stepGoal > 0 ? steps / Double(motivation.stepGoal) : 0,
-                tint: ShoeTheme.today[0],
+                tint: ShoeTheme.coralTint,
                 label: DistanceFormat.steps(steps),
                 caption: "Steps"
             )
             ProgressRing(
                 progress: motivation.weeklyKilometers > 0 ? week.thisWeek / (motivation.weeklyKilometers * 1_000) : 0,
-                tint: ShoeTheme.today[2],
+                tint: ShoeTheme.mintTint,
                 label: DistanceFormat.string(meters: week.thisWeek),
                 caption: "This week"
             )
             ProgressRing(
                 progress: min(1, Double(motivation.streak()) / 7),
-                tint: ShoeTheme.glow,
+                tint: ShoeTheme.goldTint,
                 label: "\(motivation.streak())",
                 caption: "Day streak"
             )
@@ -113,19 +140,60 @@ struct TodayView: View {
         .warmCard()
     }
 
+    /// After 10 logged wears, a gentle ask for ideas. Hidden forever once closed.
+    private var showFeedbackNudge: Bool {
+        !feedbackNudgeDismissed && !LaunchFlags.screenshots && sneakers.reduce(0) { $0 + $1.wearDates.count } >= 10
+    }
+
+    private var feedbackNudge: some View {
+        HStack(spacing: 12) {
+            FeedbackButton(kind: .idea) {
+                HStack(spacing: 12) {
+                    Image(systemName: "lightbulb.fill")
+                        .foregroundStyle(ShoeTheme.goldTint)
+                        .accessibilityHidden(true)
+                    Text("Enjoying SoleCount? Tell me what to build next")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("feedbackNudge")
+            Button {
+                feedbackNudgeDismissed = true
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(ShoeTheme.softText)
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Hide this")
+            .accessibilityIdentifier("dismissFeedbackNudge")
+        }
+        .padding(.leading)
+        .padding(.vertical, 4)
+        .padding(.trailing, 4)
+        .warmCard()
+    }
+
     private var streakCard: some View {
+
         VStack(alignment: .leading, spacing: 8) {
             Text(streakTitle)
                 .font(.headline)
             Text("Best is \(motivation.bestStreak()) days. Changing the step goal does not erase it.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
                 .fixedSize(horizontal: false, vertical: true)
             Text(motivation.bankedRestDays() > 0
                  ? "\(motivation.bankedRestDays()) rest day saved. Use it when you need a break."
                  : "A rest day is saved after every 6 days you show up, up to 2.")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
                 .fixedSize(horizontal: false, vertical: true)
             Menu {
                 ForEach(StreakPause.allCases) { pause in
@@ -161,7 +229,7 @@ struct TodayView: View {
                     .font(.headline)
                 Text(line)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
@@ -174,7 +242,7 @@ struct TodayView: View {
     private var streakTitle: String {
         if motivation.pause() != .none { return "Paused. Your streak is safe and waiting." }
         let days = motivation.streak()
-        if days == 0 { return "A fresh start is a good start." }
+        if days == 0 { return "Your streak starts with your next walk." }
         return "\(days)-day streak. Look at you."
     }
 
@@ -193,7 +261,7 @@ struct TodayView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Text("Kind words and a walking idea. Not medical advice.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -210,7 +278,7 @@ struct TodayView: View {
                         .font(.headline)
                     Text("A short walk sized to what's left today.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                         .multilineTextAlignment(.leading)
                 }
                 Spacer()
@@ -268,7 +336,7 @@ struct TodayView: View {
                     y: .value("Steps", point.steps)
                 )
                 .interpolationMethod(.catmullRom)
-                .foregroundStyle(ShoeTheme.today[0])
+                .foregroundStyle(ShoeTheme.coralTint)
             }
             .chartXAxis {
                 AxisMarks(values: .stride(by: .day)) { _ in
@@ -293,10 +361,245 @@ struct TodayView: View {
 
     private func tint(_ trend: WeekTrend) -> Color {
         switch trend {
-        case .up: .green
-        case .down: ShoeTheme.glow
-        case .flat: .secondary
+        case .up: ShoeTheme.mintTint
+        case .down: ShoeTheme.goldTint
+        case .flat: ShoeTheme.softText
         }
+    }
+
+    // MARK: - Welcome, quest, level, and weekly challenge
+
+    private var gameLevel: SoleLevel {
+        let wears = sneakers.reduce(0) { $0 + $1.wearCount }
+        let meters = sneakers.reduce(0) { $0 + $1.totalMeters }
+        let earned = badges.filter(\.unlocked).count
+        return SoleGame.level(xp: SoleGame.xp(wears: wears, meters: meters, badges: earned))
+    }
+
+    private var quest: StarterQuest {
+        SoleGame.starterQuest(
+            pairCount: sneakers.count,
+            loggedWears: sneakers.reduce(0) { $0 + $1.wearDates.count },
+            wearsThisWeek: wearWeek.thisWeek
+        )
+    }
+
+    private var usesMiles: Bool { DistanceFormat.usesMiles(forceMetric: LaunchFlags.screenshots) }
+
+    private var activeWearDates: [[Date]] {
+        sneakers.filter { !$0.isRetired }.map(\.wearDates)
+    }
+
+    private var challenge: WeeklyChallenge {
+        SoleGame.challenge(
+            for: .now,
+            calendar: .current,
+            activePairs: activeWearDates.count,
+            hasDistance: health.access == .ready || week.thisWeek > 0 || week.lastWeek > 0,
+            usesMiles: usesMiles
+        )
+    }
+
+    private var gameKey: String {
+        "\(gameLevel.number)-\(quest.doneCount)-\(sneakers.count)"
+    }
+
+    private var welcomeCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Every great walk starts with one pair 👟")
+                .font(.title2.bold())
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Add your sneakers and watch every step count.")
+                .font(.body)
+                .foregroundStyle(ShoeTheme.softText)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                if StoreManager.canAddPair(currentCount: sneakers.count, isPro: store.isPro) {
+                    showingAdd = true
+                }
+            } label: {
+                Label("Add my first pair", systemImage: "plus.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SunriseButtonStyle())
+            .accessibilityIdentifier("addFirstPairToday")
+            .padding(.top, 4)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .warmCard()
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(ShoeTheme.glow.opacity(0.6), lineWidth: 1.5)
+        )
+    }
+
+    private var questCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Starter quest", systemImage: "map.fill")
+                    .font(.headline)
+                Spacer()
+                Text("\(quest.doneCount) of 3")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ShoeTheme.softText)
+            }
+            questRow("Add your first pair", done: quest.addedPair)
+            questRow("Log your first wear", done: quest.loggedWear)
+            questRow("Log 3 wears this week", done: quest.threeWearsThisWeek)
+            Text("Finish all three to earn the Quest complete badge.")
+                .font(.footnote)
+                .foregroundStyle(ShoeTheme.softText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .warmCard()
+        .accessibilityIdentifier("starterQuestCard")
+    }
+
+    private func questRow(_ title: String, done: Bool) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: done ? "checkmark.circle.fill" : "circle")
+                .font(.title3)
+                .foregroundStyle(done ? ShoeTheme.mintTint : ShoeTheme.softText)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(done ? "\(title), done" : "\(title), not done yet")
+    }
+
+    private var levelCard: some View {
+        let level = gameLevel
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Text("\(level.number)")
+                    .font(.title3.bold())
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(ShoeTheme.goldTint.opacity(0.22)))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sole Level \(level.number)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(ShoeTheme.softText)
+                    Text(level.name)
+                        .font(.headline)
+                }
+                Spacer(minLength: 8)
+                Text("\(level.xp.formatted()) XP")
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+            }
+            SunriseBar(fraction: level.progress, tint: ShoeTheme.goldTint)
+            Text(levelLine(level))
+                .font(.subheadline)
+                .foregroundStyle(ShoeTheme.softText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .warmCard()
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("soleLevelCard")
+    }
+
+    private func levelLine(_ level: SoleLevel) -> String {
+        guard let next = level.nextName, let left = level.xpToNext else {
+            return "Top level. Every walk still counts."
+        }
+        return "\(left.formatted()) XP to \(next). Wears, distance, and badges all add XP."
+    }
+
+    private var challengeCard: some View {
+        let challenge = challenge
+        let progress = SoleGame.progress(
+            of: challenge,
+            pairWearDates: activeWearDates,
+            weekMeters: week.thisWeek,
+            now: .now,
+            calendar: .current
+        )
+        return HStack(alignment: .top, spacing: 12) {
+            Image(systemName: progress.isDone ? "checkmark.seal.fill" : challenge.symbol)
+                .font(.title2)
+                .foregroundStyle(progress.isDone ? ShoeTheme.mintTint : ShoeTheme.coralTint)
+                .frame(width: 32)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("This week's challenge")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ShoeTheme.softText)
+                Text(challenge.title)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                SunriseBar(fraction: progress.fraction, tint: progress.isDone ? ShoeTheme.mintTint : ShoeTheme.coralTint)
+                Text(SoleGame.challengeLine(challenge, progress: progress, usesMiles: usesMiles))
+                    .font(.subheadline)
+                    .foregroundStyle(ShoeTheme.softText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .warmCard()
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("weeklyChallengeCard")
+    }
+
+    private func cheerCard(_ text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "sparkles")
+                .font(.title2)
+                .foregroundStyle(ShoeTheme.goldTint)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.headline)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Button {
+                cheer = nil
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(ShoeTheme.softText)
+                    .frame(minWidth: 44, minHeight: 44)
+            }
+            .accessibilityLabel("Close")
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .warmCard()
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(ShoeTheme.goldTint.opacity(0.7), lineWidth: 1.5)
+        )
+    }
+
+    /// Marks the quest done and celebrates a new level once. The first look stays quiet.
+    private func checkGame() {
+        var message: String?
+        if quest.isComplete && !motivation.starterQuestDone {
+            motivation.markStarterQuestDone()
+            message = "Starter quest complete. You earned the Quest complete badge."
+        }
+        let level = gameLevel
+        if let up = SoleGame.levelToCelebrate(current: level.number, lastCelebrated: motivation.celebratedLevel) {
+            message = "Level up! You're a \(level.name) now. Lovely walking."
+            motivation.setCelebratedLevel(up)
+        } else if level.number > (motivation.celebratedLevel ?? 0) {
+            motivation.setCelebratedLevel(level.number)
+        }
+        guard let message, !LaunchFlags.screenshots else { return }
+        if reduceMotion {
+            cheer = message
+        } else {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { cheer = message }
+        }
+        gameBurst += 1
     }
 
     private func connect() {
@@ -330,7 +633,7 @@ private struct WalkNowSheet: View {
                     .multilineTextAlignment(.center)
                 Text(detail)
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                     .multilineTextAlignment(.center)
                 Text(timeLabel)
                     .font(.largeTitle.bold())
@@ -344,7 +647,7 @@ private struct WalkNowSheet: View {
                         running = true
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(SunriseButtonStyle())
                 .sensoryFeedback(.impact, trigger: running)
             }
             .padding()

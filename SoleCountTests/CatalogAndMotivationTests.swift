@@ -79,7 +79,8 @@ struct MotivationTests {
             pairReachedReplaceTarget: true,
             totalWears: 100,
             lowestCostPerWear: 0.5,
-            pairCount: 10
+            pairCount: 10,
+            starterQuestDone: true
         ))
         #expect(unlocked.filter(\.unlocked).count == unlocked.count)
         #expect(unlocked.map(\.id).contains("km-10"))
