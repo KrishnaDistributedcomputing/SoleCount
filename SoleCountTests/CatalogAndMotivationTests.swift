@@ -68,7 +68,7 @@ struct MotivationTests {
             woreEveryActivePairThisMonth: false,
             pairReachedReplaceTarget: false
         ))
-        #expect(locked.allSatisfy { !$0.unlocked })
+        #expect(locked.filter(\.unlocked).isEmpty)
 
         let unlocked = MotivationEngine.badges(BadgeInput(
             totalMeters: 500_000,
@@ -78,15 +78,15 @@ struct MotivationTests {
             woreEveryActivePairThisMonth: true,
             pairReachedReplaceTarget: true
         ))
-        #expect(unlocked.allSatisfy(\.unlocked))
-        #expect(unlocked.contains { $0.id == "km-10" })
+        #expect(unlocked.filter(\.unlocked).count == unlocked.count)
+        #expect(unlocked.map(\.id).contains("km-10"))
     }
 
     @Test func comparisonsUseRealApproximateDistances() {
         let fields = MotivationEngine.facts(meters: 105 * 120)
         #expect(fields[0].text == "You've walked the length of 120 soccer fields")
         let far = MotivationEngine.facts(meters: 125_000)
-        #expect(far.contains { $0.text == "≈ Toronto to Niagara Falls" })
+        #expect(far.map(\.text).contains("≈ Toronto to Niagara Falls"))
         #expect(MotivationEngine.facts(meters: 50).isEmpty)
     }
 
@@ -167,11 +167,14 @@ struct CollectionMathTests {
             CollectionRow(name: "Old", brand: "Nike", type: "Running", wears: 1, meters: 10, costPerWear: 20, createdAt: newer, isRetired: true)
         ]
         let byWears = CollectionMath.indices(rows: rows, brand: nil, type: nil, sort: .wears, retired: false)
-        #expect(byWears.map { rows[$0].name } == ["A", "B"])
+        let wornNames = byWears.map { rows[$0].name }
+        #expect(wornNames == ["A", "B"])
         let nike = CollectionMath.indices(rows: rows, brand: "nike", type: "Running", sort: .newest, retired: false)
-        #expect(nike.map { rows[$0].name } == ["B"])
+        let nikeNames = nike.map { rows[$0].name }
+        #expect(nikeNames == ["B"])
         let fame = CollectionMath.indices(rows: rows, brand: nil, type: nil, sort: .newest, retired: true)
-        #expect(fame.map { rows[$0].name } == ["Old"])
+        let fameNames = fame.map { rows[$0].name }
+        #expect(fameNames == ["Old"])
     }
 
     @Test func csvEscapesCommas() {
