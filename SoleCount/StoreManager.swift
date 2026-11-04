@@ -21,14 +21,27 @@ final class StoreManager {
 
     @ObservationIgnored private var updatesTask: Task<Void, Never>?
 
-    /// The free-tier rule in one place, so unit tests can check it.
-    nonisolated static func canAddPair(currentCount: Int, isPro: Bool) -> Bool {
-        isPro || currentCount < freePairLimit
+    /// Every feature is included while monetization is off.
+    var hasFullAccess: Bool {
+        !FeatureFlags.monetizationEnabled || isPro
+    }
+
+    /// The pair limit only applies when monetization is turned back on.
+    nonisolated static func canAddPair(
+        currentCount: Int,
+        isPro: Bool,
+        monetizationEnabled: Bool = FeatureFlags.monetizationEnabled
+    ) -> Bool {
+        if !monetizationEnabled { return true }
+        return isPro || currentCount < freePairLimit
     }
 
     /// - Parameter demoPro: only used by automated screenshots (DEBUG builds).
     ///   It pretends Pro is unlocked without touching the real purchase state.
     init(demoPro: Bool = false) {
+        if !FeatureFlags.monetizationEnabled {
+            return
+        }
         if demoPro {
             isPro = true
             return

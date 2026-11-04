@@ -1,18 +1,41 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
-// The first screen: all your sneakers, with wears and cost per wear.
+// The collection: every pair, with wears, distance, and cost per wear.
 struct SneakerListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(StoreManager.self) private var store
+    @Environment(HealthSync.self) private var health
+    @Environment(MotivationStore.self) private var motivation
     @Query(sort: \Sneaker.createdAt, order: .reverse) private var sneakers: [Sneaker]
 
     @State private var showingAdd = false
     @State private var showingPaywall = false
     @State private var showingSettings = false
+    @State private var brandFilter: String?
+    @State private var typeFilter: String?
+    @State private var sort: CollectionSort = .newest
+    @Namespace private var shoeSpace
 
-    private var activeSneakers: [Sneaker] { sneakers.filter { !$0.isRetired } }
-    private var retiredSneakers: [Sneaker] { sneakers.filter { $0.isRetired } }
+    private var rows: [CollectionRow] { sneakers.map { $0.asRow() } }
+
+    private var active: [Sneaker] {
+        CollectionMath.indices(rows: rows, brand: brandFilter, type: typeFilter, sort: sort, retired: false)
+            .map { sneakers[$0] }
+    }
+
+    private var retired: [Sneaker] {
+        CollectionMath.indices(rows: rows, brand: brandFilter, type: typeFilter, sort: sort, retired: true)
+            .map { sneakers[$0] }
+    }
+
+    private var hints: [RotationHint] {
+        CollectionMath.forgotten(
+            pairs: sneakers.map { ($0.name, $0.lastWorn, $0.isRetired) },
+            now: .now,
+            calendar: .current
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -20,41 +43,7 @@ struct SneakerListView: View {
                 if sneakers.isEmpty {
                     emptyState
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
-                            if !activeSneakers.isEmpty {
-                                Section {
-                                    ForEach(activeSneakers) { sneaker in
-                                        NavigationLink(value: sneaker) {
-                                            SneakerCard(sneaker: sneaker)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                } header: {
-                                    SectionHeader(title: "In Rotation", count: activeSneakers.count)
-                                }
-                            }
-
-                            if !retiredSneakers.isEmpty {
-                                Section {
-                                    ForEach(retiredSneakers) { sneaker in
-                                        NavigationLink(value: sneaker) {
-                                            SneakerCard(sneaker: sneaker)
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                } header: {
-                                    SectionHeader(title: "Retired", count: retiredSneakers.count)
-                                }
-                            }
-
-                            if !store.isPro {
-                                proUpsellCard
-                            }
-                        }
-                        .padding()
-                    }
-                    .background(Color(.systemGroupedBackground))
+                    list
                 }
             }
             .navigationTitle("SoleCount")
@@ -62,15 +51,18 @@ struct SneakerListView: View {
             .navigationDestination(for: Sneaker.self) { sneaker in
                 SneakerDetailView(sneaker: sneaker)
             }
+            .environment(\.shoeNamespace, shoeSpace)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.headline)
+                    HStack(spacing: 16) {
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                        }
+                        .accessibilityLabel("Settings")
+                        filterMenu
                     }
-                    .accessibilityLabel("Settings")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -90,19 +82,107 @@ struct SneakerListView: View {
         }
     }
 
+    private var list: some View {
+        ScrollView {
+            LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+                if let hint = hints.first, brandFilter == nil, typeFilter == nil {
+                    Text(CollectionMath.hintLine(hint))
+                        .font(.subheadline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                }
+                if active.isEmpty && retired.isEmpty {
+                    ContentUnavailableView("No pairs match", systemImage: "line.3.horizontal.decrease.circle", description: Text("Clear the filter to see everything."))
+                    Button("Clear filters") {
+                        brandFilter = nil
+                        typeFilter = nil
+                    }
+                }
+                if !active.isEmpty {
+                    Section {
+                        ForEach(active) { sneaker in
+                            cardLink(sneaker)
+                        }
+                    } header: {
+                        SectionHeader(title: "In Rotation", count: active.count)
+                    }
+                }
+                if !retired.isEmpty {
+                    Section {
+                        Text("Retired pairs keep their stats.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        ForEach(retired) { sneaker in
+                            cardLink(sneaker)
+                        }
+                    } header: {
+                        SectionHeader(title: "Hall of Fame", count: retired.count)
+                    }
+                }
+                if !store.hasFullAccess {
+                    proUpsellCard
+                }
+            }
+            .padding()
+        }
+        .background(Color(.systemGroupedBackground))
+    }
+
+    private func cardLink(_ sneaker: Sneaker) -> some View {
+        NavigationLink(value: sneaker) {
+            SneakerCard(sneaker: sneaker)
+        }
+        .buttonStyle(.plain)
+        .matchedTransitionSource(id: sneaker.persistentModelID, in: shoeSpace)
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            Picker("Sort", selection: $sort) {
+                ForEach(CollectionSort.allCases) { item in
+                    Text(item.title).tag(item)
+                }
+            }
+            Menu("Brand") {
+                Button("All brands") { brandFilter = nil }
+                ForEach(brandNames, id: \.self) { brand in
+                    Button(brand) { brandFilter = brand }
+                }
+            }
+            Menu("Type") {
+                Button("All types") { typeFilter = nil }
+                ForEach(ShoeType.allCases) { type in
+                    Button(type.rawValue) { typeFilter = type.rawValue }
+                }
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+        }
+        .accessibilityLabel("Filter and sort")
+    }
+
+    private var brandNames: [String] {
+        Array(Set(sneakers.map(\.brand).filter { !$0.isEmpty })).sorted()
+    }
+
     private var emptyState: some View {
-        ContentUnavailableView {
-            Label("No Sneakers Yet", systemImage: "shoe.2.fill")
-        } description: {
+        VStack(spacing: 16) {
+            ShoeEmptyArt()
+            Text("No Sneakers Yet")
+                .font(.title2.bold())
             Text("Add your first pair and tap \"Wore today\" whenever you wear them.")
+                .font(.body)
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-        } actions: {
             Button("Add a pair") {
                 addTapped()
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
         }
+        .padding()
     }
 
     private var proUpsellCard: some View {
@@ -112,44 +192,29 @@ struct SneakerListView: View {
             HStack(spacing: 16) {
                 Image(systemName: "star.circle.fill")
                     .font(.title)
-                    .foregroundStyle(
-                        .linearGradient(
-                            colors: [.yellow, .orange],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
+                    .foregroundStyle(.yellow)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Unlock SoleCount Pro")
                         .font(.headline)
-                        .foregroundStyle(.primary)
-                    Text("Unlimited pairs + wear history charts")
+                    Text("Unlimited pairs, charts, and shoe mileage")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-
                 Spacer()
-
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
             .padding()
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(Color.accentColor.opacity(0.2), lineWidth: 1)
-            )
         }
-        .padding(.top, 8)
+        .buttonStyle(.plain)
     }
 
-    /// Free users can add up to 3 pairs. After that we show the Pro screen.
     private func addTapped() {
         if StoreManager.canAddPair(currentCount: sneakers.count, isPro: store.isPro) {
             showingAdd = true
-        } else {
+        } else if FeatureFlags.monetizationEnabled {
             showingPaywall = true
         }
     }
@@ -169,10 +234,7 @@ struct SectionHeader: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(
-                    Capsule()
-                        .fill(Color.secondary.opacity(0.2))
-                )
+                .background(Capsule().fill(Color.secondary.opacity(0.2)))
             Spacer()
         }
         .padding(.vertical, 8)
@@ -180,42 +242,52 @@ struct SectionHeader: View {
     }
 }
 
-/// Modern photo-forward sneaker card
+/// Photo-forward sneaker card with the type colour and the cached distance.
 struct SneakerCard: View {
     let sneaker: Sneaker
 
     var body: some View {
         HStack(spacing: 16) {
-            SneakerPhoto(data: sneaker.photoData, size: 80)
+            SneakerPhoto(data: sneaker.gallery.first, size: 80)
                 .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-
             VStack(alignment: .leading, spacing: 6) {
                 Text(sneaker.name)
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(2)
-
-                if !sneaker.brand.isEmpty {
-                    Text(sneaker.brand)
+                HStack(spacing: 6) {
+                    Image(systemName: sneaker.shoeType.symbolName)
+                        .foregroundStyle(ShoeTheme.accent(for: sneaker.shoeType))
+                        .accessibilityHidden(true)
+                    Text(sneaker.brand.isEmpty ? sneaker.shoeType.rawValue : sneaker.brand)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-
                 HStack(spacing: 12) {
                     Label("\(sneaker.wearCount)", systemImage: "figure.walk")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-
-                    if let cpp = sneaker.costPerWear {
-                        Label(cpp.asCurrency, systemImage: "dollarsign.circle")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
+                    if sneaker.healthUpdatedAt != nil || sneaker.cachedDistanceMeters > 0 {
+                        Text(DistanceFormat.string(meters: sneaker.cachedDistanceMeters))
+                    }
+                    if let cost = sneaker.costPerWear {
+                        Text(cost.asCurrency)
                     }
                 }
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
             }
-
             Spacer(minLength: 8)
-
+            if sneaker.replaceAtKilometers > 0 {
+                ProgressRing(
+                    progress: sneaker.cachedDistanceMeters / (sneaker.replaceAtKilometers * 1_000),
+                    tint: ShoeTheme.accent(for: sneaker.shoeType),
+                    lineWidth: 5,
+                    label: "",
+                    caption: ""
+                )
+                .frame(width: 36)
+                .accessibilityHidden(true)
+            }
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
@@ -224,7 +296,13 @@ struct SneakerCard: View {
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(.background)
-                .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
+                .shadow(color: ShoeTheme.accent(for: sneaker.shoeType).opacity(0.18), radius: 8, y: 3)
         )
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(ShoeTheme.accent(for: sneaker.shoeType))
+                .frame(width: 5)
+                .padding(.vertical, 12)
+        }
     }
 }

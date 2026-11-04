@@ -34,6 +34,9 @@ targets:
     supportedDestinations: [iOS]
     sources:
       - path: SoleCount
+        excludes:
+          - "*.entitlements"
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCount
@@ -44,6 +47,15 @@ targets:
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+      configs:
+        # Debug stays unsigned-friendly for the simulator tests (no Team ID).
+        # Release carries HealthKit and the widget App Group for a real phone.
+        Release:
+          CODE_SIGN_ENTITLEMENTS: SoleCount/SoleCount.entitlements
+    dependencies:
+      - sdk: HealthKit.framework
+      - target: SoleCountWidget
+        embed: true
     info:
       path: SoleCount/Info.plist
       properties:
@@ -51,6 +63,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false   # skips the export-compliance question
+        NSHealthShareUsageDescription: SoleCount reads your steps and walking distance to show how far you've walked in each pair of shoes.
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
@@ -60,6 +73,39 @@ targets:
       SystemCapabilities:
         com.apple.InAppPurchase:
           enabled: 1
+        com.apple.HealthKit:
+          enabled: 1
+
+  SoleCountWidget:
+    type: app-extension
+    supportedDestinations: [iOS]
+    deploymentTarget: "18.0"
+    sources:
+      - path: SoleCountWidget
+        excludes:
+          - Info.plist
+          - "*.entitlements"
+      - path: Shared
+    info:
+      path: SoleCountWidget/Info.plist
+      properties:
+        CFBundleDisplayName: SoleCount
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCount.widget
+        PRODUCT_NAME: SoleCountWidget
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: YES
+        SUPPORTS_MACCATALYST: NO
+      configs:
+        Release:
+          CODE_SIGN_ENTITLEMENTS: SoleCountWidget/SoleCountWidget.entitlements
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
 
   SoleCountTests:
     type: bundle.unit-test
@@ -93,6 +139,7 @@ schemes:
     build:
       targets:
         SoleCount: all
+        SoleCountWidget: all
         SoleCountTests: [test]
         SoleCountUITests: [test]
     run:
