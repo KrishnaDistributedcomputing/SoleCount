@@ -26,11 +26,10 @@ struct HeroHeader: View {
                     .symbolRenderingMode(.hierarchical)
                     .accessibilityHidden(true)
             }
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
+            .foregroundStyle(ShoeTheme.ink)
             .padding(22)
         }
-        .shadow(color: (colors.first ?? .clear).opacity(0.35), radius: 16, y: 8)
+        .shadow(color: ShoeTheme.shadow.opacity(0.28), radius: 16, y: 8)
         .accessibilityElement(children: .combine)
     }
 }

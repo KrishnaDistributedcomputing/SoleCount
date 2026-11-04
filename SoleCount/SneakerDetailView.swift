@@ -17,6 +17,7 @@ struct SneakerDetailView: View {
     @State private var showingEdit = false
     @State private var showingSendOff = false
     @State private var buttonScale: CGFloat = 1
+    @State private var cheer = 0
 
     private var tint: Color { ShoeTheme.accent(for: sneaker.shoeType) }
 
@@ -48,7 +49,7 @@ struct SneakerDetailView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .warmCard()
                 }
                 if store.hasFullAccess, sneaker.replaceAtKilometers > 0 {
                     MileageGoalCard(
@@ -63,7 +64,7 @@ struct SneakerDetailView: View {
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(ShoeTheme.canvas)
         .navigationTitle(sneaker.name)
         .navigationBarTitleDisplayMode(.inline)
         .modifier(ShoeZoomTransition(id: sneaker.persistentModelID, space: shoeNamespace))
@@ -86,14 +87,14 @@ struct SneakerDetailView: View {
                 .accessibilityLabel("More")
             }
         }
-        .alert("Time to Retire This Pair?", isPresented: $showingLimitAlert) {
+        .alert("This pair reached the wear goal you set", isPresented: $showingLimitAlert) {
             Button("Retire Now") {
                 sneaker.isRetired = true
                 showingSendOff = true
             }
             Button("Keep Wearing", role: .cancel) { }
         } message: {
-            Text("You've reached the wear limit you set for this pair. Congratulations!")
+            Text("You can retire it now, or keep wearing it. Both are good.")
         }
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .sheet(isPresented: $showingEdit) { AddSneakerView(existing: sneaker) }
@@ -207,7 +208,7 @@ struct SneakerDetailView: View {
                 .tint(tint)
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .warmCard()
     }
 
     private var wearButton: some View {
@@ -224,21 +225,23 @@ struct SneakerDetailView: View {
                 HStack(spacing: 12) {
                     Image(systemName: sneaker.woreToday ? "checkmark.circle.fill" : "plus.circle.fill")
                         .font(.title2)
-                        .symbolEffect(.bounce, value: reduceMotion ? 0 : sneaker.wearCount)
+                        .symbolEffect(.bounce, value: reduceMotion || LaunchFlags.screenshots ? 0 : sneaker.wearCount)
                     Text(sneaker.woreToday ? "Wore Them Again" : "Wore Today")
                         .font(.title3.bold())
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
                 .background(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .fill(LinearGradient(colors: ShoeTheme.colors(for: sneaker.shoeType), startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .shadow(color: tint.opacity(0.4), radius: 12, y: 6)
+                        .shadow(color: ShoeTheme.glow.opacity(0.45), radius: cheer > 0 ? 18 : 10, y: 6)
                 )
-                .foregroundStyle(.white)
+                .foregroundStyle(ShoeTheme.ink)
             }
             .scaleEffect(buttonScale)
+            .accessibilityIdentifier("woreTodayButton")
             .accessibilityHint("Logs that you wore this pair")
+            .overlay { ConfettiBurst(trigger: cheer) }
 
             if sneaker.woreToday {
                 Button {
@@ -248,7 +251,7 @@ struct SneakerDetailView: View {
                     Label("Undo Today's Wear", systemImage: "arrow.uturn.backward")
                         .font(.subheadline.weight(.medium))
                 }
-                .foregroundStyle(.red)
+                .foregroundStyle(ShoeTheme.ink)
             }
         }
     }
@@ -264,7 +267,7 @@ struct SneakerDetailView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .warmCard()
     }
 
     @ViewBuilder
@@ -279,14 +282,14 @@ struct SneakerDetailView: View {
                     DistanceChartView(monthlyMeters: sneaker.monthlyMeters, tint: tint)
                 }
                 .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .warmCard()
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Wears")
                         .font(.headline)
                     WearChartView(wearDates: sneaker.wearDates)
                 }
                 .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .warmCard()
             } else {
                 Button { showingPaywall = true } label: {
                     VStack(spacing: 8) {
@@ -296,7 +299,7 @@ struct SneakerDetailView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .warmCard()
                 }
                 .buttonStyle(.plain)
             }
@@ -304,6 +307,7 @@ struct SneakerDetailView: View {
     }
 
     private func logWear() {
+        cheer += 1
         sneaker.logWear()
         if let limit = sneaker.wearLimit, limit > 0, sneaker.wearCount == limit {
             showingLimitAlert = true

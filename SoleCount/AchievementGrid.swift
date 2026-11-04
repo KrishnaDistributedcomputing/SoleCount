@@ -3,6 +3,10 @@ import SwiftUI
 /// Badges in a grid. Locked ones stay visible so the next walk has a target.
 struct AchievementGrid: View {
     var badges: [Badge]
+    var celebrate: Int = 0
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var popped = false
 
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
@@ -33,16 +37,26 @@ struct AchievementGrid: View {
                 .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
                 .foregroundStyle(badge.unlocked ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                 .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(badge.unlocked ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color.secondary.opacity(0.08)))
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(badge.unlocked ? AnyShapeStyle(ShoeTheme.cardFill) : AnyShapeStyle(ShoeTheme.canvas))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(badge.unlocked ? Color.orange.opacity(0.45) : Color.clear, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(badge.unlocked ? ShoeTheme.glow.opacity(0.7) : Color.clear, lineWidth: 1.5)
                 )
-                .opacity(badge.unlocked ? 1 : 0.72)
+                .opacity(badge.unlocked ? 1 : 0.85)
+                .shadow(color: badge.unlocked ? ShoeTheme.glow.opacity(popped ? 0.55 : 0.2) : .clear, radius: popped ? 14 : 6)
+                .scaleEffect(popped && badge.unlocked ? 1.04 : 1)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(badge.unlocked ? "\(badge.title), unlocked" : "\(badge.title), locked")
+            }
+        }
+        .onChange(of: celebrate) { _, newValue in
+            guard newValue > 0, !reduceMotion, !LaunchFlags.screenshots else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.55)) { popped = true }
+            Task {
+                try? await Task.sleep(for: .milliseconds(700))
+                withAnimation(.easeOut(duration: 0.35)) { popped = false }
             }
         }
     }

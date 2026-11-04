@@ -52,13 +52,13 @@ struct TodayView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Badges")
                             .font(.title3.bold())
-                        AchievementGrid(badges: Array(badges.prefix(4)))
+                        AchievementGrid(badges: Array(badges.prefix(4)), celebrate: motivation.celebration)
                     }
                     stepChart
                 }
                 .padding()
             }
-            .background(Color(.systemGroupedBackground))
+            .background(ShoeTheme.canvas)
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.inline)
             .overlay(alignment: .top) {
@@ -98,26 +98,24 @@ struct TodayView: View {
             )
             ProgressRing(
                 progress: motivation.weeklyKilometers > 0 ? week.thisWeek / (motivation.weeklyKilometers * 1_000) : 0,
-                tint: .mint,
+                tint: ShoeTheme.today[2],
                 label: DistanceFormat.string(meters: week.thisWeek),
                 caption: "This week"
             )
             ProgressRing(
                 progress: min(1, Double(motivation.streak()) / 7),
-                tint: .orange,
+                tint: ShoeTheme.glow,
                 label: "\(motivation.streak())",
                 caption: "Day streak"
             )
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
+        .warmCard()
     }
 
     private var streakCard: some View {
-        let paused = motivation.pause() != .none
-        return VStack(alignment: .leading, spacing: 8) {
-            Text(paused ? "Paused. Your streak is waiting." : "\(motivation.streak())-day streak")
+        VStack(alignment: .leading, spacing: 8) {
+            Text(streakTitle)
                 .font(.headline)
             Text("Best is \(motivation.bestStreak()) days. Changing the step goal does not erase it.")
                 .font(.subheadline)
@@ -140,7 +138,7 @@ struct TodayView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .warmCard()
     }
 
     private var weekCard: some View {
@@ -157,7 +155,7 @@ struct TodayView: View {
             Image(systemName: arrow(trend))
                 .font(.title2)
                 .foregroundStyle(tint(trend))
-                .symbolEffect(.bounce, value: trend == .up && !reduceMotion)
+                .symbolEffect(.bounce, value: trend == .up && !reduceMotion && !LaunchFlags.screenshots)
             VStack(alignment: .leading, spacing: 4) {
                 Text("This week")
                     .font(.headline)
@@ -169,24 +167,37 @@ struct TodayView: View {
             Spacer(minLength: 0)
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .warmCard()
         .accessibilityElement(children: .combine)
+    }
+
+    private var streakTitle: String {
+        if motivation.pause() != .none { return "Paused. Your streak is safe and waiting." }
+        let days = motivation.streak()
+        if days == 0 { return "A fresh start is a good start." }
+        return "\(days)-day streak. Look at you."
     }
 
     private var tipCard: some View {
         VStack(alignment: .leading, spacing: 8) {
+            Label("A good thought", systemImage: "sun.horizon.fill")
+                .font(.headline)
+            Text(MotivationEngine.affirmation(on: .now, calendar: .current))
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
             Label("Today's tip", systemImage: "quote.opening")
                 .font(.headline)
+                .padding(.top, 4)
             Text(MotivationEngine.tip(on: .now, calendar: .current))
                 .font(.body)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Tips are encouragement, not medical advice.")
+            Text("Kind words and a walking idea. Not medical advice.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .warmCard()
     }
 
     private var walkCard: some View {
@@ -205,13 +216,15 @@ struct TodayView: View {
                 Spacer()
                 Image(systemName: "figure.walk.motion")
                     .font(.title)
-                    .symbolEffect(.pulse, isActive: !reduceMotion)
+                    .symbolEffect(.pulse, isActive: !reduceMotion && !LaunchFlags.screenshots)
             }
             .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(ShoeTheme.today[0].gradient.opacity(0.18))
+            .background(ShoeTheme.cardFill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(ShoeTheme.today[0].opacity(0.16))
             )
+            .shadow(color: ShoeTheme.shadow.opacity(0.22), radius: 12, y: 6)
         }
         .buttonStyle(.plain)
         .accessibilityHint("Opens a short walk you can start")
@@ -229,7 +242,7 @@ struct TodayView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .warmCard()
     }
 
     private var stepChart: some View {
@@ -266,7 +279,7 @@ struct TodayView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Steps for the last 7 days")
             .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .warmCard()
         }
     }
 
@@ -281,7 +294,7 @@ struct TodayView: View {
     private func tint(_ trend: WeekTrend) -> Color {
         switch trend {
         case .up: .green
-        case .down: .orange
+        case .down: ShoeTheme.glow
         case .flat: .secondary
         }
     }

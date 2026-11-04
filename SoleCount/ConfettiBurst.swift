@@ -33,7 +33,12 @@ struct ConfettiBurst: View {
     }
 
     private func burst() {
-        let colors: [Color] = [.orange, .pink, .yellow, .mint, .blue, .purple]
+        let colors: [Color] = [
+            Color(red: 0.93, green: 0.45, blue: 0.38),
+            Color(red: 0.96, green: 0.72, blue: 0.55),
+            Color(red: 0.95, green: 0.78, blue: 0.42),
+            Color(red: 0.55, green: 0.78, blue: 0.66)
+        ]
         pieces = (0..<16).map { _ in
             Piece(x: 0, y: 0, color: colors.randomElement() ?? .orange, opacity: 1)
         }

@@ -161,7 +161,7 @@ enum MotivationEngine {
         "You already own the shoes. That is the hard part.",
         "One pair, one walk, one tap when you get home.",
         "Compare weeks, not perfect days.",
-        "A down week is information, not a failure.",
+        "A quieter week is just information.",
         "Badges are souvenirs. The walk is the point.",
         "Ten thousand steps is a target, not a rule.",
         "Eight thousand is a solid day too.",
@@ -178,11 +178,84 @@ enum MotivationEngine {
         "SoleCount keeps the numbers. You just take the walk."
     ]
 
+    /// About 60 original mood lines. Encouragement only, not medical advice.
+    static let affirmations: [String] = [
+        "Your feet already know the way to a nicer hour.",
+        "A few steps outside can soften a busy mind.",
+        "You are allowed to walk slowly and still be proud.",
+        "Fresh air is a small gift you can give yourself.",
+        "The pair you choose today gets to share the day.",
+        "Showing up in your shoes is enough of a plan.",
+        "A calm pace is a strong pace.",
+        "Sunlight on the sidewalk is a fine companion.",
+        "You can start small and still feel the lift.",
+        "Moving a little is a kind thing to do.",
+        "There is room in the day for an easy loop.",
+        "Your collection is a shelf of good days.",
+        "One block can change the feel of a morning.",
+        "You do not have to be fast to be out there.",
+        "A walk can be the soft part of a loud day.",
+        "The shoes by the door are an invitation.",
+        "You have already done the brave bit: you own the habit.",
+        "Let the route be simple. The mood can still be bright.",
+        "A quiet street and your favorite pair is a full plan.",
+        "Today's steps belong to you, however many there are.",
+        "Going out for a little while still counts as going out.",
+        "You can thank your shoes by taking them somewhere pleasant.",
+        "A gentle walk is a good way to meet the day.",
+        "The sky looks better when you are under it.",
+        "Your body likes the easy rhythm of a walk.",
+        "Choose the pair that makes you smile, then step out.",
+        "A short outing can leave a long good feeling.",
+        "You are building a story, one wear at a time.",
+        "There is no wrong pair for a kind walk.",
+        "Let today be light. The shoes can do the heavy part.",
+        "A lap around the block is a complete kindness.",
+        "You can pause, breathe, and still keep the good streak of trying.",
+        "Warm light and a familiar route is a lovely mix.",
+        "The next corner can be the whole adventure.",
+        "Wearing the quiet pair is a fine celebration.",
+        "You are someone who makes time to move.",
+        "A walk does not need an audience.",
+        "Put on the shoes. The rest can be easy.",
+        "Your future self will like that you went.",
+        "Even a tiny outing is a bright mark on the day.",
+        "The world outside is ready whenever you are.",
+        "You can walk beside your thoughts without rushing them.",
+        "A favorite path is a friend you can visit.",
+        "Soft steps still move you forward.",
+        "Today can be the day the unused pair gets some sun.",
+        "You deserve a few minutes that are only for moving.",
+        "The best pace is the one that feels welcome.",
+        "A clear bit of sky is reason enough to go.",
+        "Your shoes are cheering in their own quiet way.",
+        "Step out, look around, and come back pleased.",
+        "A walk can be how you say hello to yourself.",
+        "You are allowed to enjoy the outing and nothing more.",
+        "Nice weather or not, a short walk can feel like care.",
+        "The habit is simply this: you go, then you log it.",
+        "There is a good hour hiding in an ordinary route.",
+        "You can carry a light mood out the door with you.",
+        "Every pair in the closet has a day worth having.",
+        "A little movement is a warm way to begin again.",
+        "You showed up. That is the whole win.",
+        "Leave the door, take the walk, keep the smile."
+    ]
+
+    /// The same line all day, then a different one tomorrow.
+    static func affirmation(on day: Date, calendar: Calendar) -> String {
+        line(affirmations, on: day, calendar: calendar)
+    }
+
     /// The same tip all day, then a different one tomorrow.
     static func tip(on day: Date, calendar: Calendar) -> String {
-        guard !tips.isEmpty else { return "" }
+        line(tips, on: day, calendar: calendar)
+    }
+
+    private static func line(_ lines: [String], on day: Date, calendar: Calendar) -> String {
+        guard !lines.isEmpty else { return "" }
         let ordinal = calendar.ordinality(of: .day, in: .year, for: day) ?? 1
-        let index = (ordinal - 1) % tips.count
-        return tips[index]
+        let index = (ordinal - 1) % lines.count
+        return lines[index]
     }
 }

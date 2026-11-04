@@ -114,6 +114,17 @@ struct MotivationTests {
         #expect(MotivationEngine.tips.contains(tip))
     }
 
+    @Test func affirmationsArePlentyAndRotateByDay() {
+        #expect(!MotivationEngine.affirmations.isEmpty)
+        #expect(MotivationEngine.affirmations.count >= 60)
+        #expect(Set(MotivationEngine.affirmations).count == MotivationEngine.affirmations.count)
+        let first = MotivationEngine.affirmation(on: day(2026, 1, 1), calendar: calendar)
+        let next = MotivationEngine.affirmation(on: day(2026, 1, 2), calendar: calendar)
+        #expect(first == MotivationEngine.affirmation(on: day(2026, 1, 1), calendar: calendar))
+        #expect(first != next)
+        #expect(MotivationEngine.affirmations.contains(first))
+    }
+
     @Test func fullRotationNeedsEveryActivePairThisMonth() {
         let now = day(2026, 11, 4)
         #expect(!MotivationEngine.woreEveryActivePair(wearDates: [], month: now, calendar: calendar))

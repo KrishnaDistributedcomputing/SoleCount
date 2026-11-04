@@ -28,8 +28,8 @@ struct SendOffView: View {
                 .font(.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-                Text("Retired pairs keep their stats. You can bring this pair back any time.")
+                .warmCard()
+                Text("This pair has a story worth keeping. Retired pairs keep their stats, and you can bring this pair back any time.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -37,6 +37,8 @@ struct SendOffView: View {
                     .buttonStyle(.borderedProminent)
             }
             .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(ShoeTheme.canvas)
             .overlay(alignment: .top) { ConfettiBurst(trigger: burst) }
             .onAppear { burst = 1 }
             .navigationTitle("Send-off")

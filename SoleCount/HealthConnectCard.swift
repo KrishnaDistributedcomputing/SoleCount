@@ -21,7 +21,7 @@ struct HealthConnectCard: View {
                 .foregroundStyle(.pink)
             switch health.access {
             case .unavailable:
-                Text("Apple Health isn't on this device. Wears, cost per wear, and the rest of SoleCount still work.")
+                Text("Apple Health is not on this device, and that is okay. Wears, cost per wear, and the rest of SoleCount still work.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             case .notAsked:
@@ -52,6 +52,6 @@ struct HealthConnectCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .warmCard()
     }
 }

@@ -26,6 +26,9 @@ struct SoleCountWidgetProvider: TimelineProvider {
 struct SoleCountWidgetView: View {
     var entry: SoleCountWidgetEntry
 
+    /// Dark brown on the sunrise fill, so the widget stays easy to read.
+    private static let ink = Color(red: 0.24, green: 0.12, blue: 0.08)
+
     private var progress: Double {
         guard entry.snapshot.stepGoal > 0 else { return 0 }
         return min(1, Double(entry.snapshot.todaySteps) / Double(entry.snapshot.stepGoal))
@@ -41,15 +44,16 @@ struct SoleCountWidgetView: View {
                 if entry.snapshot.streak > 0 {
                     Label("\(entry.snapshot.streak)", systemImage: "flame.fill")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Self.ink)
                 }
             }
             ZStack {
-                Circle().stroke(Color.white.opacity(0.25), lineWidth: 8)
+                Circle().stroke(Self.ink.opacity(0.2), lineWidth: 8)
                 Circle()
                     .trim(from: 0, to: progress)
-                    .stroke(Color.white, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .stroke(Self.ink, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
+                    .shadow(color: Color(red: 0.95, green: 0.62, blue: 0.32).opacity(0.6), radius: 4)
                 Text("\(entry.snapshot.todaySteps)")
                     .font(.title2.bold())
                     .minimumScaleFactor(0.6)
@@ -58,16 +62,20 @@ struct SoleCountWidgetView: View {
             .padding(.horizontal, 12)
             Text("of \(entry.snapshot.stepGoal) steps")
                 .font(.caption2)
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(Self.ink.opacity(0.85))
         }
         .containerBackground(for: .widget) {
             LinearGradient(
-                colors: [Color(red: 0.12, green: 0.40, blue: 0.92), Color(red: 0.36, green: 0.22, blue: 0.82)],
+                colors: [
+                    Color(red: 0.96, green: 0.55, blue: 0.42),
+                    Color(red: 0.98, green: 0.75, blue: 0.45),
+                    Color(red: 0.62, green: 0.82, blue: 0.70)
+                ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(Self.ink)
     }
 }
 

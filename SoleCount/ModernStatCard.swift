@@ -26,7 +26,7 @@ struct ModernStatCard: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .padding(.horizontal, 4)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .warmCard()
         .accessibilityElement(children: .combine)
     }
 }

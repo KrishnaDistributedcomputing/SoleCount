@@ -15,7 +15,7 @@ struct BadgesView: View {
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(ShoeTheme.canvas)
         .navigationTitle("Badges")
         .navigationBarTitleDisplayMode(.inline)
     }

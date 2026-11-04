@@ -25,6 +25,7 @@ struct ProgressRing: View {
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
+                    .shadow(color: tint.opacity(0.45), radius: 6)
                 Text(label)
                     .font(.title3.bold())
                     .lineLimit(1)
@@ -48,7 +49,7 @@ struct ProgressRing: View {
     }
 
     private func animate(to value: Double) {
-        if reduceMotion {
+        if reduceMotion || LaunchFlags.screenshots {
             shown = value
         } else {
             withAnimation(.easeOut(duration: 0.8)) {

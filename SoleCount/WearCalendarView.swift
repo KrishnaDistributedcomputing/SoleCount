@@ -58,7 +58,7 @@ struct WearCalendarView: View {
                         }
                     }
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .warmCard()
 
                     let names = pairs(on: selected)
                     VStack(alignment: .leading, spacing: 8) {
@@ -75,11 +75,11 @@ struct WearCalendarView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .warmCard()
                 }
                 .padding()
             }
-            .background(Color(.systemGroupedBackground))
+            .background(ShoeTheme.canvas)
             .navigationTitle("Calendar")
         }
     }

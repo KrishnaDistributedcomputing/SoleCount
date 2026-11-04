@@ -11,7 +11,7 @@ final class JourneyTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments += ["-UITesting", "-HealthUnavailable"]
         app.launch()
-        let healthOff = app.staticTexts["Apple Health isn't on this device. Wears, cost per wear, and the rest of SoleCount still work."]
+        let healthOff = app.staticTexts["Apple Health is not on this device, and that is okay. Wears, cost per wear, and the rest of SoleCount still work."]
         XCTAssertTrue(healthOff.waitForExistence(timeout: 10), "The app should explain Health is off and keep working")
         app.tabBars.buttons["Collection"].tap()
         let add = app.buttons["Add a pair"]
@@ -45,10 +45,18 @@ final class JourneyTests: XCTestCase {
         starting.tap()
         starting.typeText("12")
 
-        app.buttons["Save"].tap()
-        XCTAssertTrue(app.element(containing: "City Runners").waitForExistence(timeout: 5))
-        app.element(containing: "City Runners").tap()
-        let wore = app.buttons["Wore Today"]
+        let save = app.navigationBars["New Sneaker"].buttons["Save"]
+        XCTAssertTrue(save.waitForExistence(timeout: 3))
+        save.tap()
+        XCTAssertTrue(app.navigationBars["SoleCount"].waitForExistence(timeout: 5), "Saving should return to the collection")
+        let saved = app.element(containing: "City Runners")
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        saved.tap()
+        var wore = app.buttons["woreTodayButton"]
+        if !wore.waitForExistence(timeout: 2) {
+            app.swipeUp()
+            wore = app.buttons["woreTodayButton"]
+        }
         XCTAssertTrue(wore.waitForExistence(timeout: 5))
         wore.tap()
         app.tabBars.buttons["Today"].tap()
@@ -65,8 +73,7 @@ final class JourneyTests: XCTestCase {
         app.tabBars.buttons["Collection"].tap()
         XCTAssertTrue(app.element(containing: "Daily Runners").waitForExistence(timeout: 8))
         app.element(containing: "Daily Runners").tap()
-        XCTAssertTrue(app.buttons["Wore Today"].waitForExistence(timeout: 5)
-                      || app.buttons["Wore Them Again"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.buttons["woreTodayButton"].waitForExistence(timeout: 5))
         app.buttons["More"].tap()
         app.buttons["Retire this pair"].tap()
         XCTAssertTrue(app.staticTexts["Send-off"].waitForExistence(timeout: 5))

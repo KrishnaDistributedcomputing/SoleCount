@@ -99,10 +99,10 @@ struct SneakerListView: View {
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                        .warmCard()
                 }
                 if active.isEmpty && retired.isEmpty {
-                    ContentUnavailableView("No pairs match", systemImage: "line.3.horizontal.decrease.circle", description: Text("Clear the filter to see everything."))
+                    ContentUnavailableView("No pairs in this view yet", systemImage: "line.3.horizontal.decrease.circle", description: Text("Clear the filter and every pair is here."))
                     Button("Clear filters") {
                         brandFilter = nil
                         typeFilter = nil
@@ -136,7 +136,7 @@ struct SneakerListView: View {
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(ShoeTheme.canvas)
     }
 
     private func cardLink(_ sneaker: Sneaker) -> some View {
@@ -179,9 +179,9 @@ struct SneakerListView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             ShoeEmptyArt()
-            Text("No Sneakers Yet")
+            Text("Your first pair belongs here")
                 .font(.title2.bold())
-            Text("Add your first pair and tap \"Wore today\" whenever you wear them.")
+            Text("Add one pair. Log a wear when you feel like it. That is a lovely start.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -247,7 +247,7 @@ struct SectionHeader: View {
             Spacer()
         }
         .padding(.vertical, 8)
-        .background(Color(.systemGroupedBackground))
+        .background(ShoeTheme.canvas)
     }
 }
 
@@ -295,9 +295,9 @@ struct SneakerCard: View {
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.background)
-                .shadow(color: ShoeTheme.accent(for: sneaker.shoeType).opacity(0.18), radius: 8, y: 3)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(ShoeTheme.cardFill)
+                .shadow(color: ShoeTheme.shadow.opacity(0.2), radius: 10, y: 4)
         )
         .overlay(alignment: .leading) {
             RoundedRectangle(cornerRadius: 3)

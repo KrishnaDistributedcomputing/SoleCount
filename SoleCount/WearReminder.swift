@@ -32,8 +32,8 @@ enum WearReminder {
         if morning {
             await add(
                 id: "solecount.morning",
-                title: "What are you wearing today?",
-                body: "Open SoleCount and log the pair on your feet.",
+                title: "Good morning. Which pair is coming with you?",
+                body: "Log it in SoleCount whenever you head out.",
                 hour: morningHour,
                 minute: morningMinute
             )
@@ -56,9 +56,9 @@ enum WearReminder {
         content.title = name
         switch mark {
         case .eighty:
-            content.body = "About 80% of the distance target. Still fine to wear."
+            content.body = "This pair is about 80% of the way to its distance target. It still has good days."
         case .full:
-            content.body = "This pair reached its distance target. Retiring it is optional."
+            content.body = "This pair reached its distance target. Thank it, or keep wearing it. Both are fine."
         }
         content.sound = .default
         let request = UNNotificationRequest(
@@ -73,7 +73,7 @@ enum WearReminder {
         guard await isAuthorized() else { return }
         let content = UNMutableNotificationContent()
         content.title = "New badge"
-        content.body = "\(title). Nice walking."
+        content.body = "\(title). A small celebration for showing up."
         content.sound = .default
         let request = UNNotificationRequest(
             identifier: "solecount.badge.\(title)",
@@ -86,7 +86,7 @@ enum WearReminder {
     static func eveningCopy(stepsToday: Int, goal: Int) -> String? {
         guard let remaining = MotionMath.stepsRemaining(stepsToday: stepsToday, goal: goal) else { return nil }
         let steps = remaining.stepsLeft.formatted()
-        return "\(steps) steps to go — a \(remaining.minutes)-minute walk does it"
+        return "About \(steps) steps left. A \(remaining.minutes)-minute walk would feel great."
     }
 
     private static func add(id: String, title: String, body: String, hour: Int, minute: Int) async {

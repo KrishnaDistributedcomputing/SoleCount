@@ -26,9 +26,9 @@ struct StatsDashboardView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     if sneakers.isEmpty {
                         ContentUnavailableView {
-                            Label("No stats yet", systemImage: "chart.bar")
+                            Label("Stats will bloom here", systemImage: "chart.bar")
                         } description: {
-                            Text("Add a pair and log a wear. The numbers will show up here.")
+                            Text("Add a pair and log a wear. The good numbers show up after that.")
                         }
                     } else {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -40,16 +40,16 @@ struct StatsDashboardView: View {
                             stat("Per wear", value: summary.averageCostPerWear?.asCurrency ?? "–", symbol: "divide")
                         }
                         highlight("Most worn", name: summary.mostWorn, symbol: "star.fill")
-                        highlight("Forgotten lately", name: summary.leastWorn, symbol: "moon.zzz.fill")
+                        highlight("Ready for another day", name: summary.leastWorn, symbol: "sun.max.fill")
                         HStack {
                             Image(systemName: "flame.fill")
                                 .foregroundStyle(.orange)
-                            Text(summary.wearStreak > 0 ? "\(summary.wearStreak)-day wear streak" : "No wear streak yet")
+                            Text(summary.wearStreak > 0 ? "\(summary.wearStreak)-day wear streak" : "A wear streak begins whenever you log a pair.")
                                 .font(.headline)
                         }
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                        .warmCard()
 
                         let facts = MotivationEngine.facts(meters: summary.totalMeters)
                         if !facts.isEmpty {
@@ -66,7 +66,7 @@ struct StatsDashboardView: View {
                             }
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                            .warmCard()
                         }
 
                         HStack {
@@ -80,13 +80,13 @@ struct StatsDashboardView: View {
                             }
                             .accessibilityIdentifier("allBadgesButton")
                         }
-                        AchievementGrid(badges: Array(badges.prefix(4)))
+                        AchievementGrid(badges: Array(badges.prefix(4)), celebrate: motivation.celebration)
                         shareLinks
                     }
                 }
                 .padding()
             }
-            .background(Color(.systemGroupedBackground))
+            .background(ShoeTheme.canvas)
             .navigationTitle("Stats")
         }
     }
@@ -141,7 +141,7 @@ struct StatsDashboardView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .warmCard()
         .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
         .accessibilityElement(children: .combine)
     }
@@ -160,7 +160,7 @@ struct StatsDashboardView: View {
             Spacer()
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .warmCard()
         .accessibilityElement(children: .combine)
     }
 }

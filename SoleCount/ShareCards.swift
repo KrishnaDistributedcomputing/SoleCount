@@ -26,39 +26,46 @@ enum CardRenderer {
 struct ShareCardBody: View {
     var summary: ReviewSummary
 
+    /// Fixed sunrise ink so the shared picture stays bright and readable.
+    private static let ink = Color(red: 0.24, green: 0.12, blue: 0.08)
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("SoleCount")
                 .font(.headline)
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(Self.ink.opacity(0.8))
             Text(summary.title)
                 .font(.largeTitle.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Self.ink)
                 .fixedSize(horizontal: false, vertical: true)
             if let top = summary.topPair {
                 Text("Top pair: \(top)")
                     .font(.title3)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Self.ink)
             }
             Text(DistanceFormat.string(meters: summary.totalMeters, forceMetric: true))
                 .font(.title.bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(Self.ink)
             Text("\(summary.wears) wears")
                 .font(.title3)
-                .foregroundStyle(.white)
+                .foregroundStyle(Self.ink)
             Text("Best streak: \(summary.bestStreak) days")
                 .font(.title3)
-                .foregroundStyle(.white)
+                .foregroundStyle(Self.ink)
             Spacer(minLength: 0)
             Text("On this iPhone. Not a medical app.")
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(Self.ink.opacity(0.8))
         }
         .padding(28)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(
             LinearGradient(
-                colors: [Color(red: 0.12, green: 0.35, blue: 0.85), Color(red: 0.45, green: 0.20, blue: 0.72)],
+                colors: [
+                    Color(red: 0.96, green: 0.55, blue: 0.42),
+                    Color(red: 0.98, green: 0.75, blue: 0.45),
+                    Color(red: 0.62, green: 0.82, blue: 0.70)
+                ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

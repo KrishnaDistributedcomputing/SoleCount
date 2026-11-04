@@ -72,7 +72,7 @@ final class HealthSync {
             access = .ready
             await refresh(sneakers: sneakers, force: true)
         } catch {
-            access = .failed("Couldn't open Apple Health. Wears and cost per wear still work.")
+            access = .failed("Apple Health did not open this time. Your wears and cost per wear are still right here.")
         }
     }
 
@@ -106,7 +106,7 @@ final class HealthSync {
             lastDaily = totals
             access = .ready
         } catch {
-            access = .failed("Apple Health didn't answer. Your wear log is still here.")
+            access = .failed("Apple Health is quiet right now. Your wear log is safe on this iPhone.")
         }
     }
 

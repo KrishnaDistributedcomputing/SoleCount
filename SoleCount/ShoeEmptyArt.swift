@@ -13,7 +13,7 @@ struct ShoeEmptyArt: View {
                 .offset(y: 8)
             Image(systemName: "figure.walk")
                 .font(.title)
-                .foregroundStyle(.white)
+                .foregroundStyle(ShoeTheme.ink)
                 .padding(8)
                 .background(Circle().fill(ShoeTheme.today[1]))
                 .offset(x: 58, y: -48)
