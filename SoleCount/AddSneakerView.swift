@@ -28,7 +28,8 @@ struct AddSneakerView: View {
     @State private var replaceEdited: Bool
     @State private var startingWears: Int
     @State private var startingDisplay: Double
-    @FocusState private var typing: Bool
+    private enum Entry: Hashable { case name, brand, price, starting }
+    @FocusState private var entry: Entry?
 
     init(existing: Sneaker? = nil) {
         self.existing = existing
@@ -88,7 +89,7 @@ struct AddSneakerView: View {
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Hide keyboard") { typing = false }
+                    Button("Hide keyboard") { entry = nil }
                         .accessibilityIdentifier("hideKeyboard")
                 }
             }
@@ -135,13 +136,16 @@ struct AddSneakerView: View {
         Section {
             labeledField(symbol: "tag.fill", tint: Color.accentColor) {
                 TextField("Name (e.g. Air Max 90)", text: $name)
+                    .focused($entry, equals: .name)
             }
             labeledField(symbol: "building.2.fill", tint: Color.accentColor) {
                 TextField("Brand (e.g. Nike)", text: $brand)
+                    .focused($entry, equals: .brand)
             }
             labeledField(symbol: "dollarsign.circle.fill", tint: .green) {
                 TextField("Price paid (e.g. 129.99)", value: $price, format: .number)
                     .keyboardType(.decimalPad)
+                    .focused($entry, equals: .price)
             }
             labeledField(symbol: "calendar", tint: .blue) {
                 DatePicker("Purchased", selection: $purchaseDate, in: ...Date.now, displayedComponents: .date)
@@ -209,7 +213,7 @@ struct AddSneakerView: View {
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 80)
                     .accessibilityIdentifier("startingDistanceField")
-                    .focused($typing)
+                    .focused($entry, equals: .starting)
                 Text(DistanceFormat.unitWord())
                     .foregroundStyle(.secondary)
             }
