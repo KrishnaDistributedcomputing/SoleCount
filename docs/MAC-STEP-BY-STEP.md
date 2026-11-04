@@ -13,16 +13,12 @@ Do every command on the Mac. Copy a grey box by hovering and clicking the copy i
 - [ ] [3. Set up with no Apple membership](#setup-local)
 - [ ] [4. Run the tests](#make-test)
 - [ ] [5. Run the app](#run-the-app)
-- [ ] [6. Find your Team ID](#team-id)
-- [ ] [7. Create the API key and find the .p8 file](#find-the-p8-file)
-- [ ] [8. Save the Apple answers and register the bundle ID](#make-setup)
-- [ ] [9. Check the New App form](#new-app-form)
-- [ ] [10. Attach the $0.99 purchase to version 1.0](#pro-purchase)
-- [ ] [11. Send the app to Apple](#make-deploy)
-- [ ] [12. Get later updates](#get-updates)
-- [ ] [13. Troubleshooting](#troubleshooting)
-- [ ] [14. Ask Claude Code](#claude-code)
-- [ ] [15. Command cheat sheet](#cheat-sheet)
+- [ ] [6. The steps that stay manual](#manual-steps)
+- [ ] [7. make doctor, then make release](#make-release)
+- [ ] [8. Get later updates](#get-updates)
+- [ ] [9. Troubleshooting](#troubleshooting)
+- [ ] [10. Ask Claude Code](#claude-code)
+- [ ] [11. Command cheat sheet](#cheat-sheet)
 
 <a id="part-a"></a>
 
@@ -119,7 +115,7 @@ make setup-local
 3. **Installs XcodeGen.** XcodeGen builds `SoleCount.xcodeproj` from `project.yml`. That project file is not stored on GitHub, so it has to be made on your Mac. Skip: no.
 4. **Installs fastlane with Homebrew.** Fastlane is a Ruby tool. This script does not run `bundle install`. Later, `make appstore-setup` and `make deploy` use fastlane. Skip: no.
 5. **Creates `fastlane/.env`.** This is a private settings file. Git ignores it, so it is never uploaded to the public GitHub. A blank file is fine today. Skip: no.
-6. **Skips the Apple questions.** Team ID, API Key ID, Issuer ID, the `.p8` file, Apple ID email, and the App Review phone and email. `make setup` asks these later. Skip: yes, until Apple's email.
+6. **Skips the Apple questions when nothing is saved yet.** Team ID, API Key ID, Issuer ID, the `.p8` file, Apple ID email, and the App Review phone and email. `make setup` does this by itself if those answers are missing. After Apple's email, `make release` finds a `.p8` file in Downloads and asks only for what is still blank. Skip: yes, until Apple's email.
 7. **Leaves the Team ID blank** in `Config/Team.xcconfig`. The simulator does not need a Team ID. Skip: yes.
 8. **Builds `SoleCount.xcodeproj`.** Xcode opens that file. Skip: no.
 9. **Downloads the iPhone Simulator if none is installed, then opens Xcode.** A simulator is a pretend iPhone on your Mac. `make test` and Cmd + R use it. Skip: no.
@@ -163,190 +159,129 @@ Optional: install it on your own iPhone with a free Apple ID.
 
 ## Part C: After Apple's welcome email
 
-Stop here until Apple emails you that the paid membership is active.
+Do the short list below once. Then two commands do the rest.
 
+<a id="manual-steps"></a>
 <a id="team-id"></a>
-
-### 6. Find your Team ID
-
-Open [developer.apple.com/account](https://developer.apple.com/account), then **Membership details**. Copy the 10-character Team ID.
-
-**Why:** SoleCount's upload tools need it to show Apple which developer account is yours.
-
 <a id="find-the-p8-file"></a>
 
-### 7. Create the API key and find the AuthKey .p8 file
+### 6. The steps Apple still makes you do by hand
 
-This file lets SoleCount sign in to Apple without your Apple ID password. The name looks like `AuthKey_ABC123DEFG.p8`. The letters after `AuthKey_` are the Key ID.
+These stay manual because Apple does not let a script do them:
 
-**1. Sign in.** Open [https://appstoreconnect.apple.com](https://appstoreconnect.apple.com) in Safari.
+1. Wait for the "Welcome to the Apple Developer Program" email. You already paid.
+2. In App Store Connect, open **Business** and accept the **Paid Apps** agreement. Add your bank and tax forms. The $0.99 purchase cannot be sold until this is done.
+3. Create an **Admin** API key and download the `.p8` file **once**. Leave that file in **Downloads**. Do not move it into the SoleCount folder. The Key ID is the middle of the file name `AuthKey_<Key ID>.p8`. The Issuer ID is the long code above the keys table.
+4. Have your 10-character Team ID ready. It is on [developer.apple.com/account](https://developer.apple.com/account), under **Membership details**. `make release` asks for the Team ID and the Issuer ID once.
+5. Optional: your Apple ID email. If you type it when asked, fastlane creates the app record and sends the privacy answers after one 2FA code. If you press Return, you use the website instead. The form is in the section below.
+6. The first time only, after the command finishes: on the website, add **SoleCount Pro** to version **1.0** and submit. Apple blocks a script from attaching the first purchase to a review.
+7. Wait for review. It usually takes about 1 to 2 days. It can take longer.
 
-**Why:** This is the site SoleCount's upload tools talk to.
+**Why:** Everything else (bundle ID, price, age rating, the $0.99 purchase, screenshots, TestFlight, the store text) is already in this package. `make release` runs it and skips steps that are already done.
 
-**2. Open the keys page.** Click **Users and Access**, then the **Integrations** tab, then **App Store Connect API**, then **Team Keys**.
+How to download the key, if you have not done it before:
 
-**Why:** This is the only page that can make the key `make setup` asks for.
-
-**3. First visit only.** If you see **Request Access**, click it and accept the terms.
-
-**Why:** Apple hides the key list until you accept those terms.
-
-**4. Generate the key.** Click **+** (**Generate API Key**). Name it `SoleCount`. Access: **Admin**. Click **Generate**.
-
-**Why:** `make deploy` signs the upload with this key. That cloud signing needs an Admin key. App Manager can manage the app, but it is not enough for that signing step.
-
-**5. Copy two codes.** The Key ID is the 10-character code in the list. The Issuer ID is the long code above the table.
-
-**Why:** `make setup` asks for both. The Key ID is also the middle of the file name.
-
-**6. Download the key.** Click **Download API Key**. Apple lets you download this file only once.
-
-**Why:** The download is the private half of the login. If you miss it, you must revoke that key and make a new one.
-
-**7. Find it in Downloads.** Safari saves it there.
-
-- Finder: click the blue-and-white face in the Dock, then **Downloads**. Or press Cmd + Option + L.
-- Spotlight: press Cmd + Space and type `AuthKey`.
+1. Open [appstoreconnect.apple.com](https://appstoreconnect.apple.com), then **Users and Access**, **Integrations**, **App Store Connect API**, **Team Keys**.
+2. If you see **Request Access**, click it and accept the terms.
+3. Click **+**. Name it `SoleCount`. Access: **Admin**. Click **Generate**.
+4. Copy the Key ID and the Issuer ID. Click **Download API Key**. Apple lets you download it only once.
+5. It lands in Downloads. Check with:
 
 ```bash
 ls ~/Downloads/AuthKey_*.p8
 ```
 
-```bash
-mdfind -name AuthKey_
-```
+**Why:** `make release` finds that file, reads the Key ID from the name, and copies it to `~/.appstoreconnect/private_keys/`. That folder is outside the project, so the key is never uploaded to GitHub.
 
-**Why:** The first command lists the file in Downloads. The second searches the whole Mac. You need the path when setup asks you to drag the file into Terminal.
-
-**8. Check the safe copy after setup.** Setup copies the file to `~/.appstoreconnect/private_keys/`, outside the SoleCount folder, so it is never uploaded to the public GitHub. `.gitignore` also ignores names that start with `AuthKey_`.
-
-```bash
-ls ~/.appstoreconnect/private_keys/
-```
-
-**Why:** You should see the `.p8` file there after step 8. Never put that file inside the SoleCount folder.
-
-If Safari saved it as `.p8.txt`, rename it so the name ends in `.p8` only. Do not edit the text inside. If you downloaded it on a Windows PC, AirDrop will not carry it. Use iCloud Drive, a USB stick, or email it to yourself, save it on the Mac, then delete the email and the USB copy. The file is secret. If you lost it, revoke that key in App Store Connect and generate a new one. The Issuer ID does not change.
-
+<a id="make-release"></a>
 <a id="make-setup"></a>
+<a id="make-deploy"></a>
 
-### 8. Save the Apple answers, then register the bundle ID
-
-```bash
-make setup
-```
-
-**Why:** This runs the same tool install as `make setup-local`, then asks for the Apple details and saves them. Press Return only for a question you still do not have.
-
-Answer in this order. The words in Terminal match these:
-
-1. **Team ID** (10 characters, from Membership details).
-2. **API Key ID** (10 characters).
-3. **Issuer ID** (the long code above the keys table).
-4. **The .p8 file.** If the Key ID is filled in, drag `AuthKey_XXXXXXXXXX.p8` from Finder into Terminal and press Return. Or type `~/Downloads/AuthKey_XXXXXXXXXX.p8` with your real Key ID. If the file is already in Downloads under that exact name, the script moves it for you.
-5. **Apple ID email.** Optional. Press Return to skip. If you type it, fastlane can create the app record and the privacy answers later. If you skip it, you use the website in step 9.
-6. **App Review phone**, with country code, such as `+1 416 555 0100`. Press Return to skip. You will need it before review.
-7. **App Review email.** Press Return to skip. You will need it before review.
-
-**Why:** The Team ID is written into `Config/Team.xcconfig`. The key file is copied to `~/.appstoreconnect/private_keys/`. The other answers go in `fastlane/.env` or the review contact files. None of the secret files are committed.
-
-Then:
+### 7. Run the checks, then release
 
 ```bash
-make appstore-setup
+make doctor
 ```
 
-**Why:** This checks that the Team ID, Key ID, Issuer ID, and `.p8` file are really on this Mac. Then fastlane registers the bundle ID `com.krishnav.SoleCount` if it is missing. The script says In-App Purchase is on by default for that new ID. That ID must match `project.yml` and `fastlane/Fastfile`.
+**Why:** This prints a green and red checklist: Xcode 26, the tools, the key file, and a real call to App Store Connect. Each red line tells you the exact command to run next.
 
-Apple does not let the API key create the app record. After the bundle ID exists, one of these happens:
+When every required line is green:
 
-- You skipped the Apple ID email. The command stops and tells you the app record does not exist yet. Fill in the form in step 9. The command's own example uses the name `SoleCount: Sneaker Tracker` and the SKU `solecount-ios`. On the form, use the values in step 9. `solecount001` is fine.
-- You typed the Apple ID email. Fastlane signs in as you, asks for a verification code, and creates the app. The name comes from `fastlane/metadata/en-US/name.txt`, which is `SoleCount: Sneaker Tracker`. The SKU it sends is `solecount-ios`. If SoleCount is already in the Apps list, do not create it again.
+```bash
+make release
+```
 
-When the app record exists, the same command sets the app price to free, sets where it can be sold, sets the age rating, and creates the $0.99 purchase `com.krishnav.SoleCount.pro`. If the Apple ID email is saved, it also sends the privacy answers (SoleCount collects no data). If not, it tells you to set App Privacy on the website.
+**Why:** This is the whole path, and it is safe to run again. It finds the `.p8` file, asks only for answers that are still blank, then:
+
+1. Registers the bundle ID `com.krishnav.SoleCount` and turns on In-App Purchase.
+2. Creates the app record if you saved an Apple ID (one 2FA code). If not, it stops and tells you to use the form below.
+3. Sets the app price to free, the countries, and the age rating (4+).
+4. Creates the $0.99 purchase `com.krishnav.SoleCount.pro` from `fastlane/iap.json`, including the English name and the review screenshot.
+5. Takes the 6.9-inch App Store screenshots in the iPhone 17 Pro Max simulator if they are not saved yet. The test uses sample shoes, not your real pairs. Apple scales that size to the other iPhone sizes.
+6. Runs the tests.
+7. Bumps the build number to one higher than the latest TestFlight build, builds the app, and uploads it.
+8. Uploads the name, subtitle, description, keywords, promo text, support URL, privacy URL, category (Lifestyle), and screenshots from `fastlane/metadata`.
+9. Submits version 1.0 for review when Apple allows it. The app goes live automatically after approval.
+
+Running it again does not create a second app or a second purchase. It does upload a new build, because Apple rejects a second upload of the same build number.
+
+Check progress any time:
+
+```bash
+make status
+```
+
+**Why:** This shows the latest TestFlight build and the review state, such as waiting for review.
 
 <a id="new-app-form"></a>
 
-### 9. Check the New App form
+### If make release says the app record does not exist
 
-If SoleCount is already in the Apps list, skip this form. `make appstore-setup` already created it, or you created it earlier.
-
-If the command stopped because the app record does not exist, open this form. This is the empty form:
+Apple's API key is not allowed to create the app record. Either add `APPLE_ID=you@example.com` to `fastlane/.env` and run `make release` again (one 2FA code), or fill in this form.
 
 ![New App form in App Store Connect. Platforms, Name, Primary Language, Bundle ID, SKU, and User Access are empty, and Create is grey.](images/appstoreconnect-new-app.png)
 
-**0. Open it.** In Safari, open [https://appstoreconnect.apple.com](https://appstoreconnect.apple.com). Click **Apps**. Click the blue **+** next to Apps, then **New App**.
+1. Open [appstoreconnect.apple.com](https://appstoreconnect.apple.com). Click **Apps**, the blue **+**, then **New App**.
+2. Platforms: **iOS** only.
+3. Name: `SoleCount`. If Apple says that name is taken, use `SoleCount: Sneaker Tracker`.
+4. Primary Language: **English (U.S.)**.
+5. Bundle ID: `com.krishnav.SoleCount`. If it is missing, run `make release` once so it can register the ID, then refresh this page.
+6. SKU: `solecount001`. If fastlane created the app, it used `solecount-ios`. Leave that one alone.
+7. User Access: **Full Access**. Click **Create**.
 
-**Why:** This creates the App Store record for SoleCount. The paid membership has to be active.
+Then run `make release` again.
 
-**1. Platforms.** Tick **iOS** only.
-
-**Why:** SoleCount is an iPhone app.
-
-**2. Name.** Type `SoleCount`. Stay at 30 characters or fewer. If Apple says that name is already being used, type `SoleCount: Sneaker Tracker`. You can change the name later, before release.
-
-**Why:** This is the public App Store name. Fastlane's metadata file already uses `SoleCount: Sneaker Tracker`.
-
-**3. Primary Language.** Choose **English (U.S.)**.
-
-**Why:** SoleCount's App Store text is written in that language.
-
-**4. Bundle ID.** Pick `com.krishnav.SoleCount`.
-
-**Why:** The installed app, the $0.99 purchase, and this listing must share that ID. A different ID would be a different app.
-
-If it is not in the list, `make appstore-setup` should have registered it. Run that command, then refresh this page. Or register it by hand: click **Certificates, Identifiers & Profiles**, then **Identifiers**, then **+**, then **App IDs**, then **App**. Description: `SoleCount`. Bundle ID: **Explicit**, `com.krishnav.SoleCount`. Tick **In-App Purchase** if it is listed. It is on by default for a new App ID. Continue, then Register. Come back and refresh.
-
-**5. SKU.** Type `solecount001`.
-
-**Why:** SKU is a private ID only you see. You cannot change it later. SoleCount's tools find the app by the bundle ID, not by the SKU. If fastlane already created the app, it stored `solecount-ios` instead. Leave that one alone.
-
-**6. User Access.** Choose **Full Access**.
-
-**Why:** You are the only developer. Full Access means everyone on your team can see SoleCount. Limited Access is for a large team.
-
-**7. Click Create** when the button turns blue.
-
-**Why:** This saves the record so the upload has somewhere to go.
+**Why:** The listing, the purchase, and the installed app must share the bundle ID `com.krishnav.SoleCount`.
 
 <a id="pro-purchase"></a>
 
-### 10. Attach the $0.99 purchase to version 1.0
+### If the command says to add SoleCount Pro for review
 
-The product ID is `com.krishnav.SoleCount.pro`. It is a one-time unlock, not a subscription. The free app tracks 3 pairs. Pro unlocks unlimited pairs and the wear chart.
+`make release` creates the purchase. Apple still wants the **first** one attached on the website:
 
-**Why:** Apple reviews this purchase together with the first version of SoleCount. If it is not attached to version 1.0, the submission is incomplete.
+1. Open SoleCount in App Store Connect.
+2. Open **Monetization**, then **In-App Purchases**, then **SoleCount Pro**.
+3. Click **Add for Review** and choose iOS version **1.0**.
+4. Submit for review.
 
-`make appstore-setup` creates that purchase when the app record already exists. The first time, Apple still wants you to attach it on the website:
+Also open **App Privacy** and publish **Data Not Collected**, unless the command already did that because you saved your Apple ID. SoleCount keeps every sneaker on the phone. The privacy page is [PRIVACY.md](../PRIVACY.md). The same text is in [docs/privacy.md](privacy.md) for GitHub Pages. The address uploaded to Apple is the GitHub file, which works without Pages.
 
-1. Open the SoleCount app in App Store Connect.
-2. In the sidebar, open **Monetization**, then **In-App Purchases**.
-3. Open **SoleCount Pro**.
-4. Choose **Add for Review** and select iOS version **1.0**.
+**Why:** Review looks at the app and the purchase together. After Pro is approved once, later runs of `make release` submit by themselves.
 
-Also open **App Privacy** and publish **Data Not Collected**, unless `make appstore-setup` already did that because you saved your Apple ID email.
+### GitHub button (optional)
 
-<a id="make-deploy"></a>
+After the first `make release` on this Mac has created the app, you can repeat a release from GitHub: **Actions**, **Release**, **Run workflow**. Add these repository secrets (nothing else, and never the key file in the repo):
 
-### 11. Send the app to TestFlight, then to review
+| Secret | What to paste |
+|---|---|
+| `ASC_KEY_ID` | The 10-character Key ID |
+| `ASC_ISSUER_ID` | The long Issuer ID |
+| `ASC_KEY_P8` | The output of `base64 -i ~/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8` |
+| `TEAM_ID` | The 10-character Team ID |
+| `REVIEW_PHONE` | Phone for App Review, with country code |
+| `REVIEW_EMAIL` | Email for App Review |
 
-```bash
-make deploy
-```
-
-**Why:** This checks the Apple details, runs the tests, uploads a build to TestFlight, then submits version 1.0 for App Review. The app goes live automatically when Apple approves it.
-
-You will see three steps: tests, TestFlight upload, then App Review. Uploading often takes 10 to 15 minutes. After you submit, Apple's review usually takes about 1 to 2 days. It can take longer. You cannot speed up Apple's queue.
-
-To stop after TestFlight and not submit for review:
-
-```bash
-bash scripts/deploy.sh --beta-only
-```
-
-**Why:** TestFlight lets you install the real build before you ask Apple to review it.
-
-If the membership details are missing, the command stops immediately with: `Your Apple Developer membership isn't active yet. Run make appstore-setup once Apple emails you.`
+**Why:** GitHub cannot type your 2FA code, so it cannot create the app the first time. It can repeat the upload after the Mac has done that once. The full note is in [AUTOMATION.md](../AUTOMATION.md).
 
 <a id="part-d"></a>
 
@@ -354,7 +289,7 @@ If the membership details are missing, the command stops immediately with: `Your
 
 <a id="get-updates"></a>
 
-### 12. Get the latest updates
+### 8. Get the latest updates
 
 New work is saved on a branch first. `main` is the copy that `git clone` downloads.
 
@@ -384,7 +319,7 @@ git checkout main && git pull
 
 <a id="troubleshooting"></a>
 
-### 13. Troubleshooting
+### 9. Troubleshooting
 
 **Mac and Terminal**
 
@@ -417,13 +352,14 @@ git checkout main && git pull
 
 **Upload**
 
-- **`make appstore-setup` or `make deploy` stops and talks about the membership.** The Team ID, Key ID, Issuer ID, or `.p8` file is still missing. Run `make setup` and answer those questions.
-- **The app record does not exist yet.** Fill in the New App form in step 9, then run `make appstore-setup` again.
+- **`make doctor` has a red line.** Do the Fix command on that line, then run `make doctor` again.
+- **`make release` cannot find the .p8 file.** Leave `AuthKey_*.p8` in Downloads. The name must end in `.p8`, not `.p8.txt`. Then run `make release` again.
+- **The app record does not exist yet.** Add your Apple ID when asked, or fill in the New App form above, then run `make release` again.
 - **No valid code signing identity.** In Xcode, open Signing & Capabilities and turn on Automatically manage signing. For the simulator you can ignore this. For an upload you need the paid Team ID.
 
 <a id="claude-code"></a>
 
-### 14. Ask Claude Code for help
+### 10. Ask Claude Code for help
 
 Copy the error in Terminal: drag across the red lines, then press Cmd + C.
 
@@ -445,17 +381,20 @@ Can you explain what went wrong in simple terms and tell me exactly what command
 
 <a id="cheat-sheet"></a>
 
-### 15. Command cheat sheet
+### 11. Command cheat sheet
 
 | Command | What it does | When to use it |
 |---|---|---|
 | `make setup-local` | Installs tools, builds the project, opens Xcode. Skips Apple questions. | Now, before the membership is active. |
+| `make setup` | Same as setup-local if the Team ID, key, and Issuer ID are missing. If a `.p8` file is already on the Mac, it saves that key and asks for the rest. | First setup, or any time. |
 | `make test` | Runs tests in the iPhone Simulator. No Team ID. | After setup, any time. |
 | `make open` | Rebuilds the project and opens Xcode. Then press Cmd + R. | When you want to see the app. |
-| `make setup` | Same as setup-local, then asks for the Team ID, keys, and review contact. | After Apple's email. |
-| `make appstore-setup` | Registers the bundle ID and sets up the $0.99 purchase. Stops if the app record is missing. | After `make setup` has the keys. |
-| `make deploy` | Tests, TestFlight, then App Review. | When the app record and the purchase are ready. |
-| `bash scripts/deploy.sh --beta-only` | Stops after TestFlight. | When you do not want review yet. |
+| `make doctor` | Green/red checklist, including a real API call. Each red line has the fix. | After Apple's email, before you release. |
+| `make release` | Finds the `.p8` file, then creates the records, tests, uploads a new build, and submits. Skips finished records. | The command to ship. Safe to run again. |
+| `make deploy` | Same as `make release`. | Same as `make release`. |
+| `make status` | Shows the TestFlight build and the review state. | While you wait for Apple. |
+| `make appstore-setup` | Only the App Store records (bundle ID, app, $0.99 purchase). No upload. | When you want the records without a new build. |
+| `bash scripts/deploy.sh --beta-only` | Uploads to TestFlight and stops before review. | When you do not want review yet. |
 | `make clean` | Deletes build files and the generated Xcode project. | When you want a fresh project. Run `make open` after. |
 | `git pull` | Downloads the newest copy of the branch you are on. | When GitHub has newer commits. |
 | `git checkout main && git pull` | Switches to `main` and downloads it. | After a branch is merged. |

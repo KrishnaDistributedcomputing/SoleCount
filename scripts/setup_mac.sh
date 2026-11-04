@@ -7,8 +7,11 @@
 # paid Developer membership is still being processed. Tools, the Xcode project,
 # the simulator, and Xcode itself still run.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 ROOT="$(pwd)"
+# Path depends on how the script was started, so shellcheck cannot follow it.
+# shellcheck disable=SC1091
+source "$(dirname "$0")/lib.sh"
 
 SKIP_APPLE=0
 for arg in "$@"; do
@@ -30,13 +33,6 @@ remember_skip() {
 remember_apple_skip() {
   remember_skip "$1"
   NEED_APPLE=1
-}
-
-is_placeholder() {
-  case "$1" in
-    ""|*XXXXXXXXXX*) return 0 ;;
-    *) return 1 ;;
-  esac
 }
 
 # 1. Xcode
@@ -74,27 +70,36 @@ brew upgrade xcodegen fastlane 2>/dev/null || true
 ok "xcodegen $(xcodegen --version 2>/dev/null | awk '{print $NF}'), fastlane installed"
 
 # 4. Your App Store Connect details -> fastlane/.env (git-ignored)
-ENV_FILE="$ROOT/fastlane/.env"
-if [ ! -f "$ENV_FILE" ]; then
-  cp "$ROOT/fastlane/.env.example" "$ENV_FILE"
-fi
-chmod 600 "$ENV_FILE"
-
-get_env() { grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2- || true; }
-set_env() {
-  key="$1"
-  value="$2"
-  if grep -qE "^${key}=" "$ENV_FILE"; then
-    /usr/bin/sed -i '' "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
-  else
-    echo "${key}=${value}" >> "$ENV_FILE"
-  fi
-}
+ensure_env_file
 
 # No Terminal (for example a script) cannot answer questions. Skip them.
 if [ "$SKIP_APPLE" != 1 ] && [ ! -t 0 ]; then
   echo "No Terminal to type in. Skipping the Apple questions."
   SKIP_APPLE=1
+fi
+
+# A downloaded key is named AuthKey_<Key ID>.p8. Remember it without asking.
+current_key="$(get_env ASC_KEY_ID)"
+saved_copy="$HOME/.appstoreconnect/private_keys/AuthKey_${current_key}.p8"
+if ! is_placeholder "$current_key" && [ -f "$saved_copy" ]; then
+  echo "API key ${current_key} is already saved outside the project."
+elif found_p8="$(find_newest_authkey)"; [ -n "$found_p8" ]; then
+  echo "Found $(basename "$found_p8")."
+  echo "The Key ID is the middle of that file name. Saving a copy outside the project."
+  adopt_authkey "$found_p8" >/dev/null
+fi
+
+# Nothing to ask yet: do the local setup and stop, same as make setup-local.
+if [ "$SKIP_APPLE" != 1 ]; then
+  team_now="$(get_env TEAM_ID)"
+  key_now="$(get_env ASC_KEY_ID)"
+  issuer_now="$(get_env ASC_ISSUER_ID)"
+  if is_placeholder "$team_now" && is_placeholder "$key_now" && is_placeholder "$issuer_now"; then
+    echo "No Apple membership details on this Mac yet."
+    echo "Continuing with local setup (same as make setup-local)."
+    echo "After Apple's email, leave the .p8 file in Downloads and run: make release"
+    SKIP_APPLE=1
+  fi
 fi
 
 say "Apple Developer questions"
@@ -257,21 +262,21 @@ Do this now:
   make test     run the tests in the simulator
   In Xcode, press Cmd + R to run the app
 
-Your Apple Developer membership isn't active yet. Run make appstore-setup once Apple emails you.
-Before that command can work, run make setup again and answer the skipped questions.
+Your Apple Developer membership isn't active yet.
+After Apple emails you, leave the .p8 file in Downloads and run: make release
 MSG
 elif [ -n "$SKIPPED_LABELS" ]; then
   cat <<MSG
 These optional items were skipped:${SKIPPED_LABELS}
 
 Next steps:
-  1) First time only:   make appstore-setup
-  2) Every release:     make deploy
+  make doctor     see what is still missing
+  make release    the rest of the App Store path
 MSG
 else
   cat <<MSG
 Next steps:
-  1) First time only:   make appstore-setup
-  2) Every release:     make deploy
+  make doctor     see what is still missing
+  make release    the rest of the App Store path
 MSG
 fi

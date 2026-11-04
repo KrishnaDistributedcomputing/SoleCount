@@ -38,21 +38,17 @@ Then press Cmd + R in Xcode to run SoleCount in the simulator.
 
 **C. After Apple's welcome email**
 
-Find the Team ID, create the API key, and find the `.p8` file. Steps: [Team ID](docs/MAC-STEP-BY-STEP.md#team-id) and [AuthKey .p8 file](docs/MAC-STEP-BY-STEP.md#find-the-p8-file).
+Accept the Paid Apps agreement, create an Admin API key, and leave the `.p8` file in Downloads. The few steps Apple still requires by hand are listed in the guide: [what stays manual](docs/MAC-STEP-BY-STEP.md#manual-steps).
 
 ```bash
-make setup
+make doctor
 ```
 
 ```bash
-make appstore-setup
+make release
 ```
 
-If that command says the app record does not exist yet, fill in the [New App form](docs/MAC-STEP-BY-STEP.md#new-app-form). Attach the $0.99 purchase to version 1.0, then:
-
-```bash
-make deploy
-```
+`make release` is safe to run again. It skips records that already exist, uploads a new build, and submits for review. If it asks you to create the app, use the [New App form](docs/MAC-STEP-BY-STEP.md#new-app-form). The first $0.99 purchase still needs one click on the website: [SoleCount Pro](docs/MAC-STEP-BY-STEP.md#pro-purchase). Check progress with `make status`.
 
 **D. Later updates**
 

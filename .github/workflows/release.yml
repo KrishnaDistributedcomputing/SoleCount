@@ -1,0 +1,106 @@
+# SoleCount Release button.
+# Actions tab > Release > Run workflow.
+#
+# This runs the same lane as `make release` (`fastlane ios ship`):
+# bundle ID, app records, the $0.99 purchase, tests, a new build number,
+# TestFlight, metadata, screenshots, then submit for review.
+#
+# The app record and App Privacy cannot be created on GitHub. Apple requires
+# an Apple ID login with a 2FA code, and GitHub cannot type that code.
+# Run `make release` once on the Mac first. After that, this button can repeat it.
+#
+# The first In-App Purchase still needs one click on the App Store Connect website.
+# The lane prints that click if it is still required. Later releases submit themselves.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   ASC_KEY_ID      App Store Connect API Key ID (10 characters)
+#   ASC_ISSUER_ID   Issuer ID (the long code above the keys table)
+#   ASC_KEY_P8      The .p8 file, base64-encoded. On the Mac:
+#                     base64 -i ~/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8 | pbcopy
+#   TEAM_ID         10-character Team ID
+#   REVIEW_PHONE    App Review phone, with country code
+#   REVIEW_EMAIL    App Review email
+# Never commit the .p8 file, AuthKey_*, or fastlane/.env.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: "Submit to App Review after TestFlight"
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SIM_DEVICE: iPhone 17 Pro Max
+  FASTLANE_SKIP_UPDATE_CHECK: "1"
+  FASTLANE_HIDE_CHANGELOG: "1"
+  FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: "180"
+
+jobs:
+  release:
+    name: Ship to TestFlight and App Review
+    runs-on: macos-26
+    timeout-minutes: 120
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      TEAM_ID: ${{ secrets.TEAM_ID }}
+      REVIEW_PHONE: ${{ secrets.REVIEW_PHONE }}
+      REVIEW_EMAIL: ${{ secrets.REVIEW_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -n 1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install tools
+        run: |
+          brew install xcodegen
+          command -v fastlane || brew install fastlane
+          fastlane --version
+
+      - name: Check secrets
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 TEAM_ID REVIEW_PHONE REVIEW_EMAIL; do
+            if [ -z "${!v}" ]; then
+              echo "::error::Secret $v is missing. Add it under Settings > Secrets and variables > Actions. See AUTOMATION.md."
+              exit 1
+            fi
+          done
+
+      - name: Write API key to a temporary file (never committed)
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          KEY_FILE="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          echo "$ASC_KEY_P8" | base64 --decode > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          echo "ASC_KEY_PATH=$KEY_FILE" >> "$GITHUB_ENV"
+
+      - name: Ship
+        run: |
+          if [ "${{ inputs.submit }}" = "true" ]; then
+            fastlane ios ship
+          else
+            fastlane ios setup
+            fastlane ios test
+            fastlane ios beta
+          fi
+
+      - name: Remove API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8

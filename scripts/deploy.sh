@@ -1,15 +1,14 @@
 #!/bin/bash
-# The one deploy command:  bash scripts/deploy.sh
-#   1. runs every test         (fastlane test)
-#   2. uploads to TestFlight   (fastlane beta)
-#   3. submits to App Review   (fastlane release; goes live automatically when approved)
+# Upload half of a release: tests, TestFlight, then App Review.
+# The command that does the WHOLE path (setup + this upload) is: make release
 #
 # Options:
 #   bash scripts/deploy.sh --beta-only    stop after TestFlight
-#   bash scripts/deploy.sh --setup        run the one-time App Store Connect setup first
+#   bash scripts/deploy.sh --setup        refresh the App Store records first
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.." || exit 1
 
+bash "$(dirname "$0")/prepare_apple.sh"
 # App Store upload needs the paid membership. Stop here with a plain message if it is not ready.
 bash "$(dirname "$0")/require_apple.sh"
 

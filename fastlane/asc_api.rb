@@ -165,17 +165,39 @@ module SoleCountASC
     def ensure_bundle_id(identifier, name)
       existing = get_all("/v1/bundleIds", "filter[identifier]" => identifier, "limit" => 200)
                  .find { |b| b.dig("attributes", "identifier") == identifier }
-      if existing
-        say "Bundle ID #{identifier} already registered."
-        return existing
+      record = if existing
+                 say "Bundle ID #{identifier} already registered."
+                 existing
+               else
+                 created = post("/v1/bundleIds", data: {
+                   type: "bundleIds",
+                   attributes: { identifier: identifier, name: name, platform: "IOS" }
+                 })["data"]
+                 say "Registered bundle ID #{identifier}."
+                 created
+               end
+      ensure_iap_capability(record["id"])
+      record
+    end
+
+    # New iOS App IDs include In-App Purchase by default. This turns it on if Apple left it off.
+    def ensure_iap_capability(bundle_resource_id)
+      caps = get_all("/v1/bundleIds/#{bundle_resource_id}/bundleIdCapabilities")
+      if caps.any? { |c| c.dig("attributes", "capabilityType") == "IN_APP_PURCHASE" }
+        say "In-App Purchase capability is already on for this bundle ID."
+        return
       end
 
-      created = post("/v1/bundleIds", data: {
-        type: "bundleIds",
-        attributes: { identifier: identifier, name: name, platform: "IOS" }
-      })["data"]
-      say "Registered bundle ID #{identifier} (In-App Purchase is on by default)."
-      created
+      post("/v1/bundleIdCapabilities", data: {
+        type: "bundleIdCapabilities",
+        attributes: { capabilityType: "IN_APP_PURCHASE" },
+        relationships: { bundleId: { data: { type: "bundleIds", id: bundle_resource_id } } }
+      })
+      say "Turned on the In-App Purchase capability."
+    rescue Error => e
+      raise if [401, 403].include?(e.status)
+
+      say "Could not change the In-App Purchase capability (#{e.message}). New iOS App IDs include it by default, so setup continues."
     end
 
     # ---------------------------------------------------------------- app
@@ -434,6 +456,89 @@ module SoleCountASC
       say "IAP review screenshot uploaded."
     end
 
+    # ---------------------------------------------------------------- status
+
+    # Read-only report for `make status` and `make doctor`.
+    # Returns [exit_code, text]. 0 = app exists, 2 = key works but no app yet.
+    def status_report(bundle_id)
+      lines = []
+      app = find_app(bundle_id)
+      lines << "API key works."
+      bundle = get_all("/v1/bundleIds", "filter[identifier]" => bundle_id, "limit" => 5)
+               .find { |b| b.dig("attributes", "identifier") == bundle_id }
+      lines << if bundle
+                 "Bundle ID #{bundle_id}: registered."
+               else
+                 "Bundle ID #{bundle_id}: not registered yet."
+               end
+      if app.nil?
+        lines << "App record: not created yet."
+        lines << "IAP: not created"
+        lines << "TestFlight: no build yet."
+        return [2, lines.join("\n")]
+      end
+
+      lines << "App: #{app.dig('attributes', 'name')} (id #{app['id']})"
+      versions = app_store_versions(app["id"])
+      if versions.empty?
+        lines << "App Store version: none yet."
+      else
+        versions.first(3).each do |version|
+          number = version.dig("attributes", "versionString")
+          state = version.dig("attributes", "appStoreState").to_s.tr("_", " ")
+          lines << "Version #{number}: #{state}"
+        end
+      end
+
+      builds = recent_builds(app["id"])
+      if @build_error
+        lines << "TestFlight: could not list builds (#{@build_error})."
+      elsif builds.empty?
+        lines << "TestFlight: no build yet. The next upload will be build 1."
+      else
+        latest = builds.first
+        number = latest.dig("attributes", "version")
+        state = latest.dig("attributes", "processingState").to_s
+        label = {
+          "PROCESSING" => "processing",
+          "VALID" => "ready",
+          "FAILED" => "failed",
+          "INVALID" => "invalid"
+        }[state] || state
+        lines << "Latest TestFlight build: #{number} (#{label})."
+        lines << "Next upload will use build #{number.to_i + 1}."
+      end
+
+      iap = find_iap(app["id"], "com.krishnav.SoleCount.pro")
+      lines << if iap
+                 "IAP: #{iap.dig('attributes', 'state')}"
+               else
+                 "IAP: not created"
+               end
+      live = live_version(app["id"])
+      lines << if live
+                 "On the App Store: version #{live.dig('attributes', 'versionString')} is live."
+               else
+                 "On the App Store: not yet."
+               end
+      [0, lines.join("\n")]
+    end
+
+    def app_store_versions(app_id)
+      get("/v1/apps/#{app_id}/appStoreVersions",
+          "filter[platform]" => "IOS", "limit" => 5)["data"]
+    rescue Error => e
+      say "Could not list App Store versions (#{e.message})."
+      []
+    end
+
+    def recent_builds(app_id)
+      get("/v1/builds", "filter[app]" => app_id, "sort" => "-uploadedDate", "limit" => 3)["data"]
+    rescue Error => e
+      @build_error = e.message
+      []
+    end
+
     # ---------------------------------------------------------------- helpers
 
     EU_TERRITORIES = %w[AUT BEL BGR HRV CYP CZE DNK EST FIN FRA DEU GRC HUN IRL ITA LVA LTU LUX
@@ -497,23 +602,25 @@ end
 
 # ------------------------------------------------------------------ command line
 if $PROGRAM_NAME == __FILE__
-  bundle_id = ENV.fetch("APP_IDENTIFIER", "com.krishnav.SoleCount")
-  client = SoleCountASC::Client.from_env
-  case ARGV.first
-  when "status", nil
-    app = client.find_app(bundle_id)
-    if app.nil?
-      puts "No App Store Connect app found for #{bundle_id} yet."
+  begin
+    bundle_id = ENV.fetch("APP_IDENTIFIER", "com.krishnav.SoleCount")
+    client = SoleCountASC::Client.from_env
+    case ARGV.first
+    when "status", nil
+      code, text = client.status_report(bundle_id)
+      puts text
+      exit code
+    when "token"
+      puts client.token
     else
-      puts "App: #{app.dig('attributes', 'name')} (id #{app['id']})"
-      iap = client.find_iap(app["id"], "com.krishnav.SoleCount.pro")
-      puts "IAP: #{iap ? iap.dig('attributes', 'state') : 'not created'}"
-      puts "Live version: #{client.live_version(app['id']) ? 'yes' : 'not yet'}"
+      warn "Usage: ruby fastlane/asc_api.rb [status|token]"
+      exit 1
     end
-  when "token"
-    puts client.token
-  else
-    warn "Usage: ruby fastlane/asc_api.rb [status|token]"
+  rescue SoleCountASC::Error => e
+    warn e.message
+    exit 1
+  rescue OpenSSL::PKey::PKeyError
+    warn "The .p8 file could not be read as a private key."
     exit 1
   end
 end

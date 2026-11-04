@@ -1,6 +1,6 @@
 # SoleCount: Your 3-Day App Store Launch Guide
 
-> For the current Mac commands (`make setup-local`, `make test`, `make setup`, `make appstore-setup`, `make deploy`), follow [docs/MAC-STEP-BY-STEP.md](docs/MAC-STEP-BY-STEP.md) first. This file is the longer launch plan, including Apple's review wait.
+> For the current Mac commands (`make setup-local`, `make doctor`, `make release`), follow [docs/MAC-STEP-BY-STEP.md](docs/MAC-STEP-BY-STEP.md) first. This file is the longer launch plan, including Apple's review wait.
 
 *Written for a first-timer on a Mac. Every step is numbered. Do them in order.*
 
