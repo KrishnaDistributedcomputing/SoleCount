@@ -1,7 +1,6 @@
 import PhotosUI
 import SwiftData
 import SwiftUI
-import UIKit
 
 // The form for a new pair, or for editing one you already saved.
 struct AddSneakerView: View {
@@ -85,13 +84,6 @@ struct AddSneakerView: View {
                         .font(.body.weight(.semibold))
                         .disabled(!canSave)
                         .accessibilityIdentifier("saveSneakerButton")
-                }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Hide keyboard") {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }
-                        .accessibilityIdentifier("hideKeyboard")
                 }
             }
             .onChange(of: photoItem) { _, item in

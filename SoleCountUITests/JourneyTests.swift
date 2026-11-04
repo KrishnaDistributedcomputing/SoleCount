@@ -20,18 +20,19 @@ final class JourneyTests: XCTestCase {
 
         let name = app.textFields["Name (e.g. Air Max 90)"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
-        type("City Runners", into: name, in: app)
+        name.tap()
+        name.typeText("City Runners")
 
         let brand = app.textFields["Brand (e.g. Nike)"]
-        type("Ni", into: brand, in: app)
+        brand.tap()
+        brand.typeText("Ni")
         let nike = app.buttons["Nike"]
         XCTAssertTrue(nike.waitForExistence(timeout: 3), "The catalog should offer Nike")
         nike.tap()
-        hideKeyboard(in: app)
 
         let price = app.textFields["Price paid (e.g. 129.99)"]
-        type("80", into: price, in: app)
-        hideKeyboard(in: app)
+        price.tap()
+        price.typeText("80")
 
         var starting = app.descendants(matching: .any)["startingDistanceField"]
         var swipes = 0
@@ -41,8 +42,8 @@ final class JourneyTests: XCTestCase {
             swipes += 1
         }
         XCTAssertTrue(starting.waitForExistence(timeout: 2), "Starting distance should be on the add form")
-        type("12", into: starting, in: app)
-        hideKeyboard(in: app)
+        starting.tap()
+        starting.typeText("12")
 
         let save = app.buttons["saveSneakerButton"]
         XCTAssertTrue(save.waitForExistence(timeout: 3))
@@ -126,24 +127,5 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 10) || app.navigationBars["Today"].exists)
         app.tabBars.buttons["Collection"].tap()
         XCTAssertTrue(app.element(containing: "Daily Runners").waitForExistence(timeout: 8))
-    }
-
-    @MainActor
-    private func type(_ text: String, into field: XCUIElement, in app: XCUIApplication) {
-        if !field.isHittable {
-            app.swipeUp()
-        }
-        field.tap()
-        if !app.keyboards.firstMatch.waitForExistence(timeout: 2) {
-            field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        }
-        field.typeText(text)
-    }
-
-    private func hideKeyboard(in app: XCUIApplication) {
-        let button = app.buttons["hideKeyboard"]
-        if button.waitForExistence(timeout: 2), button.isHittable {
-            button.tap()
-        }
     }
 }
