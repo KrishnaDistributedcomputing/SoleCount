@@ -30,7 +30,7 @@ struct SneakerDetailView: View {
                 if let note = sneaker.shareNote {
                     Text(note)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                 }
                 if let limit = sneaker.wearLimit, limit > 0 {
                     wearGoal(limit)
@@ -45,12 +45,13 @@ struct SneakerDetailView: View {
                         LifeBar(fraction: fraction)
                         Text(DistanceFormat.string(meters: sneaker.totalMeters))
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(ShoeTheme.softText)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .warmCard()
                 }
+                SoleCheckSection(sneaker: sneaker)
                 if store.hasFullAccess, sneaker.replaceAtKilometers > 0 {
                     MileageGoalCard(
                         meters: sneaker.totalMeters,
@@ -141,7 +142,7 @@ struct SneakerDetailView: View {
                     .accessibilityHidden(true)
                 Text(subtitle)
                     .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                     .multilineTextAlignment(.center)
             }
             if sneaker.isRetired {
@@ -149,7 +150,8 @@ struct SneakerDetailView: View {
                     .font(.headline)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(Capsule().fill(.orange.gradient))
+                    .foregroundStyle(ShoeTheme.onCoral)
+                    .background(Capsule().fill(ShoeTheme.coral))
             }
         }
     }
@@ -166,8 +168,8 @@ struct SneakerDetailView: View {
     private var stats: some View {
         VStack(spacing: 12) {
             HStack(spacing: 12) {
-                ModernStatCard(icon: "figure.walk", value: "\(sneaker.wearCount)", label: "Wears", color: .blue)
-                ModernStatCard(icon: "dollarsign.circle", value: sneaker.costPerWear?.asCurrency ?? "–", label: "Per Wear", color: .green)
+                ModernStatCard(icon: "figure.walk", value: sneaker.wearCount.formatted(), label: "Wears", color: .blue)
+                ModernStatCard(icon: "dollarsign.circle", value: sneaker.costPerWear?.asCurrency ?? "–", label: "Per Wear", color: ShoeTheme.mintTint)
                 ModernStatCard(icon: "tag", value: sneaker.price.asCurrency, label: "Price", color: .purple)
             }
             HStack(spacing: 12) {
@@ -181,13 +183,13 @@ struct SneakerDetailView: View {
                     icon: "shoeprints.fill",
                     value: sneaker.healthUpdatedAt == nil && sneaker.cachedSteps == 0 ? "–" : DistanceFormat.steps(sneaker.cachedSteps),
                     label: "Steps",
-                    color: .orange
+                    color: ShoeTheme.flame
                 )
                 ModernStatCard(
                     icon: "divide",
                     value: sneaker.averageMetersPerWear.map { DistanceFormat.string(meters: $0) } ?? "–",
                     label: "Avg / wear",
-                    color: .teal
+                    color: ShoeTheme.goldTint
                 )
             }
         }
@@ -199,9 +201,9 @@ struct SneakerDetailView: View {
                 Text("Wear Goal")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
-                Text("\(sneaker.wearCount) / \(limit)")
+                Text("\(sneaker.wearCount.formatted()) / \(limit.formatted())")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                     .contentTransition(.numericText())
             }
             ProgressView(value: min(1, Double(sneaker.wearCount) / Double(limit)))

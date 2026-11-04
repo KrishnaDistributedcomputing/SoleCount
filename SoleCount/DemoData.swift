@@ -47,10 +47,41 @@ enum DemoData {
                 sneaker.startingWears = 4
             }
             context.insert(sneaker)
+            if index == 0 {
+                // Two sample sole photos so the Sole check timeline and compare have something to show.
+                for (daysAgo, km, worn) in [(120, 120.0, false), (25, 410.0, true)] {
+                    let photo = SolePhoto(photoData: solePhoto(worn: worn), takenAt: calendar.date(byAdding: .day, value: -daysAgo, to: now) ?? now, kilometers: km)
+                    context.insert(photo)
+                    sneaker.solePhotos.append(photo)
+                }
+            }
         }
         let wish = WishlistItem(brand: "Nike", modelName: "Air Max 90", targetPrice: 120, notes: "A pair to look at next")
         context.insert(wish)
         try? context.save()
+    }
+
+    /// A drawn sole with tread lines. The worn one has fainter tread.
+    private static func solePhoto(worn: Bool) -> Data? {
+        let size = CGSize(width: 480, height: 640)
+        let image = UIGraphicsImageRenderer(size: size).image { context in
+            UIColor(red: 0.93, green: 0.88, blue: 0.82, alpha: 1).setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            let sole = UIBezierPath(roundedRect: CGRect(x: 130, y: 50, width: 220, height: 540), cornerRadius: 110)
+            UIColor(red: 0.30, green: 0.27, blue: 0.26, alpha: 1).setFill()
+            sole.fill()
+            sole.addClip()
+            UIColor(white: 1, alpha: worn ? 0.14 : 0.40).setStroke()
+            for row in 0..<22 {
+                let y = CGFloat(70 + row * 24)
+                let line = UIBezierPath()
+                line.move(to: CGPoint(x: 130, y: y))
+                line.addLine(to: CGPoint(x: 350, y: y + 14))
+                line.lineWidth = worn && (8...15).contains(row) ? 2 : 7
+                line.stroke()
+            }
+        }
+        return image.jpegData(compressionQuality: 0.8)
     }
 
     /// A simple colored square with a shoe symbol, so screenshots have "photos".
