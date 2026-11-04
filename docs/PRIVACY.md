@@ -13,3 +13,4 @@ The Home Screen widget reads a small snapshot the app saved on the phone. It doe
 SoleCount is not a medical app. Goals, tips, and badges are encouragement, not health advice.
 
 Questions: krishnaazure1975@gmail.com
+
