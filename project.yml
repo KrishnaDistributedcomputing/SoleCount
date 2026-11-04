@@ -64,6 +64,7 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false   # skips the export-compliance question
         NSHealthShareUsageDescription: SoleCount reads your steps and walking distance to show how far you've walked in each pair of shoes.
+        NSHealthUpdateUsageDescription: SoleCount never writes to the Health app. It only reads your steps and walking distance to show how far you have walked in each pair of shoes.
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
