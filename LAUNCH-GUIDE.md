@@ -1,5 +1,7 @@
 # SoleCount: Your 3-Day App Store Launch Guide
 
+> For the current Mac commands (`make setup-local`, `make test`, `make setup`, `make appstore-setup`, `make deploy`), follow [docs/MAC-STEP-BY-STEP.md](docs/MAC-STEP-BY-STEP.md) first. This file is the longer launch plan, including Apple's review wait.
+
 *Written for a first-timer on a Mac. Every step is numbered. Do them in order.*
 
 **Your app:** SoleCount (sneaker wear tracker) · **Bundle ID:** `com.krishnav.SoleCount` · **Pro unlock:** `com.krishnav.SoleCount.pro` ($0.99, one-time) · **Code:** <https://github.com/KrishnaDistributedcomputing/SoleCount>

@@ -1,5 +1,7 @@
 # SoleCount: Automated Deployment
 
+> The ordered path for a new Mac, including what to do before the paid membership is active, is [docs/MAC-STEP-BY-STEP.md](docs/MAC-STEP-BY-STEP.md). This file explains the automation behind `make appstore-setup` and `make deploy`.
+
 After a short one-time setup, a single command (or one button on GitHub) does all of this:
 **generate the Xcode project → run the tests → take the screenshots → build and sign → upload to TestFlight → upload the App Store text and screenshots → submit for review → release automatically once approved.**
 

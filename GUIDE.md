@@ -1,5 +1,7 @@
 # SoleCount: Build It, Run It, Put It on GitHub
 
+> This is an older walkthrough. The current step-by-step path is [docs/MAC-STEP-BY-STEP.md](docs/MAC-STEP-BY-STEP.md). Use that one to set up the Mac and submit the app.
+
 **A beginner's step-by-step guide.** Follow the steps in order. Don't skip any. Each step tells you what to click or type and what you should see afterwards.
 
 **What you're building:** SoleCount, an iPhone app that counts how often you wear each pair of sneakers and shows your **cost per wear** (price ÷ number of wears).
