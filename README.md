@@ -1,84 +1,72 @@
 # SoleCount
 
-An iPhone app that counts how often you wear each pair of sneakers and shows your cost per wear.
+An iPhone app that counts how often you wear each pair of sneakers and shows the cost per wear (price divided by wears).
 
-- SwiftUI, SwiftData, Swift Charts, StoreKit 2 (iOS 18+)
-- All data stays on the device. No accounts, no tracking.
-- Free: 3 pairs. SoleCount Pro (one-time): unlimited pairs + wear history chart.
+- SwiftUI, SwiftData, Swift Charts, and StoreKit 2. iOS 18 or newer.
+- All data stays on the phone. No account, no tracking, no ads.
+- Free: 3 pairs. SoleCount Pro is a one-time $0.99 unlock: unlimited pairs and the wear chart.
 
 Privacy policy: [PRIVACY.md](PRIVACY.md)
 
-## 🚀 Quick Start on Mac
+## Quick start
 
-### Never used a Mac? Start here
+You are new to the Mac, and Apple may still be processing the paid Developer membership (up to 48 hours). The full path, with a **Why:** line on every step, is **[docs/MAC-STEP-BY-STEP.md](docs/MAC-STEP-BY-STEP.md)**.
 
-Do all of this on the Mac, so you copy and paste on the same computer.
+Do this on the Mac. Copy each grey box, click Terminal, press Cmd + V, then press Return.
 
-1. **Open this page in Safari.** Click the compass icon in the row of icons at the bottom of the screen (the Dock). That's Safari. Click the address bar at the top, type `github.com/KrishnaDistributedcomputing/SoleCount` and press Return. Scroll down to the steps.  
-   **Why:** You copy commands from this page, and copying and pasting is easiest on the same computer, because the Mac can't paste text that was copied on your Windows PC.
+**A. Get ready**
 
-2. **Open Terminal.** Hold the Cmd key (⌘, next to the space bar) and press the space bar. In the search box that appears, type `Terminal` and press Return. A window with a blinking cursor opens; that's where commands go.  
-   **Why:** Terminal lets you type instructions directly to the Mac, and the setup tools (Xcode, fastlane) are run from it.
-
-3. **Copy a command.** Hover over a grey command box and click the copy icon (two squares) in its top-right corner. Or drag your mouse across the command to highlight it and press Cmd + C.  
-   **Why:** Copying avoids typos, since one wrong character can make a command fail.
-
-4. **Paste and run it.** Click inside the Terminal window, press Cmd + V, then press Return.  
-   **Why:** Pasting puts the command in Terminal, but nothing happens until you press Return, which tells the Mac to run it.
-
-5. **Wait, then do the next one.** When the blinking cursor comes back on a new line, the command is finished. If it asks for your Mac password, type it and press Return. Nothing shows on screen while you type, and that's normal.  
-   **Why:** Each command builds on the one before, so running the next one too early can break things. The password check is macOS confirming you allow installing tools, and the characters are hidden for security.
-
-**Tips:** Press Cmd + Tab to switch between Safari and Terminal. If something goes wrong, take a photo of the screen and ask for help, or use the Claude Code prompt section.
-
----
-
-**New to Mac?** **[→ 5-step beginner guide](docs/MAC-STEP-BY-STEP.md)** with copy-paste commands.
-
-**Requirements:** macOS with Xcode 26+.
+Already have an old SoleCount folder? [Delete SoleCount and start fresh](docs/MAC-STEP-BY-STEP.md#delete-solecount), then clone again.
 
 ```bash
 cd ~/Desktop && git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git && cd SoleCount
 ```
-**Why:** Gets a copy of the app's code onto your Mac.
+
+**B. Do this now. No Apple membership needed**
 
 ```bash
-make setup
+make setup-local
 ```
-**Why:** Installs the tools Apple's build needs and saves your App Store keys safely. ([What this does step-by-step](docs/MAC-STEP-BY-STEP.md#step-2-run-setup-and-answer-the-questions))
-
-```bash
-make appstore-setup
-```
-**Why:** Creates the app's listing and the $0.99 upgrade in Apple's system.
 
 ```bash
 make test
 ```
-**Why:** Catches bugs before Apple's reviewers do, which helps avoid rejection.
 
 ```bash
-make deploy
+make open
 ```
-**Why:** Builds the app and sends it to Apple for review.
 
-### Available commands
+Then press Cmd + R in Xcode to run SoleCount in the simulator.
 
-- `make setup` — One-time Mac setup (Homebrew, XcodeGen, fastlane, API keys, generate project)
-- `make test` — Run all tests
-- `make deploy` — Full deployment (tests → TestFlight → App Review)
-- `make open` — Regenerate the Xcode project and open it
-- `make clean` — Remove build artifacts
-- `make help` — Show all available commands
+**C. After Apple's welcome email**
 
-**Deploy options:**
-- `bash scripts/deploy.sh --beta-only` — Upload to TestFlight only (skip App Review)
-- `bash scripts/deploy.sh --setup` — Run `fastlane setup` first, then deploy
+Accept the Paid Apps agreement, create an Admin API key, and leave the `.p8` file in Downloads. The few steps Apple still requires by hand are listed in the guide: [what stays manual](docs/MAC-STEP-BY-STEP.md#manual-steps).
 
----
+```bash
+make doctor
+```
 
-## Detailed guides
-- [AUTOMATION.md](AUTOMATION.md) — Full fastlane and GitHub Actions setup
-- [LAUNCH-GUIDE.md](LAUNCH-GUIDE.md) — First-time App Store submission walkthrough
+```bash
+make release
+```
 
-**Note:** The Xcode project (`SoleCount.xcodeproj`) is generated from `project.yml` by XcodeGen and is not committed to Git. Always edit `project.yml`, not the `.xcodeproj` directly.
+`make release` is safe to run again. It skips records that already exist, uploads a new build, and submits for review. If it asks you to create the app, use the [New App form](docs/MAC-STEP-BY-STEP.md#new-app-form). The first $0.99 purchase still needs one click on the website: [SoleCount Pro](docs/MAC-STEP-BY-STEP.md#pro-purchase). Check progress with `make status`.
+
+**D. Later updates**
+
+Merge the branch on GitHub, then on the Mac:
+
+```bash
+git checkout main && git pull
+```
+
+How: [Get the latest updates](docs/MAC-STEP-BY-STEP.md#get-updates).
+
+## Other guides
+
+Use these for extra detail. The step-by-step page above is the one to follow first.
+
+- [docs/MAC-STEP-BY-STEP.md](docs/MAC-STEP-BY-STEP.md) is the ordered setup.
+- [AUTOMATION.md](AUTOMATION.md) explains fastlane and GitHub Actions.
+- [LAUNCH-GUIDE.md](LAUNCH-GUIDE.md) is the longer launch plan.
+- [GUIDE.md](GUIDE.md) is an older build walkthrough.

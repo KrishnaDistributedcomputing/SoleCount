@@ -1,5 +1,7 @@
 # SoleCount: Automated Deployment
 
+> The ordered path for a new Mac is [docs/MAC-STEP-BY-STEP.md](docs/MAC-STEP-BY-STEP.md). After Apple's welcome email, run `make doctor`, then `make release`. This file explains the automation behind those commands.
+
 After a short one-time setup, a single command (or one button on GitHub) does all of this:
 **generate the Xcode project → run the tests → take the screenshots → build and sign → upload to TestFlight → upload the App Store text and screenshots → submit for review → release automatically once approved.**
 
@@ -98,21 +100,27 @@ Then, on github.com, go to your **SoleCount repo → Settings → Secrets and va
 | `ASC_KEY_ID` | Key ID (10 characters) |
 | `ASC_ISSUER_ID` | Issuer ID |
 | `ASC_KEY_P8` | Paste (the base64 text you just copied) |
-| `TEAM_ID` | Team ID (optional if it's already in `Config/Team.xcconfig`) |
+| `TEAM_ID` | Team ID. Required for GitHub, because `Config/Team.xcconfig` in the repo is blank. |
+| `REVIEW_PHONE` | App Review phone, with country code. Do not commit this. |
+| `REVIEW_EMAIL` | App Review email. Do not commit this. |
 
-Also commit the files `setup_mac.sh` changed: `Config/Team.xcconfig` and `fastlane/metadata/review_information/*`. They're not secret.
+`make release` saves the phone and email in `fastlane/.env` on your Mac (that file is git-ignored). The GitHub button reads the secrets above, so you do not have to commit them. The repo is public.
 
 # Deploying (every release)
 
-**On your Mac, one command:**
+**On your Mac, two commands:**
 ```bash
-bash scripts/deploy.sh
+make doctor
+make release
 ```
-It runs the tests, then uploads to TestFlight, then submits to App Review with **automatic release**. To stop after TestFlight, use `bash scripts/deploy.sh --beta-only`.
+`make doctor` is the checklist. `make release` is safe to run again: it skips the bundle ID, the app, and the purchase if they already exist, then runs the tests, uploads a **new** TestFlight build (Apple requires a new build number), uploads the store text and screenshots, and submits for review. `make deploy` is the same command. `make status` shows the TestFlight build and the review state.
 
-**Or on GitHub (no Mac needed):**
+To stop after TestFlight: `bash scripts/deploy.sh --beta-only`.
+
+**Or on GitHub, after the first Mac release has created the app:**
+- **Actions → Release → Run workflow.** This runs `fastlane ios ship`. GitHub cannot type your 2FA code, so the first app record still has to be created on the Mac (or on the website).
 - **Push a tag** to run tests, TestFlight, and App Review: `git tag v1.0.0` then `git push origin v1.0.0`.
-- **Or use the button**: go to **GitHub → Actions → iOS → Run workflow**. Tick **release** to also submit.
+- **Actions → iOS → Run workflow** does the same upload. Tick **release** to also submit.
 - Every push to `main` only runs the tests.
 
 **The very first release only:** Apple requires the **first** In‑App Purchase to be added to a review on the website. `release` uploads everything and then shows you this last click:

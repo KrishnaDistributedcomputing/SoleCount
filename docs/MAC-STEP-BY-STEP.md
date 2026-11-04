@@ -1,358 +1,496 @@
-# SoleCount — Mac Setup Guide
+# SoleCount on a Mac, step by step
 
-Complete setup from zero to App Store in **5 steps**. For someone brand new to Mac.
+One path, in order. You are new to the Mac. Apple is still processing the paid Developer membership (up to 48 hours). You can build and run SoleCount today. You upload it after Apple's welcome email.
 
-**Time needed:** 30-45 minutes first time.
+Do every command on the Mac. Copy a grey box by hovering and clicking the copy icon (two squares), or select the text and press Cmd + C. Click inside Terminal, press Cmd + V, then press Return.
 
----
+<a id="contents"></a>
 
-## Never used a Mac? Start here
+## 0. Contents
 
-Do all of this on the Mac, so you copy and paste on the same computer.
+- [ ] [1. Mac basics](#mac-basics)
+- [ ] [2. Get the code](#get-the-code)
+- [ ] [Delete SoleCount and start fresh](#delete-solecount)
+- [ ] [3. Set up with no Apple membership](#setup-local)
+- [ ] [4. Run the tests](#make-test)
+- [ ] [5. Run the app](#run-the-app)
+- [ ] [6. The steps that stay manual](#manual-steps)
+- [ ] [7. make doctor, then make release](#make-release)
+- [ ] [8. Get later updates](#get-updates)
+- [ ] [9. Troubleshooting](#troubleshooting)
+- [ ] [10. Ask Claude Code](#claude-code)
+- [ ] [11. Command cheat sheet](#cheat-sheet)
 
-1. **Open this page in Safari.** Click the compass icon in the row of icons at the bottom of the screen (the Dock). That's Safari. Click the address bar at the top, type `github.com/KrishnaDistributedcomputing/SoleCount` and press Return. Scroll down to the steps.  
-   **Why:** You copy commands from this page, and copying and pasting is easiest on the same computer, because the Mac can't paste text that was copied on your Windows PC.
+<a id="part-a"></a>
 
-2. **Open Terminal.** Hold the Cmd key (⌘, next to the space bar) and press the space bar. In the search box that appears, type `Terminal` and press Return. A window with a blinking cursor opens; that's where commands go.  
-   **Why:** Terminal lets you type instructions directly to the Mac, and the setup tools (Xcode, fastlane) are run from it.
+## Part A: Get ready (one time)
 
-3. **Copy a command.** Hover over a grey command box and click the copy icon (two squares) in its top-right corner. Or drag your mouse across the command to highlight it and press Cmd + C.  
-   **Why:** Copying avoids typos, since one wrong character can make a command fail.
+<a id="mac-basics"></a>
 
-4. **Paste and run it.** Click inside the Terminal window, press Cmd + V, then press Return.  
-   **Why:** Pasting puts the command in Terminal, but nothing happens until you press Return, which tells the Mac to run it.
+### 1. Mac basics
 
-5. **Wait, then do the next one.** When the blinking cursor comes back on a new line, the command is finished. If it asks for your Mac password, type it and press Return. Nothing shows on screen while you type, and that's normal.  
-   **Why:** Each command builds on the one before, so running the next one too early can break things. The password check is macOS confirming you allow installing tools, and the characters are hidden for security.
+**1. Open this page in Safari.** Click the compass icon in the Dock (the row of icons at the bottom of the screen). Click the address bar, type `github.com/KrishnaDistributedcomputing/SoleCount`, and press Return.
 
-**Tips:** Press Cmd + Tab to switch between Safari and Terminal. If something goes wrong, take a photo of the screen and ask for help, or use the Claude Code prompt section.
+**Why:** You copy commands from this page. A Mac cannot paste text that was copied on a Windows PC.
 
----
+**2. Open Terminal.** Hold the Cmd key (⌘, next to the space bar) and press the space bar. Type `Terminal` and press Return. A window with a blinking cursor opens.
 
-## How to copy and paste commands
+**Why:** Terminal is where you type instructions. SoleCount's setup tools run there.
 
-Throughout this guide:
-1. **Copy:** Hover over any code block and click the copy icon (two squares) in the top-right corner. Or select the text and press `Cmd + C`.
-2. **Paste:** Click inside Terminal, press `Cmd + V`, then press `Return` to run it.
+**3. Copy a command.** Hover over a grey box and click the copy icon, or drag across the text and press Cmd + C.
 
----
+**Why:** One wrong character can make a command fail.
 
-## Step 1: Open Terminal and get the code
+**4. Paste and run it.** Click inside Terminal, press Cmd + V, then press Return.
 
-Press `Cmd + Space`, type `Terminal`, press `Return`. Then copy and run this (all three commands at once):
+**Why:** Pasting only puts the text in. Return tells the Mac to run it.
+
+**5. Wait.** When the blinking cursor comes back on a new line, the command is finished. If the Mac asks for your password, type it and press Return. Nothing appears while you type. That is normal.
+
+**Why:** Each command builds on the one before it. The password check is macOS asking permission to install tools. The characters stay hidden for security.
+
+Press Cmd + Tab to switch between Safari and Terminal. In Finder, press Cmd + Shift + . to show folders whose names start with a dot. Press it again to hide them.
+
+<a id="get-the-code"></a>
+
+### 2. Get the code
+
+Already have an old SoleCount folder and want it gone? Do [Delete SoleCount and start fresh](#delete-solecount) first. Then come back here.
+
+If you do not have a SoleCount folder yet:
 
 ```bash
 cd ~/Desktop && git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git && cd SoleCount
 ```
 
-**Why:** Gets a copy of the app's code onto your Mac.
+**Why:** This downloads SoleCount onto the Desktop and moves into that folder. Later commands only work inside it.
 
-<details>
-<summary>What you should see</summary>
+The first time you use `git`, a window may say **Install command line developer tools**. Click **Install**, wait, then run the command again.
 
-```
-Cloning into 'SoleCount'...
-Receiving objects: 100% ...
-```
+**Why:** Those tools include `git`. The Mac does not include them until you install them.
 
-Your prompt now shows `SoleCount`.
-</details>
-
-<details>
-<summary>If it fails</summary>
-
-**Popup says "Install command line developer tools"**: Click Install, wait 5-10 minutes, then run the command again.
-</details>
-
----
-
-## Step 2: Run setup and answer the questions
+If the folder is already there, update it instead of cloning again:
 
 ```bash
-make setup
+cd ~/Desktop/SoleCount && git pull
 ```
 
-**Why:** Installs the tools Apple's build needs and saves your App Store keys safely.
+**Why:** `git pull` downloads the newest saved copy of the branch you are on.
 
-### What make setup does, and why SoleCount needs it
-
-`make setup` only runs `scripts/setup_mac.sh`. These are the steps that script actually does, in order. It is safe to run again: if a tool or answer is already there, it keeps it.
-
-1. **Checks Xcode 26**
-   - What it does: Looks for Xcode, Apple's app-building program, and checks that it is version 26 or newer.
-   - Why SoleCount needs it: Apple only accepts App Store uploads built with Xcode 26. Without it, SoleCount cannot be sent to Apple.
-
-2. **Installs Homebrew if it is missing**
-   - What it does: Installs Homebrew, a helper that installs other developer tools. On a new Apple-chip Mac it also tells Terminal where Homebrew lives. It may ask for your Mac password.
-   - Why SoleCount needs it: The next step uses Homebrew to install XcodeGen and fastlane.
-
-3. **Installs XcodeGen**
-   - What it does: Installs XcodeGen, the tool that builds an Xcode project from a settings file.
-   - Why SoleCount needs it: SoleCount's project file (`SoleCount.xcodeproj`) is not stored on GitHub. XcodeGen makes it on your Mac from `project.yml`.
-
-4. **Installs fastlane**
-   - What it does: Installs fastlane with Homebrew. Fastlane is written in the Ruby language. This script does not install Ruby packages with bundler, and it does not run `bundle install`. (The project has a `Gemfile` that lists fastlane, but `make setup` uses the Homebrew copy.)
-   - Why SoleCount needs it: `make appstore-setup` and `make deploy` use fastlane to set up the $0.99 Pro upgrade, take screenshots, upload to TestFlight, and send the app to App Review.
-
-5. **Creates a private settings file**
-   - What it does: Copies `fastlane/.env.example` to `fastlane/.env` if that file is not there yet, and locks it so only your Mac user can read it.
-   - Why SoleCount needs it: Your Team ID and API details are saved in that file. It is ignored by Git, so it is never uploaded to the public GitHub repo.
-
-6. **Asks for your Team ID**
-   - What it does: Asks for the 10-character Team ID and saves it in `fastlane/.env`. Find it at [developer.apple.com/account](https://developer.apple.com/account) → Membership details.
-   - Why SoleCount needs it: It tells Xcode which Apple Developer account is allowed to build SoleCount.
-
-7. **Asks for your API Key ID**
-   - What it does: Asks for the 10-character Key ID and saves it. Find it at [App Store Connect → Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api). Click **+** to make a key if you do not have one.
-   - Why SoleCount needs it: Together with the next two items, it lets SoleCount's tools sign in to your Apple account without your Apple ID password.
-
-8. **Asks for your Issuer ID**
-   - What it does: Asks for the long Issuer ID shown above the keys table on that same API page, and saves it.
-   - Why SoleCount needs it: Apple uses it with the Key ID and the `.p8` file to confirm the login is yours.
-
-9. **Stores the .p8 key outside the project**
-   - What it does: Takes the downloaded `AuthKey_XXXXXXXXXX.p8` file (from Downloads, or you drag it into Terminal) and saves it at `~/.appstoreconnect/private_keys/`, which is in your home folder, not inside SoleCount.
-   - Why SoleCount needs it: That file is the private half of the API login. Keeping it outside the project means it never goes to the public GitHub.
-
-10. **Asks for your Apple ID email (you can skip this)**
-    - What it does: Asks for the email on your Apple ID. Press Return to skip.
-    - Why SoleCount needs it: If you fill it in, fastlane can create the App Store listing and the privacy answers for you. If you skip it, you do that once on the Apple website instead.
-
-11. **Writes the Team ID into the Xcode settings**
-    - What it does: Puts the Team ID into `Config/Team.xcconfig`.
-    - Why SoleCount needs it: When Xcode builds SoleCount, it reads that file to know which developer team to use.
-
-12. **Asks for an App Review phone number and email**
-    - What it does: If those two files still contain the placeholder `REPLACE_ME`, it asks for a phone number (with country code) and an email, then saves them.
-    - Why SoleCount needs it: Apple requires a person they can contact while they review SoleCount.
-
-13. **Builds the Xcode project**
-    - What it does: Runs XcodeGen to create `SoleCount.xcodeproj` from `project.yml`.
-    - Why SoleCount needs it: Xcode opens a project file, and that file is created on your Mac rather than downloaded from GitHub.
-
-14. **Downloads the iPhone Simulator if it is missing**
-    - What it does: Checks for an iPhone simulator. If none is installed, it downloads the iOS simulator. A simulator is a pretend iPhone that runs on your Mac.
-    - Why SoleCount needs it: `make test` and the App Store screenshots run SoleCount in that simulator.
-
-15. **Opens SoleCount in Xcode**
-    - What it does: Opens `SoleCount.xcodeproj`.
-    - Why SoleCount needs it: You can then run the app in the simulator or on your real iPhone.
-
----
-
-The script then asks for:
-
-- **Team ID** (10 chars): [developer.apple.com/account](https://developer.apple.com/account) → Membership details
-- **API Key ID** (10 chars): [App Store Connect → API](https://appstoreconnect.apple.com/access/integrations/api) → Generate key, copy Key ID
-- **Issuer ID** (a long code): Same page, above the keys table
-- **.p8 file**: Drag `AuthKey_*.p8` from Downloads into Terminal when prompted
-- **Phone & email**: For App Review contact
-
-**Note:** When typing your Mac password, you won't see any characters. That's normal—just type it and press Return.
-
-<details>
-<summary>What you should see</summary>
-
-```
-==> Checking Xcode
-✔ Xcode is ready
-==> Checking Homebrew
-✔ Homebrew 4.x
-...
-==> Done!
-```
-
-Xcode opens with the project.
-</details>
-
-<details>
-<summary>If it fails</summary>
-
-**"Xcode is not ready"**: Install Xcode 26+ from App Store, open it once, run `make setup` again.
-</details>
-
----
-
-## Step 3: Create the app in App Store Connect
+This guide may still be on the branch `cursor/setup-without-apple-043d` and not yet on `main`. If `git pull` on `main` does not show these steps, switch to that branch:
 
 ```bash
-make appstore-setup
+git checkout cursor/setup-without-apple-043d && git pull
 ```
 
-**Why:** Creates the app's listing and the $0.99 upgrade in Apple's system.
+**Why:** `git checkout` switches which copy of the project this folder is using. After the branch is merged into `main`, go back with `git checkout main && git pull`.
 
-<details>
-<summary>What you should see</summary>
+<a id="delete-solecount"></a>
 
-```
-App record: SoleCount: Sneaker Tracker (Apple ID 1234567890)
-✅ Setup done.
-```
-</details>
+### Delete SoleCount and start fresh
 
-<details>
-<summary>If it fails</summary>
+Use this when a SoleCount folder is already on the Mac and you want to throw it away. This deletes the copy on this Mac only. It does not delete the code on GitHub, and it does not delete the app in App Store Connect.
 
-**"App record doesn't exist yet"**: Go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com), click Apps → + → New App, use bundle ID `com.krishnav.SoleCount`, then run the command again.
-</details>
-
----
-
-## Step 4: Test the app
+**1. Check whether the folder exists.**
 
 ```bash
-make test
+ls -d ~/Desktop/SoleCount
 ```
 
-**Why:** Catches bugs before Apple's reviewers do, which helps avoid rejection.
+**Why:** This asks the Mac if that one folder is there. You want to see which of these two answers you get before you delete anything.
 
-The simulator opens, tests run (8-10 minutes).
+- The path, such as `/Users/you/Desktop/SoleCount`, means the folder is there.
+- `No such file or directory` means there is no SoleCount folder on the Desktop. Skip the delete and use the clone command in step 2.
 
-<details>
-<summary>What you should see</summary>
-
-```
-Executed 12 tests, with 0 failures
-✅ Tests passed!
-```
-</details>
-
----
-
-## Step 5: Deploy to TestFlight and App Store
-
-⚠️ This submits your app to the real App Store.
+The project might be somewhere else. Search your home folder:
 
 ```bash
-make deploy
+mdfind -name SoleCount -onlyin ~ | head
 ```
 
-**Why:** Builds the app and sends it to Apple for review.
+**Why:** This lists up to 10 files and folders named SoleCount under your home folder. You can also press Cmd + Space, type `SoleCount`, and look at the Spotlight results. Only delete a folder you recognize as the project.
 
-Takes 10-15 minutes. Runs tests → uploads to TestFlight → submits for review.
-
-<details>
-<summary>What you should see</summary>
-
-```
-==> 1/3 Tests
-✅ Tests passed!
-==> 2/3 TestFlight upload
-✅ Build 1 is on TestFlight.
-==> 3/3 App Review
-✅ Submitted SoleCount 1.0 (1) for review.
-```
-</details>
-
-<details>
-<summary>If it fails</summary>
-
-**"No valid code signing identity"**: Open the project in Xcode, click the project name, go to Signing & Capabilities, check "Automatically manage signing".
-</details>
-
----
-
-## Get updates later
+**2. Save your answers first, if you want them.**
 
 ```bash
-git pull && make open
+cp ~/Desktop/SoleCount/fastlane/.env ~/solecount-env-backup
 ```
 
----
+**Why:** `fastlane/.env` holds the Team ID, Key ID, Issuer ID, and Apple ID you already typed. This copies that file to your home folder so you can put it back later. If the command says the file does not exist, there was nothing to save. This does not copy the `.p8` key. That key lives outside the project folder.
 
-## Other commands
+**3. Close Xcode.** Click Xcode, then press Cmd + Q.
+
+**Why:** Xcode keeps the project open. A delete can fail, or leave a half-deleted folder, while Xcode is still using it.
+
+**4. Delete the folder.**
 
 ```bash
-make help           # See all commands
-make open           # Regenerate and open Xcode project
-make clean          # Remove build artifacts
+cd ~
 ```
 
----
+**Why:** `cd ~` moves you to your home folder. You cannot delete a folder you are currently inside.
 
-## If something goes wrong
-
-Copy the error from Terminal (select it with your mouse, press `Cmd + C`), then use this prompt with Claude Code:
-
-```
-I'm setting up SoleCount on Mac (beginner). I ran:
-
-[paste the command here]
-
-Error:
-
-[paste the error here]
-
-What's wrong and how do I fix it?
+```bash
+rm -rf ~/Desktop/SoleCount
 ```
 
-Open Claude Code: type `claude` in Terminal (inside the SoleCount folder), or paste the prompt at [claude.ai](https://claude.ai).
+**Why:** This deletes `~/Desktop/SoleCount` permanently. It does not go to the Trash, and there is no undo. Read the path before you press Return. It must be `~/Desktop/SoleCount` and nothing else. The `.p8` key is outside this folder, so this command does not delete it.
 
----
+Or use Finder: open the Desktop, drag the SoleCount folder to the Trash, click the Trash, and choose **Empty Trash**.
 
-## Complete command list
+Check that it is gone:
+
+```bash
+ls -d ~/Desktop/SoleCount
+```
+
+**Why:** `No such file or directory` means the folder is gone. If you still see the path, the delete did not happen.
+
+**5. Optional deeper clean.** Skip any line you do not need.
+
+Xcode build cache for SoleCount only:
+
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData/SoleCount-*
+```
+
+**Why:** Xcode keeps old build files. This removes SoleCount's cache so the next build starts clean. Other apps' build files stay.
+
+The copy inside the iPhone Simulator: open Simulator, long-press the SoleCount icon, and choose **Remove App**. Or, with a simulator already open:
+
+```bash
+xcrun simctl uninstall booted com.krishnav.SoleCount
+```
+
+**Why:** This removes the app from the simulator that is running. Sneaker data in that simulator copy is deleted with the app.
+
+The copy on your iPhone: long-press the SoleCount icon, tap **Remove App**, then **Delete App**.
+
+**Why:** This removes the installed app from your phone. It does not remove an App Store listing.
+
+Only if you also want to delete the App Store key files:
+
+```bash
+rm -f ~/.appstoreconnect/private_keys/AuthKey_*.p8
+```
+
+**Why:** These files are how SoleCount signs in to Apple. Apple lets you download each `.p8` file only once. If you delete it and you have no other copy, you must revoke that key on the App Store Connect website and create a new one. Leave the file alone unless you are sure.
+
+Homebrew, XcodeGen, and fastlane can stay. The next setup reuses them.
+
+**6. Start fresh.**
 
 ```bash
 cd ~/Desktop && git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git && cd SoleCount
-make setup
-make appstore-setup
-make test
-make deploy
 ```
 
-Done! 🎉
+**Why:** This downloads a clean SoleCount onto the Desktop and moves into that folder.
 
-For more details: [AUTOMATION.md](../AUTOMATION.md) • [LAUNCH-GUIDE.md](../LAUNCH-GUIDE.md)
+While Apple is still processing the membership:
 
----
+```bash
+make setup-local
+```
 
-## Other helpful commands
+**Why:** This installs any missing tools, creates the Xcode project, and opens Xcode. It skips the Apple questions.
 
-### Open the Xcode project
+If Apple has already emailed you and you want to answer the Apple questions:
 
-If you closed Xcode and want to open it again:
+```bash
+make setup
+```
+
+**Why:** This does the same tool setup. If the Team ID and keys are still missing, it continues as the local setup.
+
+If you saved `fastlane/.env` in the save step above, put it back:
+
+```bash
+cp ~/solecount-env-backup ~/Desktop/SoleCount/fastlane/.env
+```
+
+**Why:** This restores the answers you saved. The file stays on this Mac. Git does not upload it.
+
+**7. GitHub and App Store Connect stay as they are.**
+
+**Why:** Deleting the folder on your Mac does not delete the GitHub repository, and it does not delete the app record in App Store Connect. Removing that record is a separate step on the website. Apple keeps the app name reserved after a record is removed, so you usually do not need to remove it.
+
+<a id="part-b"></a>
+
+## Part B: Do now, no Apple membership needed
+
+You do not have a Team ID, Key ID, Issuer ID, or `.p8` file yet. You do not need them for this part.
+
+<a id="setup-local"></a>
+
+### 3. Set up the Mac
+
+```bash
+make setup-local
+```
+
+**Why:** This installs the tools, creates the Xcode project, downloads the iPhone Simulator if it is missing, and opens Xcode. It skips every Apple question.
+
+`make setup-local` only runs `scripts/setup_mac.sh --no-apple`. These are the steps, in order:
+
+1. **Checks Xcode 26.** Xcode is Apple's app-building program. Apple only accepts uploads built with Xcode 26, so SoleCount cannot be sent to the App Store with an older Xcode. Skip: no.
+2. **Installs Homebrew if it is missing.** Homebrew installs other developer tools. On a new Apple-chip Mac it also tells Terminal where Homebrew lives. It may ask for your Mac password. Skip: no.
+3. **Installs XcodeGen.** XcodeGen builds `SoleCount.xcodeproj` from `project.yml`. That project file is not stored on GitHub, so it has to be made on your Mac. Skip: no.
+4. **Installs fastlane with Homebrew.** Fastlane is a Ruby tool. This script does not run `bundle install`. Later, `make appstore-setup` and `make deploy` use fastlane. Skip: no.
+5. **Creates `fastlane/.env`.** This is a private settings file. Git ignores it, so it is never uploaded to the public GitHub. A blank file is fine today. Skip: no.
+6. **Skips the Apple questions when nothing is saved yet.** Team ID, API Key ID, Issuer ID, the `.p8` file, Apple ID email, and the App Review phone and email. `make setup` does this by itself if those answers are missing. After Apple's email, `make release` finds a `.p8` file in Downloads and asks only for what is still blank. Skip: yes, until Apple's email.
+7. **Leaves the Team ID blank** in `Config/Team.xcconfig`. The simulator does not need a Team ID. Skip: yes.
+8. **Builds `SoleCount.xcodeproj`.** Xcode opens that file. Skip: no.
+9. **Downloads the iPhone Simulator if none is installed, then opens Xcode.** A simulator is a pretend iPhone on your Mac. `make test` and Cmd + R use it. Skip: no.
+
+When it finishes, it lists the skipped Apple items and tells you to run `make test`, then press Cmd + R.
+
+<a id="make-test"></a>
+
+### 4. Run the tests
+
+```bash
+make test
+```
+
+**Why:** This runs SoleCount's tests in the iPhone Simulator. No Team ID is required. It catches bugs before Apple's reviewers do.
+
+The command prints `Running tests in the iPhone Simulator. No Apple Team ID is needed.` Then fastlane runs the unit tests and the UI tests. The screenshot test is skipped. The usual simulator name is `iPhone 17 Pro Max`. It can take about 10 minutes. A passing run ends with the tests passed.
+
+<a id="run-the-app"></a>
+
+### 5. Run the app
 
 ```bash
 make open
 ```
 
-### Clean build artifacts
+**Why:** This rebuilds the Xcode project from `project.yml` and opens it.
 
-If you want to start fresh (removes build cache and generated project):
+In Xcode, press Cmd + R.
+
+**Why:** Cmd + R builds SoleCount and shows it in the simulator. The $0.99 purchase can be tried there because the project includes `SoleCount.storekit`, a local pretend store. That is not the real App Store.
+
+Optional: install it on your own iPhone with a free Apple ID.
+
+1. In Xcode, open Settings, then Accounts, and add your Apple ID.
+2. Click the SoleCount project, open Signing & Capabilities, and choose your Personal Team.
+
+**Why:** A free Apple ID can put SoleCount on your own phone. That install expires after 7 days. It cannot use the In-App Purchase sandbox, and it cannot upload to TestFlight.
+
+<a id="part-c"></a>
+
+## Part C: After Apple's welcome email
+
+Do the short list below once. Then two commands do the rest.
+
+<a id="manual-steps"></a>
+<a id="team-id"></a>
+<a id="find-the-p8-file"></a>
+
+### 6. The steps Apple still makes you do by hand
+
+These stay manual because Apple does not let a script do them:
+
+1. Wait for the "Welcome to the Apple Developer Program" email. You already paid.
+2. In App Store Connect, open **Business** and accept the **Paid Apps** agreement. Add your bank and tax forms. The $0.99 purchase cannot be sold until this is done.
+3. Create an **Admin** API key and download the `.p8` file **once**. Leave that file in **Downloads**. Do not move it into the SoleCount folder. The Key ID is the middle of the file name `AuthKey_<Key ID>.p8`. The Issuer ID is the long code above the keys table.
+4. Have your 10-character Team ID ready. It is on [developer.apple.com/account](https://developer.apple.com/account), under **Membership details**. `make release` asks for the Team ID and the Issuer ID once.
+5. Optional: your Apple ID email. If you type it when asked, fastlane creates the app record and sends the privacy answers after one 2FA code. If you press Return, you use the website instead. The form is in the section below.
+6. The first time only, after the command finishes: on the website, add **SoleCount Pro** to version **1.0** and submit. Apple blocks a script from attaching the first purchase to a review.
+7. Wait for review. It usually takes about 1 to 2 days. It can take longer.
+
+**Why:** Everything else (bundle ID, price, age rating, the $0.99 purchase, screenshots, TestFlight, the store text) is already in this package. `make release` runs it and skips steps that are already done.
+
+How to download the key, if you have not done it before:
+
+1. Open [appstoreconnect.apple.com](https://appstoreconnect.apple.com), then **Users and Access**, **Integrations**, **App Store Connect API**, **Team Keys**.
+2. If you see **Request Access**, click it and accept the terms.
+3. Click **+**. Name it `SoleCount`. Access: **Admin**. Click **Generate**.
+4. Copy the Key ID and the Issuer ID. Click **Download API Key**. Apple lets you download it only once.
+5. It lands in Downloads. Check with:
 
 ```bash
-make clean
+ls ~/Downloads/AuthKey_*.p8
 ```
 
-Then run `make open` to regenerate the project.
+**Why:** `make release` finds that file, reads the Key ID from the name, and copies it to `~/.appstoreconnect/private_keys/`. That folder is outside the project, so the key is never uploaded to GitHub.
 
-### See all available commands
+<a id="make-release"></a>
+<a id="make-setup"></a>
+<a id="make-deploy"></a>
+
+### 7. Run the checks, then release
 
 ```bash
-make help
+make doctor
 ```
 
----
+**Why:** This prints a green and red checklist: Xcode 26, the tools, the key file, and a real call to App Store Connect. Each red line tells you the exact command to run next.
 
-## If something goes wrong: copy this prompt into Claude Code
+When every required line is green:
 
-If you hit an error and don't know how to fix it, you can get help from Claude Code (an AI coding assistant that runs in your Terminal).
-
-### How to copy an error from Terminal
-
-1. **Select the error text** with your mouse (click and drag over the red error lines)
-2. Press `Cmd + C` to copy
-
-### Open Claude Code and ask for help
-
-If Claude Code is installed (type `claude` in Terminal), use this prompt. If not, paste this into the Claude chat in your browser or IDE.
-
-**Copy this prompt template:**
-
+```bash
+make release
 ```
+
+**Why:** This is the whole path, and it is safe to run again. It finds the `.p8` file, asks only for answers that are still blank, then:
+
+1. Registers the bundle ID `com.krishnav.SoleCount` and turns on In-App Purchase.
+2. Creates the app record if you saved an Apple ID (one 2FA code). If not, it stops and tells you to use the form below.
+3. Sets the app price to free, the countries, and the age rating (4+).
+4. Creates the $0.99 purchase `com.krishnav.SoleCount.pro` from `fastlane/iap.json`, including the English name and the review screenshot.
+5. Takes the 6.9-inch App Store screenshots in the iPhone 17 Pro Max simulator if they are not saved yet. The test uses sample shoes, not your real pairs. Apple scales that size to the other iPhone sizes.
+6. Runs the tests.
+7. Bumps the build number to one higher than the latest TestFlight build, builds the app, and uploads it.
+8. Uploads the name, subtitle, description, keywords, promo text, support URL, privacy URL, category (Lifestyle), and screenshots from `fastlane/metadata`.
+9. Submits version 1.0 for review when Apple allows it. The app goes live automatically after approval.
+
+Running it again does not create a second app or a second purchase. It does upload a new build, because Apple rejects a second upload of the same build number.
+
+Check progress any time:
+
+```bash
+make status
+```
+
+**Why:** This shows the latest TestFlight build and the review state, such as waiting for review.
+
+<a id="new-app-form"></a>
+
+### If make release says the app record does not exist
+
+Apple's API key is not allowed to create the app record. Either add `APPLE_ID=you@example.com` to `fastlane/.env` and run `make release` again (one 2FA code), or fill in this form.
+
+![New App form in App Store Connect. Platforms, Name, Primary Language, Bundle ID, SKU, and User Access are empty, and Create is grey.](images/appstoreconnect-new-app.png)
+
+1. Open [appstoreconnect.apple.com](https://appstoreconnect.apple.com). Click **Apps**, the blue **+**, then **New App**.
+2. Platforms: **iOS** only.
+3. Name: `SoleCount`. If Apple says that name is taken, use `SoleCount: Sneaker Tracker`.
+4. Primary Language: **English (U.S.)**.
+5. Bundle ID: `com.krishnav.SoleCount`. If it is missing, run `make release` once so it can register the ID, then refresh this page.
+6. SKU: `solecount001`. If fastlane created the app, it used `solecount-ios`. Leave that one alone.
+7. User Access: **Full Access**. Click **Create**.
+
+Then run `make release` again.
+
+**Why:** The listing, the purchase, and the installed app must share the bundle ID `com.krishnav.SoleCount`.
+
+<a id="pro-purchase"></a>
+
+### If the command says to add SoleCount Pro for review
+
+`make release` creates the purchase. Apple still wants the **first** one attached on the website:
+
+1. Open SoleCount in App Store Connect.
+2. Open **Monetization**, then **In-App Purchases**, then **SoleCount Pro**.
+3. Click **Add for Review** and choose iOS version **1.0**.
+4. Submit for review.
+
+Also open **App Privacy** and publish **Data Not Collected**, unless the command already did that because you saved your Apple ID. SoleCount keeps every sneaker on the phone. The privacy page is [PRIVACY.md](../PRIVACY.md). The same text is in [docs/privacy.md](privacy.md) for GitHub Pages. The address uploaded to Apple is the GitHub file, which works without Pages.
+
+**Why:** Review looks at the app and the purchase together. After Pro is approved once, later runs of `make release` submit by themselves.
+
+### GitHub button (optional)
+
+After the first `make release` on this Mac has created the app, you can repeat a release from GitHub: **Actions**, **Release**, **Run workflow**. Add these repository secrets (nothing else, and never the key file in the repo):
+
+| Secret | What to paste |
+|---|---|
+| `ASC_KEY_ID` | The 10-character Key ID |
+| `ASC_ISSUER_ID` | The long Issuer ID |
+| `ASC_KEY_P8` | The output of `base64 -i ~/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8` |
+| `TEAM_ID` | The 10-character Team ID |
+| `REVIEW_PHONE` | Phone for App Review, with country code |
+| `REVIEW_EMAIL` | Email for App Review |
+
+**Why:** GitHub cannot type your 2FA code, so it cannot create the app the first time. It can repeat the upload after the Mac has done that once. The full note is in [AUTOMATION.md](../AUTOMATION.md).
+
+<a id="part-d"></a>
+
+## Part D: Keeping up to date and help
+
+<a id="get-updates"></a>
+
+### 8. Get the latest updates
+
+New work is saved on a branch first. `main` is the copy that `git clone` downloads.
+
+**1. Merge on the GitHub website.** Open:
+
+[https://github.com/KrishnaDistributedcomputing/SoleCount/compare/main...cursor/setup-without-apple-043d](https://github.com/KrishnaDistributedcomputing/SoleCount/compare/main...cursor/setup-without-apple-043d)
+
+For a later branch, replace `cursor/setup-without-apple-043d` at the end of that address. Or open the repo page and click the yellow **Compare & pull request** banner when it appears.
+
+Click the green **Create pull request** button, then **Create pull request** again. Wait for the checks. Click **Merge pull request**, then **Confirm merge**.
+
+**Why:** Merging copies the branch into `main`, which is the version everyone gets by default.
+
+**2. Download it on the Mac.** If this folder is still on the branch:
+
+```bash
+cd ~/Desktop/SoleCount && git pull
+```
+
+After the merge, switch back to `main` and download it:
+
+```bash
+git checkout main && git pull
+```
+
+**Why:** `git checkout main` switches this folder to the default copy. `git pull` downloads the newest saved version of that copy.
+
+<a id="troubleshooting"></a>
+
+### 9. Troubleshooting
+
+**Mac and Terminal**
+
+- **Password field looks blank.** Type the password and press Return. macOS hides it on purpose.
+- **Popup: Install command line developer tools.** Click Install, wait, then run the `git` command again.
+
+**Getting the code**
+
+- **`not a git repository`.** You are not inside the SoleCount folder. Run `cd ~/Desktop/SoleCount`, then try again.
+- **`git pull` says your local changes would be overwritten.** Run `git stash`, then `git pull`. `git stash` sets your Mac-only edits aside so the download can finish. Those edits stay in a side pile. You do not need them for normal setup.
+- **There isn't anything to compare.** That branch is already in `main`. Skip the merge and run `git checkout main && git pull`.
+
+**Setup**
+
+- **Xcode is not ready.** Install Xcode 26 or newer from the App Store, open it once, then run `make setup-local` again.
+- **You skipped a question by mistake.** Run `make setup` again. Saved answers are kept. Blank ones are asked again.
+
+**The .p8 file**
+
+- **The name does not end in `.p8`.** Rename it. Do not edit the inside.
+- **You cannot find it.** Run `ls ~/Downloads/AuthKey_*.p8` and `mdfind -name AuthKey_`.
+- **You lost the only download.** Revoke that key and generate a new one. Update the Key ID in `make setup`.
+- **Never commit it.** Keep it in `~/.appstoreconnect/private_keys/`. The repo is public.
+
+**New App form**
+
+- **The app name you entered is already being used.** Type `SoleCount: Sneaker Tracker`.
+- **Bundle ID is not in the list.** Run `make appstore-setup`, then refresh. Or register `com.krishnav.SoleCount` under Certificates, Identifiers & Profiles.
+- **Create stays grey.** A required field is empty. Check iOS, the name, English (U.S.), the bundle ID, the SKU, and Full Access.
+
+**Upload**
+
+- **`make doctor` has a red line.** Do the Fix command on that line, then run `make doctor` again.
+- **`make release` cannot find the .p8 file.** Leave `AuthKey_*.p8` in Downloads. The name must end in `.p8`, not `.p8.txt`. Then run `make release` again.
+- **The app record does not exist yet.** Add your Apple ID when asked, or fill in the New App form above, then run `make release` again.
+- **No valid code signing identity.** In Xcode, open Signing & Capabilities and turn on Automatically manage signing. For the simulator you can ignore this. For an upload you need the paid Team ID.
+
+<a id="claude-code"></a>
+
+### 10. Ask Claude Code for help
+
+Copy the error in Terminal: drag across the red lines, then press Cmd + C.
+
+If Claude Code is installed, go to the SoleCount folder and type `claude`. If not, paste the prompt at [claude.ai](https://claude.ai) or into Cursor.
+
+```text
 I'm setting up the SoleCount iOS app on my Mac and I'm a beginner to macOS and Terminal. I ran this command:
 
-[PASTE THE COMMAND YOU RAN HERE, like: make setup]
+[PASTE THE COMMAND YOU RAN HERE]
 
 And I got this error:
 
@@ -361,38 +499,31 @@ And I got this error:
 Can you explain what went wrong in simple terms and tell me exactly what command to run to fix it?
 ```
 
-**How to use it:**
+**Why:** The prompt gives Claude the command and the real error, so the answer matches SoleCount's scripts.
 
-1. Copy the template above
-2. Replace `[PASTE THE COMMAND YOU RAN HERE]` with the command that failed (like `make setup` or `git clone ...`)
-3. Replace `[PASTE THE ERROR TEXT FROM TERMINAL HERE]` with the error you copied from Terminal
-4. If you have Claude Code installed:
-   - Open Terminal in the SoleCount folder (`cd ~/Desktop/SoleCount` or wherever you put it)
-   - Type `claude` and press `Return`
-   - Paste the filled-in prompt and press `Return`
-5. If you don't have Claude Code:
-   - Paste the filled-in prompt into the Claude chat at [claude.ai](https://claude.ai) or in Cursor IDE
+<a id="cheat-sheet"></a>
 
-Claude Code will read your project files and tell you how to fix the issue.
+### 11. Command cheat sheet
 
----
+| Command | What it does | When to use it |
+|---|---|---|
+| `make setup-local` | Installs tools, builds the project, opens Xcode. Skips Apple questions. | Now, before the membership is active. |
+| `make setup` | Same as setup-local if the Team ID, key, and Issuer ID are missing. If a `.p8` file is already on the Mac, it saves that key and asks for the rest. | First setup, or any time. |
+| `make test` | Runs tests in the iPhone Simulator. No Team ID. | After setup, any time. |
+| `make open` | Rebuilds the project and opens Xcode. Then press Cmd + R. | When you want to see the app. |
+| `make doctor` | Green/red checklist, including a real API call. Each red line has the fix. | After Apple's email, before you release. |
+| `make release` | Finds the `.p8` file, then creates the records, tests, uploads a new build, and submits. Skips finished records. | The command to ship. Safe to run again. |
+| `make deploy` | Same as `make release`. | Same as `make release`. |
+| `make status` | Shows the TestFlight build and the review state. | While you wait for Apple. |
+| `make appstore-setup` | Only the App Store records (bundle ID, app, $0.99 purchase). No upload. | When you want the records without a new build. |
+| `bash scripts/deploy.sh --beta-only` | Uploads to TestFlight and stops before review. | When you do not want review yet. |
+| `make clean` | Deletes build files and the generated Xcode project. | When you want a fresh project. Run `make open` after. |
+| `git pull` | Downloads the newest copy of the branch you are on. | When GitHub has newer commits. |
+| `git checkout main && git pull` | Switches to `main` and downloads it. | After a branch is merged. |
 
-## Quick reference: All setup commands in order
+More detail lives in other files. Read them when you need that topic. Do not follow them instead of this page for the first setup.
 
-Once you're comfortable, here's the complete flow:
-
-```bash
-cd ~/Desktop
-git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git
-cd SoleCount
-make setup
-make appstore-setup
-make test
-make deploy
-```
-
-That's it! 🎉
-
-For more details, see:
-- [AUTOMATION.md](../AUTOMATION.md) — fastlane and GitHub Actions explained
-- [LAUNCH-GUIDE.md](../LAUNCH-GUIDE.md) — Complete App Store submission walkthrough
+- [AUTOMATION.md](../AUTOMATION.md) explains fastlane and GitHub Actions.
+- [LAUNCH-GUIDE.md](../LAUNCH-GUIDE.md) is the longer launch plan, including Apple's review wait.
+- [GUIDE.md](../GUIDE.md) is an older build walkthrough.
+- [PRIVACY.md](../PRIVACY.md) is the privacy policy. SoleCount collects no data.

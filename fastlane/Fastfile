@@ -1,13 +1,15 @@
 # SoleCount automation. Plain-English summary of each lane:
 #
-#   fastlane setup        One time: bundle ID, app record, price, countries, age rating, IAP, privacy
+#   fastlane ship         Whole path. make release runs this. Safe to run again.
+#   fastlane setup        Bundle ID, app record, price, countries, age rating, IAP, privacy
 #   fastlane test         Unit tests + UI tests in the Simulator
-#   fastlane screenshots  6.9" App Store screenshots, generated automatically
-#   fastlane beta         New build number -> build -> sign -> upload to TestFlight
+#   fastlane screenshots  6.9" App Store screenshots from sample shoes
+#   fastlane beta         Next TestFlight build number -> build -> sign -> upload
 #   fastlane release      Metadata + screenshots + IAP -> submit for review (automatic release)
 #
-# Everything uses the App Store Connect API key (no Apple ID password, no 2FA), except the
-# two things Apple only allows with a website login (see AUTOMATION.md).
+# The API key does every step it is allowed to do. Two steps still need an Apple ID
+# login with one 2FA code: creating the app record, and publishing App Privacy.
+# The first In-App Purchase still needs one click on the website. See AUTOMATION.md.
 
 require "json"
 require "yaml"
@@ -105,6 +107,21 @@ def ensure_iap(app_id, with_screenshot:)
   )
 end
 
+# Phone and email can live in fastlane/.env or in GitHub secrets. Copy them into the
+# metadata files deliver reads, but only while those files are still placeholders.
+def apply_review_contact_from_env!
+  { "phone_number" => "REVIEW_PHONE", "email_address" => "REVIEW_EMAIL" }.each do |file, env_name|
+    value = ENV[env_name].to_s.strip
+    next if value.empty?
+
+    path = File.join(METADATA, "review_information/#{file}.txt")
+    current = File.exist?(path) ? File.read(path).strip : ""
+    next unless current.empty? || current.include?("REPLACE_ME")
+
+    File.write(path, "#{value}\n")
+  end
+end
+
 def check_review_contact!
   %w[phone_number email_address].each do |f|
     value = File.read(File.join(METADATA, "review_information/#{f}.txt")).strip
@@ -135,6 +152,7 @@ platform :ios do
 
   desc "One-time App Store Connect setup (safe to run again)"
   lane :setup do
+    apply_review_contact_from_env!
     # 1. Bundle ID (API key)
     asc.ensure_bundle_id(APP_IDENTIFIER, "SoleCount")
 
@@ -183,7 +201,7 @@ platform :ios do
                    "'No, we do not collect data from this app' > Save > Publish. (Or set APPLE_ID and rerun.)")
     end
 
-    UI.success("Setup done. Next: bash scripts/deploy.sh")
+    UI.success("App Store records are ready.")
   end
 
   desc "Run unit tests and UI tests"
@@ -194,6 +212,10 @@ platform :ios do
   # (A helper method, because Ruby already has a built-in method called `test`.)
   private_lane :run_test_suite do
     generate
+    # No Team ID is required. Config/Team.xcconfig can leave DEVELOPMENT_TEAM
+    # blank, and the iPhone Simulator still runs these tests (this is the same
+    # setup the GitHub macOS runner uses). Do not force CODE_SIGN_IDENTITY=-
+    # here: a bare "-" is easy for xcodebuild to misread.
     run_tests(
       project: PROJECT,
       scheme: SCHEME,
@@ -262,6 +284,7 @@ platform :ios do
   desc "Upload metadata + screenshots and submit for App Review (automatic release)"
   lane :release do
     api_key
+    apply_review_contact_from_env!
     check_review_contact!
     app = find_app!
 
@@ -317,5 +340,13 @@ platform :ios do
     run_test_suite
     beta
     release
+  end
+
+  desc "Whole path: records, tests, TestFlight, metadata, review. Safe to run again."
+  lane :ship do
+    UI.message("Step 1 of 2: App Store records. Steps that are already done are skipped.")
+    setup
+    UI.message("Step 2 of 2: tests, a new build number, TestFlight, metadata, screenshots, review.")
+    deploy
   end
 end
