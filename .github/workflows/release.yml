@@ -77,7 +77,7 @@ jobs:
         run: |
           for v in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 TEAM_ID REVIEW_PHONE REVIEW_EMAIL; do
             if [ -z "${!v}" ]; then
-              echo "::error::Secret $v is missing. Add it under Settings > Secrets and variables > Actions. See AUTOMATION.md."
+              echo "::error::Secret $v is missing. Add it under Settings > Secrets and variables > Actions. See docs/START-HERE.md."
               exit 1
             fi
           done

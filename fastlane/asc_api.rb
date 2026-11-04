@@ -93,7 +93,7 @@ module SoleCountASC
               raw.include?("BEGIN PRIVATE KEY") ? raw : Base64.decode64(raw)
             else
               default = File.expand_path("~/.appstoreconnect/private_keys/AuthKey_#{ENV['ASC_KEY_ID']}.p8")
-              raise Error, "No API key found. Set ASC_KEY_PATH (see AUTOMATION.md)." unless File.exist?(default)
+              raise Error, "No API key found. Set ASC_KEY_PATH (see docs/START-HERE.md)." unless File.exist?(default)
 
               File.read(default)
             end
@@ -162,7 +162,7 @@ module SoleCountASC
 
     # ---------------------------------------------------------------- bundle ID
 
-    def ensure_bundle_id(identifier, name)
+    def ensure_bundle_id(identifier, name, iap: false, health: false)
       existing = get_all("/v1/bundleIds", "filter[identifier]" => identifier, "limit" => 200)
                  .find { |b| b.dig("attributes", "identifier") == identifier }
       record = if existing
@@ -176,8 +176,37 @@ module SoleCountASC
                  say "Registered bundle ID #{identifier}."
                  created
                end
-      ensure_iap_capability(record["id"])
+      ensure_iap_capability(record["id"]) if iap
+      ensure_healthkit_capability(record["id"]) if health
       record
+    end
+
+    # Read-only HealthKit. Same shape as the In-App Purchase capability call.
+    def ensure_healthkit_capability(bundle_resource_id)
+      caps = get_all("/v1/bundleIds/#{bundle_resource_id}/bundleIdCapabilities")
+      if caps.any? { |c| c.dig("attributes", "capabilityType") == "HEALTHKIT" }
+        say "HealthKit capability is already on for this bundle ID."
+        return
+      end
+
+      post("/v1/bundleIdCapabilities", data: {
+        type: "bundleIdCapabilities",
+        attributes: { capabilityType: "HEALTHKIT" },
+        relationships: { bundleId: { data: { type: "bundleIds", id: bundle_resource_id } } }
+      })
+      say "Turned on the HealthKit capability."
+    rescue Error => e
+      raise if [401, 403].include?(e.status)
+
+      say "Could not turn on HealthKit from the API (#{e.message}). Tick it by hand: developer.apple.com > Certificates, Identifiers & Profiles > Identifiers > com.krishnav.SoleCount > HealthKit > Save."
+    end
+
+    def healthkit_line(bundle_resource_id)
+      caps = get_all("/v1/bundleIds/#{bundle_resource_id}/bundleIdCapabilities")
+      on = caps.any? { |c| c.dig("attributes", "capabilityType") == "HEALTHKIT" }
+      on ? "HealthKit capability: on." : "HealthKit capability: off."
+    rescue Error
+      "HealthKit capability: could not check."
     end
 
     # New iOS App IDs include In-App Purchase by default. This turns it on if Apple left it off.
@@ -471,9 +500,14 @@ module SoleCountASC
                else
                  "Bundle ID #{bundle_id}: not registered yet."
                end
+      lines << if bundle
+                 healthkit_line(bundle["id"])
+               else
+                 "HealthKit capability: not checked (bundle ID not registered yet)."
+               end
       if app.nil?
         lines << "App record: not created yet."
-        lines << "IAP: not created"
+        lines << (monetization_enabled? ? "IAP: not created" : "IAP: skipped (the app is free).")
         lines << "TestFlight: no build yet."
         return [2, lines.join("\n")]
       end
@@ -509,12 +543,16 @@ module SoleCountASC
         lines << "Next upload will use build #{number.to_i + 1}."
       end
 
-      iap = find_iap(app["id"], "com.krishnav.SoleCount.pro")
-      lines << if iap
-                 "IAP: #{iap.dig('attributes', 'state')}"
-               else
-                 "IAP: not created"
-               end
+      if monetization_enabled?
+        iap = find_iap(app["id"], "com.krishnav.SoleCount.pro")
+        lines << if iap
+                   "IAP: #{iap.dig('attributes', 'state')}"
+                 else
+                   "IAP: not created"
+                 end
+      else
+        lines << "IAP: skipped (the app is free)."
+      end
       live = live_version(app["id"])
       lines << if live
                  "On the App Store: version #{live.dig('attributes', 'versionString')} is live."
@@ -549,6 +587,13 @@ module SoleCountASC
     end
 
     private
+
+    def monetization_enabled?
+      path = File.expand_path("../SoleCount/FeatureFlags.swift", __dir__)
+      return true unless File.exist?(path)
+
+      File.read(path).match?(/monetizationEnabled\s*=\s*true/)
+    end
 
     def say(message)
       @log&.call("[ASC] #{message}")

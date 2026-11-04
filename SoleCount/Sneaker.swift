@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 
 // One pair of sneakers, saved on the phone with SwiftData.
+// New fields all have defaults so pairs from older versions of the app still open.
 @Model
 final class Sneaker {
     var name: String = ""
@@ -21,12 +22,49 @@ final class Sneaker {
     // Optional: retire the pair after this many wears (nil = no limit).
     var wearLimit: Int?
 
+    var shoeTypeRaw: String = ShoeType.other.rawValue
+    var notes: String = ""
+    var size: String = ""
+    var colorway: String = ""
+    var conditionRaw: String = ShoeCondition.good.rawValue
+
+    /// Cached Health totals so the list opens without waiting on Apple Health.
+    var cachedSteps: Double = 0
+    var cachedDistanceMeters: Double = 0
+    /// Six monthly distances in metres, oldest first, separated by commas.
+    var cachedMonthlyMetersCSV: String = ""
+    var cachedSharedDays: Int = 0
+    /// 0 = not shared, -1 = shared with a different count on some days, otherwise the other-pair count.
+    var cachedShareOthers: Int = 0
+    var healthUpdatedAt: Date?
+    /// 0 means there is no replacement target.
+    var replaceAtKilometers: Double = 0
+    /// Wears the pair already had before SoleCount. Added to the logged taps.
+    var startingWears: Int = 0
+    /// Kilometres already walked before SoleCount. Added to the tracked distance.
+    var startingKilometers: Double = 0
+    /// 0, 80, or 100. The highest retirement alert already handled.
+    var retirementAlertMark: Int = 0
+    /// The first pass only records the current mark, so an old pair does not ping at launch.
+    var retirementAlertBaselined: Bool = false
+
+    @Relationship(deleteRule: .cascade, inverse: \SneakerPhotoItem.sneaker)
+    var photos: [SneakerPhotoItem] = []
+
     init(name: String,
          brand: String,
          price: Double,
          purchaseDate: Date = .now,
          photoData: Data? = nil,
-         wearLimit: Int? = nil) {
+         wearLimit: Int? = nil,
+         shoeType: ShoeType = .other,
+         size: String = "",
+         colorway: String = "",
+         condition: ShoeCondition = .good,
+         notes: String = "",
+         replaceAtKilometers: Double = 0,
+         startingWears: Int = 0,
+         startingKilometers: Double = 0) {
         self.name = name
         self.brand = brand
         self.price = price
@@ -36,15 +74,36 @@ final class Sneaker {
         self.wearDates = []
         self.isRetired = false
         self.wearLimit = wearLimit
+        self.shoeTypeRaw = shoeType.rawValue
+        self.size = size
+        self.colorway = colorway
+        self.conditionRaw = condition.rawValue
+        self.notes = notes
+        self.replaceAtKilometers = replaceAtKilometers
+        self.startingWears = startingWears
+        self.startingKilometers = startingKilometers
     }
 
-    // MARK: - Handy calculations (not saved, worked out on the fly)
+    var shoeType: ShoeType {
+        get { ShoeType(rawValue: shoeTypeRaw) ?? .other }
+        set { shoeTypeRaw = newValue.rawValue }
+    }
 
-    var wearCount: Int { wearDates.count }
+    var condition: ShoeCondition {
+        get { ShoeCondition(rawValue: conditionRaw) ?? .good }
+        set { conditionRaw = newValue.rawValue }
+    }
 
-    /// Price divided by number of wears. nil until the first wear.
+    var wearCount: Int { PairTotals.wears(logged: wearDates.count, starting: startingWears) }
+
+    /// Tracked distance plus the kilometres you entered when you added the pair.
+    var totalMeters: Double {
+        PairTotals.meters(tracked: cachedDistanceMeters, startingKilometers: startingKilometers)
+    }
+
+    /// Price divided by logged wears plus starting wears. nil until there is a wear.
     var costPerWear: Double? {
-        wearCount > 0 ? price / Double(wearCount) : nil
+        PairTotals.costPerWear(price: price, wears: wearCount)
     }
 
     var woreToday: Bool {
@@ -56,6 +115,40 @@ final class Sneaker {
         return wearCount >= limit
     }
 
+    var lastWorn: Date? { wearDates.max() }
+
+    var monthlyMeters: [Double] {
+        let values = cachedMonthlyMetersCSV.split(separator: ",").compactMap { Double($0) }
+        if values.count >= 6 { return Array(values.prefix(6)) }
+        return values + Array(repeating: 0, count: 6 - values.count)
+    }
+
+    var shareNote: String? {
+        let others: Int? = cachedShareOthers > 0 ? cachedShareOthers : nil
+        return HealthAttribution.shareNote(sharedDayCount: cachedSharedDays, otherPairs: others)
+    }
+
+    var averageMetersPerWear: Double? {
+        guard wearCount > 0 else { return nil }
+        return totalMeters / Double(wearCount)
+    }
+
+    var lifeFraction: Double? {
+        RetirementMath.fraction(meters: totalMeters, goalKilometers: replaceAtKilometers)
+    }
+
+    var reachedMileageGoal: Bool {
+        replaceAtKilometers > 0 && totalMeters + 0.5 >= replaceAtKilometers * 1_000
+    }
+
+    /// Extra photos first. If there are none, the original single photo is used.
+    var gallery: [Data] {
+        let extra = photos.sorted { $0.createdAt < $1.createdAt }.compactMap(\.photoData)
+        if !extra.isEmpty { return extra }
+        if let photoData { return [photoData] }
+        return []
+    }
+
     func logWear(on date: Date = .now) {
         wearDates.append(date)
     }
@@ -64,5 +157,79 @@ final class Sneaker {
         if let index = wearDates.lastIndex(where: { Calendar.current.isDateInToday($0) }) {
             wearDates.remove(at: index)
         }
+    }
+
+    func applyHealth(_ result: AttributedShoe) {
+        cachedSteps = result.steps
+        cachedDistanceMeters = result.distanceMeters
+        cachedMonthlyMetersCSV = result.monthlyMeters.map { meters in
+            String(format: "%.3f", locale: Locale(identifier: "en_US_POSIX"), meters)
+        }.joined(separator: ",")
+        cachedSharedDays = result.sharedDayCount
+        if result.sharedDayCount == 0 {
+            cachedShareOthers = 0
+        } else if let others = result.otherPairs {
+            cachedShareOthers = others
+        } else {
+            cachedShareOthers = -1
+        }
+        healthUpdatedAt = .now
+    }
+
+    func asRow() -> CollectionRow {
+        CollectionRow(
+            name: name,
+            brand: brand,
+            type: shoeType.rawValue,
+            wears: wearCount,
+            meters: totalMeters,
+            costPerWear: costPerWear,
+            createdAt: createdAt,
+            isRetired: isRetired,
+            lastWorn: lastWorn
+        )
+    }
+
+    func asPairStats() -> PairStats {
+        PairStats(
+            name: name,
+            wears: wearCount,
+            price: price,
+            meters: totalMeters,
+            steps: cachedSteps,
+            isRetired: isRetired,
+            lastWorn: lastWorn
+        )
+    }
+
+    func asExportRow() -> ExportRow {
+        ExportRow(
+            name: name,
+            brand: brand,
+            type: shoeType.rawValue,
+            size: size,
+            colorway: colorway,
+            condition: condition.rawValue,
+            price: price,
+            purchaseDate: purchaseDate,
+            wears: wearCount,
+            meters: totalMeters,
+            steps: cachedSteps,
+            retired: isRetired,
+            notes: notes
+        )
+    }
+
+    func replacePhotos(_ datas: [Data], in context: ModelContext) {
+        for photo in photos {
+            context.delete(photo)
+        }
+        let items = datas.map { data in
+            let item = SneakerPhotoItem(photoData: data)
+            context.insert(item)
+            return item
+        }
+        photos = items
+        photoData = datas.first
     }
 }

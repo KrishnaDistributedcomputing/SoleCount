@@ -20,4 +20,6 @@ enum LaunchFlags {
     static var demoPro: Bool { has("-DemoPro") }
     /// We are taking App Store screenshots.
     static var screenshots: Bool { has("-Screenshots") }
+    /// UI tests pretend Apple Health is missing. The rest of the app still runs.
+    static var healthUnavailable: Bool { has("-HealthUnavailable") }
 }

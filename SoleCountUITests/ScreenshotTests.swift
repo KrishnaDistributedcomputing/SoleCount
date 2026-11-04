@@ -21,30 +21,25 @@ final class ScreenshotTests: XCTestCase {
 
     @MainActor
     func testTakeScreenshots() throws {
-        // Free user: list, detail, paywall.
-        var app = launch(pro: false)
+        let app = launch(pro: false)
+        XCTAssertTrue(app.navigationBars["Today"].waitForExistence(timeout: 10)
+                      || app.staticTexts["Today"].waitForExistence(timeout: 2))
+        snapshot("01_Today")
+
+        app.tabBars.buttons["Collection"].tap()
         XCTAssertTrue(app.element(containing: "Daily Runners").waitForExistence(timeout: 10))
-        snapshot("01_List")
+        snapshot("02_List")
 
         app.element(containing: "Daily Runners").tap()
-        XCTAssertTrue(app.buttons["Wore today"].waitForExistence(timeout: 5)
-                      || app.buttons["Wore them again"].waitForExistence(timeout: 2))
-        snapshot("02_Detail")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.buttons["Wore Today"].waitForExistence(timeout: 5)
+                      || app.buttons["Wore today"].waitForExistence(timeout: 2)
+                      || app.buttons["Wore Them Again"].waitForExistence(timeout: 2)
+                      || app.buttons["Wore them again"].exists)
+        snapshot("03_Detail")
 
-        let unlock = app.buttons["Unlock SoleCount Pro"]
-        if !unlock.waitForExistence(timeout: 3) { app.swipeUp() }
-        unlock.tap()
-        XCTAssertTrue(app.staticTexts["SoleCount Pro"].waitForExistence(timeout: 5))
-        snapshot("05_Paywall")   // also used as the In-App Purchase review screenshot
-        app.terminate()
-
-        // Pro user: wear history chart.
-        app = launch(pro: true)
-        XCTAssertTrue(app.element(containing: "White Court Lows").waitForExistence(timeout: 10))
-        snapshot("03_ListPro")
-        app.element(containing: "White Court Lows").tap()
-        app.swipeUp()
-        snapshot("04_Chart")
+        app.tabBars.buttons["Stats"].tap()
+        snapshot("04_Stats")
+        app.tabBars.buttons["Calendar"].tap()
+        snapshot("05_Calendar")
     }
 }

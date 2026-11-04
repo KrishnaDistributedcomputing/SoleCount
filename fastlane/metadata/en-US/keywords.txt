@@ -1,1 +1,1 @@
-shoes,kicks,wear log,cost per wear,collection,rotation,closet,footwear,sneakerhead,outfit,budget
+shoes,steps,km,walk,wear,sneakers,closet,streak,distance,health,retire

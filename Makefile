@@ -1,4 +1,4 @@
-.PHONY: setup setup-local appstore-setup test deploy release open clean help doctor status
+.PHONY: setup setup-local appstore-setup test deploy release submit open clean help doctor status
 
 help:
 	@echo "SoleCount — Quick commands"
@@ -8,14 +8,15 @@ help:
 	@echo "  make doctor          Green/red checklist, with the fix for each red item"
 	@echo "  make test            Run all tests in the iPhone Simulator (no Team ID needed)"
 	@echo "  make open            Generate project and open in Xcode"
-	@echo "  make release         Full path: records, tests, TestFlight, metadata, review"
+	@echo "  make release         Records, tests, TestFlight, and the store listing. Does not submit."
+	@echo "  make submit          Send the latest TestFlight build to App Review"
 	@echo "  make deploy          Same as make release"
 	@echo "  make status          TestFlight build and App Store review state"
-	@echo "  make appstore-setup  Only the App Store records (bundle ID, app, purchase)"
+	@echo "  make appstore-setup  Only the App Store records (bundle ID and the free app)"
 	@echo "  make clean           Remove build artifacts and generated project"
 	@echo ""
 	@echo "Waiting on Apple? Run: make setup-local"
-	@echo "After Apple's email:  make doctor, then make release"
+	@echo "After Apple's email:  make doctor, then make release. After TestFlight: make submit"
 
 setup:
 	@bash scripts/setup_mac.sh
@@ -44,6 +45,9 @@ test:
 
 release:
 	@bash scripts/release.sh
+
+submit:
+	@bash scripts/submit.sh
 
 deploy:
 	@bash scripts/release.sh

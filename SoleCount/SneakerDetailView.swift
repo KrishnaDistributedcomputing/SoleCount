@@ -1,239 +1,305 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
-// The screen for one pair: big "Wore today" button, stats, chart, retire.
+// One pair: wear button, distance, photos, and the charts.
 struct SneakerDetailView: View {
     @Environment(StoreManager.self) private var store
+    @Environment(HealthSync.self) private var health
+    @Environment(MotivationStore.self) private var motivation
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.shoeNamespace) private var shoeNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Query private var allSneakers: [Sneaker]
     @Bindable var sneaker: Sneaker
 
     @State private var showingPaywall = false
     @State private var showingLimitAlert = false
-    @State private var buttonScale: CGFloat = 1.0
-    @State private var celebrationScale: CGFloat = 0.5
+    @State private var showingEdit = false
+    @State private var showingSendOff = false
+    @State private var buttonScale: CGFloat = 1
+    @State private var cheer = 0
+
+    private var tint: Color { ShoeTheme.accent(for: sneaker.shoeType) }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
-                // Hero photo
-                SneakerPhoto(data: sneaker.photoData, size: 240)
-                    .shadow(color: Color.accentColor.opacity(0.3), radius: 20, y: 10)
-
-                // Title and brand
-                VStack(spacing: 8) {
-                    Text(sneaker.name)
-                        .font(.largeTitle.bold())
-                        .multilineTextAlignment(.center)
-
-                    if !sneaker.brand.isEmpty {
-                        Text(sneaker.brand)
-                            .font(.title3)
+            VStack(spacing: 20) {
+                hero
+                titleBlock
+                stats
+                if let note = sneaker.shareNote {
+                    Text(note)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                if let limit = sneaker.wearLimit, limit > 0 {
+                    wearGoal(limit)
+                }
+                if !sneaker.isRetired {
+                    wearButton
+                }
+                if let fraction = sneaker.lifeFraction {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Distance target")
+                            .font(.headline)
+                        LifeBar(fraction: fraction)
+                        Text(DistanceFormat.string(meters: sneaker.totalMeters))
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-
-                    if sneaker.isRetired {
-                        Label("Retired", systemImage: "archivebox.fill")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(
-                                Capsule()
-                                    .fill(.orange.gradient)
-                            )
-                            .padding(.top, 8)
-                    }
-                }
-
-                // Stats cards
-                HStack(spacing: 12) {
-                    ModernStatCard(
-                        icon: "figure.walk",
-                        value: "\(sneaker.wearCount)",
-                        label: "Wears",
-                        color: .blue
-                    )
-                    ModernStatCard(
-                        icon: "dollarsign.circle",
-                        value: sneaker.costPerWear?.asCurrency ?? "–",
-                        label: "Per Wear",
-                        color: .green
-                    )
-                    ModernStatCard(
-                        icon: "tag",
-                        value: sneaker.price.asCurrency,
-                        label: "Price",
-                        color: .purple
-                    )
-                }
-
-                // Wear limit progress
-                if let limit = sneaker.wearLimit, limit > 0 {
-                    VStack(spacing: 8) {
-                        HStack {
-                            Text("Wear Goal")
-                                .font(.subheadline.weight(.semibold))
-                            Spacer()
-                            Text("\(sneaker.wearCount) / \(limit)")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule()
-                                    .fill(Color.secondary.opacity(0.2))
-                                Capsule()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .frame(width: geo.size.width * min(1.0, Double(sneaker.wearCount) / Double(limit)))
-                            }
-                        }
-                        .frame(height: 12)
-                    }
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .warmCard()
                 }
-
-                // Wore today button with animation
-                if !sneaker.isRetired {
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                            buttonScale = 0.95
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
-                                buttonScale = 1.0
-                            }
-                        }
-                        logWear()
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: sneaker.woreToday ? "checkmark.circle.fill" : "plus.circle.fill")
-                                .font(.title2)
-                                .symbolEffect(.bounce, value: sneaker.wearCount)
-
-                            Text(sneaker.woreToday ? "Wore Them Again" : "Wore Today")
-                                .font(.title3.bold())
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .shadow(color: Color.accentColor.opacity(0.5), radius: 12, y: 6)
-                        )
-                    }
-                    .scaleEffect(buttonScale)
-                    .sensoryFeedback(.success, trigger: sneaker.wearCount)
-
-                    if sneaker.woreToday {
-                        Button {
-                            withAnimation {
-                                sneaker.undoTodayWear()
-                            }
-                        } label: {
-                            Label("Undo Today's Wear", systemImage: "arrow.uturn.backward")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.red)
-                        }
-                    }
+                if store.hasFullAccess, sneaker.replaceAtKilometers > 0 {
+                    MileageGoalCard(
+                        meters: sneaker.totalMeters,
+                        goalKilometers: sneaker.replaceAtKilometers,
+                        tint: tint
+                    )
                 }
-
-                // Chart section
-                chartSection
-                    .padding(.top, 8)
+                HealthConnectCard(onConnect: connect, onRefresh: refresh)
+                details
+                charts
             }
             .padding()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(ShoeTheme.canvas)
         .navigationTitle(sneaker.name)
         .navigationBarTitleDisplayMode(.inline)
+        .modifier(ShoeZoomTransition(id: sneaker.persistentModelID, space: shoeNamespace))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button {
-                        withAnimation {
-                            sneaker.isRetired.toggle()
+                    Button("Edit", systemImage: "pencil") { showingEdit = true }
+                    Button(sneaker.isRetired ? "Bring back" : "Retire this pair", systemImage: "archivebox") {
+                        if sneaker.isRetired {
+                            sneaker.isRetired = false
+                        } else {
+                            sneaker.isRetired = true
+                            showingSendOff = true
                         }
-                    } label: {
-                        Label(
-                            sneaker.isRetired ? "Unretire" : "Retire",
-                            systemImage: sneaker.isRetired ? "arrow.uturn.backward" : "archivebox"
-                        )
                     }
+                    .accessibilityIdentifier("retirePairButton")
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .font(.headline)
                 }
+                .accessibilityLabel("More")
             }
         }
-        .alert("Time to Retire This Pair?", isPresented: $showingLimitAlert) {
+        .alert("This pair reached the wear goal you set", isPresented: $showingLimitAlert) {
             Button("Retire Now") {
-                withAnimation {
-                    sneaker.isRetired = true
-                }
+                sneaker.isRetired = true
+                showingSendOff = true
             }
             Button("Keep Wearing", role: .cancel) { }
         } message: {
-            Text("You've reached the wear limit you set for this pair. Congratulations!")
+            Text("You can retire it now, or keep wearing it. Both are good.")
         }
-        .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+        .sheet(isPresented: $showingPaywall) { PaywallView() }
+        .sheet(isPresented: $showingEdit) { AddSneakerView(existing: sneaker) }
+        .sheet(isPresented: $showingSendOff) {
+            SendOffView(
+                name: sneaker.name,
+                meters: sneaker.totalMeters,
+                wears: sneaker.wearCount,
+                cost: sneaker.costPerWear,
+                daysOwned: PairTotals.daysOwned(from: sneaker.purchaseDate, to: .now, calendar: .current)
+            )
+        }
+        .sensoryFeedback(.success, trigger: sneaker.wearCount)
+    }
+
+    private var hero: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(LinearGradient(colors: ShoeTheme.colors(for: sneaker.shoeType), startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(height: 280)
+            if sneaker.gallery.count > 1 {
+                TabView {
+                    ForEach(Array(sneaker.gallery.enumerated()), id: \.offset) { _, data in
+                        SneakerPhoto(data: data, size: 220)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .automatic))
+                .frame(height: 260)
+            } else {
+                SneakerPhoto(data: sneaker.gallery.first, size: 220)
+                    .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
+            }
         }
     }
 
-    @ViewBuilder
-    private var chartSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "chart.bar.fill")
-                    .foregroundStyle(Color.accentColor)
-                Text("Wear History")
-                    .font(.title3.bold())
-                Spacer()
-                Text("Last 6 Months")
-                    .font(.caption)
+    private var titleBlock: some View {
+        VStack(spacing: 8) {
+            Text(sneaker.name)
+                .font(.largeTitle.bold())
+                .multilineTextAlignment(.center)
+            HStack(spacing: 6) {
+                Image(systemName: sneaker.shoeType.symbolName)
+                    .foregroundStyle(tint)
+                    .accessibilityHidden(true)
+                Text(subtitle)
+                    .font(.title3)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
+            if sneaker.isRetired {
+                Label("Hall of Fame", systemImage: "archivebox.fill")
+                    .font(.headline)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(.orange.gradient))
+            }
+        }
+    }
 
-            if store.isPro {
-                WearChartView(wearDates: sneaker.wearDates)
-                    .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-            } else {
+    private var subtitle: String {
+        var parts: [String] = []
+        if !sneaker.brand.isEmpty { parts.append(sneaker.brand) }
+        parts.append(sneaker.shoeType.rawValue)
+        if !sneaker.colorway.isEmpty { parts.append(sneaker.colorway) }
+        if !sneaker.size.isEmpty { parts.append("Size \(sneaker.size)") }
+        return parts.joined(separator: " · ")
+    }
+
+    private var stats: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                ModernStatCard(icon: "figure.walk", value: "\(sneaker.wearCount)", label: "Wears", color: .blue)
+                ModernStatCard(icon: "dollarsign.circle", value: sneaker.costPerWear?.asCurrency ?? "–", label: "Per Wear", color: .green)
+                ModernStatCard(icon: "tag", value: sneaker.price.asCurrency, label: "Price", color: .purple)
+            }
+            HStack(spacing: 12) {
+                ModernStatCard(
+                    icon: "point.topleft.down.to.point.bottomright.curvepath",
+                    value: sneaker.healthUpdatedAt == nil && sneaker.cachedDistanceMeters == 0 ? "–" : DistanceFormat.string(meters: sneaker.cachedDistanceMeters),
+                    label: "Distance",
+                    color: tint
+                )
+                ModernStatCard(
+                    icon: "shoeprints.fill",
+                    value: sneaker.healthUpdatedAt == nil && sneaker.cachedSteps == 0 ? "–" : DistanceFormat.steps(sneaker.cachedSteps),
+                    label: "Steps",
+                    color: .orange
+                )
+                ModernStatCard(
+                    icon: "divide",
+                    value: sneaker.averageMetersPerWear.map { DistanceFormat.string(meters: $0) } ?? "–",
+                    label: "Avg / wear",
+                    color: .teal
+                )
+            }
+        }
+    }
+
+    private func wearGoal(_ limit: Int) -> some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text("Wear Goal")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Text("\(sneaker.wearCount) / \(limit)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
+            }
+            ProgressView(value: min(1, Double(sneaker.wearCount) / Double(limit)))
+                .tint(tint)
+        }
+        .padding()
+        .warmCard()
+    }
+
+    private var wearButton: some View {
+        VStack(spacing: 8) {
+            Button {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.6)) {
+                    buttonScale = 0.95
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(reduceMotion ? nil : .spring) { buttonScale = 1 }
+                }
+                logWear()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: sneaker.woreToday ? "checkmark.circle.fill" : "plus.circle.fill")
+                        .font(.title2)
+                        .symbolEffect(.bounce, value: reduceMotion || LaunchFlags.screenshots ? 0 : sneaker.wearCount)
+                    Text(sneaker.woreToday ? "Wore Them Again" : "Wore Today")
+                        .font(.title3.bold())
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(LinearGradient(colors: ShoeTheme.colors(for: sneaker.shoeType), startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .shadow(color: ShoeTheme.glow.opacity(0.45), radius: cheer > 0 ? 18 : 10, y: 6)
+                )
+                .foregroundStyle(ShoeTheme.ink)
+            }
+            .scaleEffect(buttonScale)
+            .accessibilityIdentifier("woreTodayButton")
+            .accessibilityHint("Logs that you wore this pair")
+            .overlay { ConfettiBurst(trigger: cheer) }
+
+            if sneaker.woreToday {
                 Button {
-                    showingPaywall = true
+                    withAnimation(reduceMotion ? nil : .spring) { sneaker.undoTodayWear() }
+                    Task { await HealthCoordinator.refresh(health: health, motivation: motivation, sneakers: allSneakers) }
                 } label: {
-                    VStack(spacing: 12) {
+                    Label("Undo Today's Wear", systemImage: "arrow.uturn.backward")
+                        .font(.subheadline.weight(.medium))
+                }
+                .foregroundStyle(ShoeTheme.ink)
+            }
+        }
+    }
+
+    private var details: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            LabeledContent("Condition", value: sneaker.condition.rawValue)
+            LabeledContent("Purchased", value: sneaker.purchaseDate.formatted(date: .abbreviated, time: .omitted))
+            if !sneaker.notes.isEmpty {
+                Text(sneaker.notes)
+                    .font(.body)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding()
+        .warmCard()
+    }
+
+    @ViewBuilder
+    private var charts: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Last 6 months")
+                .font(.title3.bold())
+            if store.hasFullAccess {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Distance")
+                        .font(.headline)
+                    DistanceChartView(monthlyMeters: sneaker.monthlyMeters, tint: tint)
+                }
+                .padding()
+                .warmCard()
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Wears")
+                        .font(.headline)
+                    WearChartView(wearDates: sneaker.wearDates)
+                }
+                .padding()
+                .warmCard()
+            } else {
+                Button { showingPaywall = true } label: {
+                    VStack(spacing: 8) {
                         Image(systemName: "lock.fill")
-                            .font(.title2)
-                            .foregroundStyle(Color.accentColor)
-                        Text("Unlock Wear History Charts")
+                        Text("Unlock the distance and wear charts")
                             .font(.headline)
-                        Text("Available with SoleCount Pro")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 32)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 2, antialiased: true)
-                            )
-                    )
+                    .padding()
+                    .warmCard()
                 }
                 .buttonStyle(.plain)
             }
@@ -241,42 +307,19 @@ struct SneakerDetailView: View {
     }
 
     private func logWear() {
+        cheer += 1
         sneaker.logWear()
         if let limit = sneaker.wearLimit, limit > 0, sneaker.wearCount == limit {
             showingLimitAlert = true
         }
+        Task { await HealthCoordinator.refresh(health: health, motivation: motivation, sneakers: allSneakers) }
     }
-}
 
-/// Modern stat card with icon and color
-struct ModernStatCard: View {
-    let icon: String
-    let value: String
-    let label: String
-    let color: Color
+    private func connect() {
+        Task { await HealthCoordinator.connect(health: health, motivation: motivation, sneakers: allSneakers) }
+    }
 
-    var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(color.gradient)
-
-            Text(value)
-                .font(.title2.bold())
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
-        )
-        .accessibilityElement(children: .combine)
+    private func refresh() {
+        Task { await HealthCoordinator.refresh(health: health, motivation: motivation, sneakers: allSneakers) }
     }
 }

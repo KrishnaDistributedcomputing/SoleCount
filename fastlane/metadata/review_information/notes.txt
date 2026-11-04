@@ -1,10 +1,15 @@
 Thank you for reviewing SoleCount.
 
-- No login or account is required. All data is stored only on the device (SwiftData). The app has no servers, analytics, ads or third-party SDKs.
-- Free version: track up to 3 pairs of sneakers.
-- In-App Purchase: "SoleCount Pro" (com.krishnav.SoleCount.pro), a one-time NON-CONSUMABLE that unlocks unlimited pairs and the wear history chart.
-- How to reach the purchase screen: tap the gear icon (top left) > Unlock Pro. Or add 3 pairs with the + button, then tap + again. Or open any pair and tap "Unlock the wear history chart with Pro".
-- Restore Purchases is on the Pro screen and in Settings.
-- To test the core feature: tap + to add a pair (name and price), open it, and tap "Wore today". Cost per wear updates.
+SoleCount is not a medical app. Step goals, tips, badges, and distance comparisons are general encouragement. They are not health advice, a diagnosis, or a treatment.
+
+- No login or account is required. All data is stored only on the device (SwiftData). The app has no servers, analytics, ads, or third-party SDKs.
+- The app is free. There is no in-app purchase and no subscription.
+- HealthKit is optional and read-only. The app works fully if Health is denied or unavailable. There is no NSHealthUpdateUsageDescription because SoleCount never writes to Apple Health. It reads step count and walking/running distance for the days a pair was marked as worn. If several pairs were worn the same day, that day's steps and distance are split evenly.
+- Health data is not used for advertising, is not stored in iCloud, and never leaves the device. App Privacy stays "Data Not Collected" because nothing is transmitted.
+- To try HealthKit: allow the read prompt, mark a pair as worn today, then tap Refresh. On the simulator, add sample steps in the Health app first (Browse > Activity > Steps > Add Data).
+- To test the core feature: open Collection, tap + to add a pair (name and price), open it, and tap "Wore today". Cost per wear updates. The Today, Stats, and Calendar tabs summarize the collection.
 - Photos are chosen with the system photo picker and stay on the device.
+- Optional local notifications are off until the person turns them on in Settings. They are scheduled on the device only.
+- Export: Settings > Export CSV uses the system share sheet.
+- A Home Screen widget shows today's step ring. It reads a snapshot the app saved on the device. It does not read HealthKit itself.
 - Export compliance: the app uses no encryption beyond Apple's standard OS-provided HTTPS (ITSAppUsesNonExemptEncryption = NO).

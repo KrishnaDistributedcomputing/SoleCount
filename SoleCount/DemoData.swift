@@ -10,10 +10,10 @@ enum DemoData {
     static func insert(into context: ModelContext) {
         let calendar = Calendar.current
         let now = Date.now
-        let samples: [(name: String, brand: String, price: Double, wears: Int, color: UIColor)] = [
-            ("Daily Runners", "Running", 140, 48, .systemOrange),
-            ("White Court Lows", "Everyday", 95, 31, .systemTeal),
-            ("Trail Hikers", "Outdoor", 180, 12, .systemGreen),
+        let samples: [(name: String, brand: String, type: ShoeType, price: Double, wears: Int, color: UIColor, km: Double, steps: Double, recent: Int, goal: Double)] = [
+            ("Daily Runners", "Running", .running, 140, 48, .systemOrange, 520, 230_000, 0, 650),
+            ("White Court Lows", "Everyday", .lifestyle, 95, 31, .systemTeal, 42, 60_000, 1, 0),
+            ("Trail Hikers", "Outdoor", .hiking, 180, 12, .systemGreen, 30, 40_000, 40, 0),
         ]
 
         for (index, sample) in samples.enumerated() {
@@ -23,17 +23,33 @@ enum DemoData {
                                   price: sample.price,
                                   purchaseDate: bought,
                                   photoData: photo(color: sample.color),
-                                  wearLimit: index == 0 ? 500 : nil)
-            // Spread the wears over the last ~6 months.
+                                  wearLimit: index == 0 ? 500 : nil,
+                                  shoeType: sample.type,
+                                  size: index == 0 ? "10" : "",
+                                  colorway: index == 0 ? "Grey" : "",
+                                  replaceAtKilometers: sample.goal)
+            // Spread the wears over the last ~6 months. Trail Hikers sit unused so rotation has something to say.
             for wear in 0..<sample.wears {
-                let daysAgo = wear * 170 / max(sample.wears, 1) + index
+                let daysAgo = wear * 140 / max(sample.wears, 1) + sample.recent
                 if let date = calendar.date(byAdding: .day, value: -daysAgo, to: now) {
                     sneaker.logWear(on: date)
                 }
             }
+            sneaker.cachedDistanceMeters = sample.km * 1_000
+            sneaker.cachedSteps = sample.steps
+            sneaker.cachedMonthlyMetersCSV = (0..<6).map { _ in
+                String(format: "%.3f", locale: Locale(identifier: "en_US_POSIX"), sample.km * 1_000 / 6)
+            }.joined(separator: ",")
+            sneaker.healthUpdatedAt = now
             sneaker.createdAt = calendar.date(byAdding: .minute, value: -index, to: now) ?? now
+            if index == 1 {
+                sneaker.startingKilometers = 8
+                sneaker.startingWears = 4
+            }
             context.insert(sneaker)
         }
+        let wish = WishlistItem(brand: "Nike", modelName: "Air Max 90", targetPrice: 120, notes: "A pair to look at next")
+        context.insert(wish)
         try? context.save()
     }
 
