@@ -4,7 +4,7 @@ SoleCount is not a medical app. Step goals, tips, badges, and distance compariso
 
 - No login or account is required. All data is stored only on the device (SwiftData). The app has no servers, analytics, ads, or third-party SDKs.
 - The app is free. There is no in-app purchase and no subscription.
-- HealthKit is used to read steps and walking/running distance so the app can show kilometres (or miles) for the days a pair was marked as worn. If several pairs were worn the same day, that day's steps and distance are split evenly. SoleCount never writes to Apple Health.
+- HealthKit is optional and read-only. The app works fully if Health is denied or unavailable. There is no NSHealthUpdateUsageDescription because SoleCount never writes to Apple Health. It reads step count and walking/running distance for the days a pair was marked as worn. If several pairs were worn the same day, that day's steps and distance are split evenly.
 - Health data is not used for advertising, is not stored in iCloud, and never leaves the device. App Privacy stays "Data Not Collected" because nothing is transmitted.
 - To try HealthKit: allow the read prompt, mark a pair as worn today, then tap Refresh. On the simulator, add sample steps in the Health app first (Browse > Activity > Steps > Add Data).
 - To test the core feature: open Collection, tap + to add a pair (name and price), open it, and tap "Wore today". Cost per wear updates. The Today, Stats, and Calendar tabs summarize the collection.

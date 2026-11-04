@@ -1,1 +1,1 @@
-shoes,steps,km,walk,wear,sneakers,closet,streak,distance,health
+shoes,steps,km,walk,wear,sneakers,closet,streak,distance,health,retire

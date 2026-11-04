@@ -189,7 +189,7 @@ if [ "$can_call_api" -eq 1 ] && command -v ruby >/dev/null 2>&1; then
       ;;
     *)
       if [ "$MONETIZATION" -eq 0 ]; then
-        bad "The API key was rejected" "Check the Key ID, Issuer ID, and .p8 file. Accept the free apps agreement if Apple shows one. Then run: make doctor"
+        bad "The API key was rejected" "Check the Key ID, Issuer ID, and .p8 file. Then run: make doctor"
       else
         bad "The API key was rejected" "Check the Key ID, Issuer ID, and .p8 file. Accept the Paid Apps agreement, tax, and bank. Then run: make doctor"
       fi
@@ -213,7 +213,7 @@ echo ""
 echo "Still manual, because Apple does not allow a script to do them:"
 echo "  - Pay for the Developer membership and wait for the welcome email"
 if [ "$MONETIZATION" -eq 0 ]; then
-  echo "  - The Paid Apps agreement is not needed. The app is free"
+  echo "  - The app is free, so there is no purchase to create"
 else
   echo "  - Accept the Paid Apps agreement, tax, and bank"
   echo "  - The first time only: add SoleCount Pro to version 1.0 on the website"

@@ -308,14 +308,15 @@ platform :ios do
     screenshots if Dir[File.join(SCREENSHOTS, "en-US", "*.png")].empty?
 
     first_release = asc.live_version(app["id"]).nil?
+    wants_submit = ENV["SUBMIT"] == "1"
     if monetization_enabled?
       iap = ensure_iap(app["id"], with_screenshot: true)
       iap_state = iap.to_h.dig("attributes", "state").to_s
       # Apple only lets the FIRST In-App Purchase be added to a submission on the website.
-      submit = iap_state == "APPROVED" || ENV["FORCE_SUBMIT"] == "1"
+      submit = wants_submit && (iap_state == "APPROVED" || ENV["FORCE_SUBMIT"] == "1")
     else
       UI.message("Monetization is off. Not attaching an In-App Purchase.")
-      submit = true
+      submit = wants_submit
     end
 
     version = marketing_version
@@ -344,6 +345,8 @@ platform :ios do
 
     if submit
       UI.success("Submitted SoleCount #{version} (#{build_number}) for review. It goes live automatically when approved.")
+    elsif !wants_submit
+      UI.success("Uploaded to TestFlight. Not submitted for review. When you have tried the build, run: make submit")
     elsif monetization_enabled?
       UI.important(<<~MSG)
         Everything is uploaded (version #{version}, build #{build_number}, text, screenshots, Pro).
@@ -368,7 +371,7 @@ platform :ios do
   lane :ship do
     UI.message("Step 1 of 2: App Store records. Steps that are already done are skipped.")
     setup
-    UI.message("Step 2 of 2: tests, a new build number, TestFlight, metadata, screenshots, review.")
+    UI.message("Step 2 of 2: tests, a new build number, TestFlight, and the store listing. Review waits for make submit.")
     deploy
   end
 end

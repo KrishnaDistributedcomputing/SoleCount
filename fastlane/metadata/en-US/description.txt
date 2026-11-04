@@ -13,10 +13,13 @@ APPLE HEALTH
 • Nothing is sent off your iPhone, and nothing is written to Apple Health
 
 KEEP MOVING
-• A Today page with streaks, badges, and a short original tip
-• See how this week compares with last week
-• A calendar, a Hall of Fame for retired pairs, and a nudge when a pair has been sitting
-• Export a CSV. Optional reminders stay on the phone
+• A Today page with a gentle streak, rest days, badges, and a short original tip
+• A green, yellow, or red bar shows how close a pair is to its distance target
+• Retire a pair without deleting it. Stats stay in the Hall of Fame
+• Add starting distance and starting wears. A wishlist can move into the collection
+• Share a collection card or a month card made on your iPhone
+• A calendar, and a nudge when a pair has been sitting
+• Export a CSV. Optional reminders stay on the phone and are off until you turn them on
 
 PRIVATE BY DESIGN
 • No account, no sign-up, no ads, no tracking

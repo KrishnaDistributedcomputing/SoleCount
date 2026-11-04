@@ -6,7 +6,7 @@ An iPhone app that counts how often you wear each pair of sneakers, shows the co
 - Today: a step ring, a weekly kilometre goal, a streak, badges, and a short tip. Not a medical app.
 - Apple Health is read-only (steps and walking distance). Connect it when you want. The app works without it.
 - Built-in brands, types, and model names. Photos, size, colorway, notes, a calendar, and a Hall of Fame for retired pairs.
-- Optional reminders, a CSV export, a Siri shortcut to log a wear, and a Home Screen widget for today's steps.
+- Optional reminders, a CSV export, a Siri shortcut to log a wear, a wishlist, share cards made on the phone, and a Home Screen widget for today's steps.
 
 Privacy policy: [PRIVACY.md](PRIVACY.md)
 

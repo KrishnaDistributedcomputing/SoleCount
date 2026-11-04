@@ -4,7 +4,7 @@ This is the only setup page. Read it from the top and do the steps in order. You
 
 You are new to the Mac. Apple may still be processing the paid Developer membership (up to 48 hours). You can build and run SoleCount today. You send it to Apple after the welcome email.
 
-SoleCount is a free iPhone app. It counts how often you wear each pair, shows the cost per wear, and can read Apple Health steps so you can see kilometres per shoe. The phone keeps all of the data. There is no account and no in-app purchase. The bundle ID is `com.krishnav.SoleCount`.
+SoleCount is a free iPhone app. It counts how often you wear each pair, shows the cost per wear, and can read Apple Health steps so you can see kilometres per shoe. You can set a distance target, retire a pair without deleting it, keep a wishlist, and share a card made on the phone. The phone keeps all of the data. There is no account and no in-app purchase. The bundle ID is `com.krishnav.SoleCount`.
 
 Do every command on the Mac. Copy a grey box, click Terminal, press Cmd + V, then press Return.
 
@@ -448,7 +448,7 @@ If Cmd + R says the simulator is missing, install it from Xcode Settings, then C
 Stop after step 5 until Apple emails you that the paid membership is active. These items stay manual because Apple does not let a script do them:
 
 - Paying, and waiting for the welcome email. You still need the paid Developer membership (the program that lets you upload). That is separate from the Paid Apps agreement.
-- The Paid Apps agreement, tax, and bank are **not needed**. The app is free.
+- There is no purchase to set up. The app is free.
 - Creating the API key and downloading the `.p8` file once.
 - Typing the Team ID and the Issuer ID once. The Key ID is read from the file name. The Issuer ID is not.
 - A 2FA code, if you want the script to create the app record.
@@ -464,14 +464,14 @@ After the email, sign in to App Store Connect. This is the public sign-in page. 
 
 Then do these clicks once:
 
-1. You can skip **Business** (older accounts say **Agreements, Tax, and Banking**). The Paid Apps agreement is not needed, because the app is free. The free agreement is enough.
+1. You can skip **Business** (older accounts say **Agreements, Tax, and Banking**). The app is free, so there is no purchase to set up.
 2. Open [developer.apple.com/account](https://developer.apple.com/account), then **Membership details**. Copy the 10-character Team ID.
 3. Back in App Store Connect, open **Users and Access**, then **Integrations**, then **App Store Connect API**, then **Team Keys**. If you see **Request Access**, click it and accept the terms.
 4. Click **+** (**Generate API Key**). Name it `SoleCount`. Access: **Admin**. Click **Generate**.
 5. Copy the Key ID (10 characters, in the list) and the Issuer ID (the long code above the table).
 6. Click **Download API Key**. Apple lets you download this file only once. Leave it in **Downloads**. Do not put it inside the SoleCount folder. Do not edit the inside. The name must end in `.p8`, not `.p8.txt`.
 
-The Paid Apps agreement page is not needed for this app.
+There is no purchase page to fill in. The app is free.
 
 📸 Screenshot needed: Membership details, with the 10-character Team ID visible.
 
@@ -524,7 +524,7 @@ It also prints this reminder, which is normal even when the checks pass:
 ```text
 Still manual, because Apple does not allow a script to do them:
   - Pay for the Developer membership and wait for the welcome email
-  - The Paid Apps agreement is not needed. The app is free
+  - The app is free, so there is no purchase to create
   - Create the API key and download the .p8 file once
   - Type a 2FA code if you saved an Apple ID
   - If HealthKit is off, tick it: developer.apple.com > Certificates, Identifiers & Profiles > Identifiers > com.krishnav.SoleCount > HealthKit > Save
@@ -591,7 +591,7 @@ Step 1 of 2: App Store records. Steps that are already done are skipped.
 ```
 
 ```text
-Step 2 of 2: tests, a new build number, TestFlight, metadata, screenshots, review.
+Step 2 of 2: tests, a new build number, TestFlight, and the store listing. Review waits for make submit.
 ```
 
 And later:
@@ -617,7 +617,7 @@ What this command does, in order:
 7. Runs the tests.
 8. Builds, signs, and uploads to TestFlight.
 9. Uploads the name, subtitle, description, keywords, promo text, support URL, privacy URL, Lifestyle category, and screenshots from `fastlane/metadata`.
-10. Submits for review. There is no purchase to attach. The app goes live automatically when Apple approves it.
+10. Uploads the store listing and stops. It does not send the app to review. You should see `Uploaded to TestFlight. Not submitted for review. When you have tried the build, run: make submit`. Install that build from the TestFlight app on your iPhone. When it looks right, run `make submit`. That sends version 1.0 to App Review. There is no purchase to attach. After Apple approves it, the app goes live on its own.
 
 If you typed an Apple ID, the privacy answers (SoleCount collects no data) are sent after the same 2FA code. If you did not, you will see:
 
@@ -699,9 +699,15 @@ If **Create** stays grey, a required field is empty. Check iOS, the name, Englis
 
 **What you do**
 
-After you submit, wait. Apple's review usually takes about 1 to 2 days. It can take longer. You cannot speed up the queue.
+`make release` stops at TestFlight. Install the build from the TestFlight app on your iPhone and try it. When you want Apple to review it, run `make submit`. Then wait. Apple's review usually takes about 1 to 2 days. It can take longer. You cannot speed up the queue.
 
-**Copy this**
+**Copy this** when the TestFlight build looks right
+
+```bash
+make submit
+```
+
+**Copy this** to check the status
 
 ```bash
 make status
@@ -746,7 +752,7 @@ This asks App Store Connect for the latest TestFlight build and the review state
 
 **If it goes wrong**
 
-A line that says the API key was rejected means the Key ID, the Issuer ID, and the `.p8` file do not match. The Paid Apps agreement is not required. Fix the key, then run `make doctor`. More cases are in Troubleshooting at the end of this page.
+A line that says the API key was rejected means the Key ID, the Issuer ID, and the `.p8` file do not match. Fix the key, then run `make doctor`. More cases are in Troubleshooting at the end of this page.
 
 <a id="step-11"></a>
 
