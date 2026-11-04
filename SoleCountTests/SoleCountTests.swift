@@ -12,7 +12,8 @@ struct CostPerWearTests {
     init() throws {
         container = try ModelContainer(
             for: Sneaker.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            SneakerPhotoItem.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         )
     }
 
@@ -74,14 +75,20 @@ struct FreeLimitTests {
         #expect(StoreManager.canAddPair(currentCount: currentCount, isPro: false))
     }
 
+    @Test(arguments: [0, 3, 10, 50])
+    func freeAppAllowsAnyNumberOfPairs(currentCount: Int) {
+        #expect(FeatureFlags.monetizationEnabled == false)
+        #expect(StoreManager.canAddPair(currentCount: currentCount, isPro: false))
+    }
+
     @Test(arguments: [3, 4, 10])
-    func freeUserIsBlockedAfterThree(currentCount: Int) {
-        #expect(!StoreManager.canAddPair(currentCount: currentCount, isPro: false))
+    func pairLimitReturnsWhenMonetizationIsOn(currentCount: Int) {
+        #expect(!StoreManager.canAddPair(currentCount: currentCount, isPro: false, monetizationEnabled: true))
     }
 
     @Test(arguments: [0, 3, 50])
     func proUserIsNeverBlocked(currentCount: Int) {
-        #expect(StoreManager.canAddPair(currentCount: currentCount, isPro: true))
+        #expect(StoreManager.canAddPair(currentCount: currentCount, isPro: true, monetizationEnabled: true))
     }
 
     @Test func productIDMatchesAppStoreConnect() {

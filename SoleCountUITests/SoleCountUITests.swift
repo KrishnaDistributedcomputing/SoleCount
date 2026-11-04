@@ -9,6 +9,10 @@ final class SoleCountUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments += ["-UITesting"]   // start with an empty, in-memory database
         app.launch()
+        let collection = app.tabBars.buttons["Collection"]
+        if collection.waitForExistence(timeout: 5) {
+            collection.tap()
+        }
     }
 
     @MainActor
@@ -24,7 +28,7 @@ final class SoleCountUITests: XCTestCase {
     }
 
     @MainActor
-    func testFourthPairShowsPaywallForFreeUsers() throws {
+    func testFourthPairIsFree() throws {
         let firstAdd = app.buttons["Add a pair"]
         XCTAssertTrue(firstAdd.waitForExistence(timeout: 10))
         firstAdd.tap()
@@ -36,8 +40,10 @@ final class SoleCountUITests: XCTestCase {
         }
 
         app.buttons["addSneakerButton"].tap()
-        XCTAssertTrue(app.staticTexts["SoleCount Pro"].waitForExistence(timeout: 5),
-                      "A free user adding a 4th pair should see the Pro screen")
+        addPair(name: "Pair 4", brand: "", price: "10")
+        XCTAssertTrue(app.element(containing: "Pair 4").waitForExistence(timeout: 5),
+                      "A fourth pair should save, because SoleCount is free")
+        XCTAssertFalse(app.staticTexts["SoleCount Pro"].exists)
     }
 
     // MARK: - Helpers
