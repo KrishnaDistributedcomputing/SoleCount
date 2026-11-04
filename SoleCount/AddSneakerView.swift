@@ -28,6 +28,7 @@ struct AddSneakerView: View {
     @State private var replaceEdited: Bool
     @State private var startingWears: Int
     @State private var startingDisplay: Double
+    @FocusState private var typing: Bool
 
     init(existing: Sneaker? = nil) {
         self.existing = existing
@@ -83,6 +84,12 @@ struct AddSneakerView: View {
                     Button("Save") { save() }
                         .font(.body.weight(.semibold))
                         .disabled(!canSave)
+                        .accessibilityIdentifier("saveSneakerButton")
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Hide keyboard") { typing = false }
+                        .accessibilityIdentifier("hideKeyboard")
                 }
             }
             .onChange(of: photoItem) { _, item in
@@ -202,6 +209,7 @@ struct AddSneakerView: View {
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 80)
                     .accessibilityIdentifier("startingDistanceField")
+                    .focused($typing)
                 Text(DistanceFormat.unitWord())
                     .foregroundStyle(.secondary)
             }

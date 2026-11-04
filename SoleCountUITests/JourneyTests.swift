@@ -45,11 +45,14 @@ final class JourneyTests: XCTestCase {
         starting.tap()
         starting.typeText("12")
 
-        let save = app.navigationBars["New Sneaker"].buttons["Save"]
+        if app.buttons["hideKeyboard"].waitForExistence(timeout: 2) {
+            app.buttons["hideKeyboard"].tap()
+        }
+        let save = app.buttons["saveSneakerButton"]
         XCTAssertTrue(save.waitForExistence(timeout: 3))
         save.tap()
-        XCTAssertTrue(app.navigationBars["SoleCount"].waitForExistence(timeout: 5), "Saving should return to the collection")
-        let saved = app.element(containing: "City Runners")
+        XCTAssertTrue(app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 5), "Saving should close the form")
+        let saved = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "pairRow", "City Runners")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
         saved.tap()
         var wore = app.buttons["woreTodayButton"]

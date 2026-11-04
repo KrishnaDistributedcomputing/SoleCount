@@ -144,6 +144,7 @@ struct SneakerListView: View {
             SneakerCard(sneaker: sneaker)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("pairRow")
         .matchedTransitionSource(id: sneaker.persistentModelID, in: shoeSpace)
     }
 
