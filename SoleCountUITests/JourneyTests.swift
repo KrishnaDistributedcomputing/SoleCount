@@ -23,16 +23,16 @@ final class JourneyTests: XCTestCase {
         name.tap()
         name.typeText("City Runners")
 
+        let price = app.textFields["Price paid (e.g. 129.99)"]
+        price.tap()
+        price.typeText("80")
+
         let brand = app.textFields["Brand (e.g. Nike)"]
         brand.tap()
         brand.typeText("Ni")
         let nike = app.buttons["Nike"]
         XCTAssertTrue(nike.waitForExistence(timeout: 3), "The catalog should offer Nike")
         nike.tap()
-
-        let price = app.textFields["Price paid (e.g. 129.99)"]
-        price.tap()
-        price.typeText("80")
 
         var starting = app.descendants(matching: .any)["startingDistanceField"]
         var swipes = 0
