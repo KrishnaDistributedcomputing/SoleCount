@@ -11,7 +11,7 @@ help:
 	@echo "  make release         Full path: records, tests, TestFlight, metadata, review"
 	@echo "  make deploy          Same as make release"
 	@echo "  make status          TestFlight build and App Store review state"
-	@echo "  make appstore-setup  Only the App Store records (bundle ID, app, purchase)"
+	@echo "  make appstore-setup  Only the App Store records (bundle ID and the free app)"
 	@echo "  make clean           Remove build artifacts and generated project"
 	@echo ""
 	@echo "Waiting on Apple? Run: make setup-local"

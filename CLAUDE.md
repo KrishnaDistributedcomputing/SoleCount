@@ -1,11 +1,12 @@
 # SoleCount — project guide for Claude Code
 
 ## What this app is
-SoleCount is an iPhone app that tracks how often I wear each pair of sneakers
-and shows the cost per wear (price ÷ number of wears).
+SoleCount is a free iPhone app that tracks how often I wear each pair of sneakers,
+shows the cost per wear (price ÷ number of wears), and can read Apple Health
+steps and walking distance so each pair shows kilometres. It is not a medical app.
 
 ## Tech rules (always follow)
-- SwiftUI + SwiftData + Swift Charts + StoreKit 2. Minimum iOS 18.
+- SwiftUI + SwiftData + Swift Charts + HealthKit (read only) + StoreKit 2 kept behind a flag. Minimum iOS 18.
 - No servers, no accounts, no analytics, no ads, no third-party SDKs or packages.
 - All data stays on the device. Do not add networking code.
 - One main type per file. Keep files short and readable.
@@ -15,24 +16,26 @@ and shows the cost per wear (price ÷ number of wears).
 - Do not rename the bundle ID or the product ID.
 
 ## Files
-- SoleCountApp.swift — app entry, creates StoreManager + SwiftData container
-- Sneaker.swift — @Model: name, brand, price, purchaseDate, createdAt,
-  photoData (external storage), wearDates [Date], isRetired, wearLimit Int?
-- SneakerListView.swift — list (In rotation / Retired), add button, free limit
-- AddSneakerView.swift — form with PhotosPicker, price, date, wear limit
-- SneakerDetailView.swift — stats, big "Wore today" button, undo, retire, chart
-- WearChartView.swift — bar chart of wears per month (last 6 months)
-- StoreManager.swift — StoreKit 2, one non-consumable
-- PaywallView.swift — Pro screen with Buy + Restore Purchases + links
-- SettingsView.swift — Pro status, Restore Purchases, privacy policy, version
-- Helpers.swift — currency formatting, photo shrinking, SneakerPhoto, StatCard
+- SoleCountApp.swift — app entry, StoreManager, Health, motivation, SwiftData
+- FeatureFlags.swift — `monetizationEnabled = false` (Fastlane reads this line)
+- Sneaker.swift — @Model: name, brand, type, price, photos, wear dates, cached km
+- ShoeCatalog.swift — offline brands, types, and model suggestions
+- SneakerListView.swift — collection, filters, Hall of Fame, Add a pair
+- AddSneakerView.swift — form, brand and type, PhotosPicker, price, date
+- SneakerDetailView.swift — stats, Wore Today, km, charts
+- TodayView.swift — step rings, streak, tip, Walk now
+- WearChartView.swift — bar chart of wears per month
+- StoreManager.swift — StoreKit 2, unused while the flag is false
+- PaywallView.swift — kept for the flag; not shown while the app is free
+- SettingsView.swift — goals, reminders, CSV, privacy, version
 - PrivacyInfo.xcprivacy — no tracking, no data collected, UserDefaults CA92.1
 
 ## Business rules
-- Free: up to 3 pairs (StoreManager.freePairLimit). Chart is Pro only.
-- Pro: one-time non-consumable, product ID `com.krishnav.SoleCount.pro`, $0.99.
-- Paywall must always show: price from StoreKit (displayPrice), Restore Purchases,
-  Privacy Policy and Terms links. Never hard-code the price in text.
+- The app is free. `FeatureFlags.monetizationEnabled` is false. Do not show a paywall.
+- StoreKit code stays in the project. The product ID is still `com.krishnav.SoleCount.pro`. Do not rename it.
+- If that flag is turned back on, the paywall must show the StoreKit price, Restore Purchases, and the Privacy and Terms links. Never hard-code the price.
+- HealthKit is read-only (step count and walking/running distance). Never write to Health. The app must work if Health is unavailable or denied.
+- Health numbers stay on the device. No iCloud, no ads, no analytics.
 
 ## App Store rules to respect
 - No claims we can't back up. No fake reviews prompts. No "free" if it isn't.

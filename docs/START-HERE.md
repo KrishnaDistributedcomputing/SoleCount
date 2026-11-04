@@ -4,7 +4,7 @@ This is the only setup page. Read it from the top and do the steps in order. You
 
 You are new to the Mac. Apple may still be processing the paid Developer membership (up to 48 hours). You can build and run SoleCount today. You send it to Apple after the welcome email.
 
-SoleCount is an iPhone app that counts how often you wear each pair of sneakers and shows the cost per wear. The phone keeps all of the data. There is no account. Free tracks 3 pairs. SoleCount Pro is a one-time $0.99 unlock for unlimited pairs and the wear chart. The product ID is `com.krishnav.SoleCount.pro`. The bundle ID is `com.krishnav.SoleCount`.
+SoleCount is a free iPhone app. It counts how often you wear each pair, shows the cost per wear, and can read Apple Health steps so you can see kilometres per shoe. The phone keeps all of the data. There is no account and no in-app purchase. The bundle ID is `com.krishnav.SoleCount`.
 
 Do every command on the Mac. Copy a grey box, click Terminal, press Cmd + V, then press Return.
 
@@ -17,7 +17,7 @@ flowchart TD
   E --> F[Team ID and the .p8 key]
   F --> G[make doctor]
   G --> H[make release]
-  H --> I[Add the purchase for review]
+  H --> I[Create the app if needed]
   I --> J[Apple review]
   J --> K[Live on the App Store]
 ```
@@ -32,7 +32,7 @@ flowchart TD
 - [ ] 6. After Apple's email: agreement, Team ID, and the `.p8` key
 - [ ] 7. Run `make doctor`
 - [ ] 8. Run `make release`
-- [ ] 9. Create the app if needed, then add the $0.99 purchase for review
+- [ ] 9. Create the app if needed. The paid purchase is not needed, because the app is free
 - [ ] 10. Wait for Apple's review
 - [ ] 11. Get later updates
 - [ ] 12. Optional: ship again from GitHub
@@ -400,7 +400,24 @@ The simulator shows SoleCount. You can add a pair and tap **Wore today**.
 
 **Why**
 
-Cmd + R builds the app and shows it on a pretend iPhone. The $0.99 purchase can be tried there because the project includes `SoleCount.storekit`, a local pretend store. That is not the real App Store.
+Cmd + R builds the app and shows it on a pretend iPhone. The app is free, so there is no purchase to try.
+
+**What you do** to try Apple Health sample data, still in this step:
+
+1. In the simulator, open the Health app.
+2. Tap Browse, then Activity, then Steps, then Add Data. Add a few thousand steps for today. If you see Walking + Running Distance, add a distance too.
+3. Open SoleCount, add a pair or open Daily Runners if you used the sample shoes, and tap **Wore Today**.
+4. Tap **Connect Apple Health**, allow the read, then tap **Refresh**.
+
+**What you should see**
+
+The pair shows kilometres (or miles, if the pretend iPhone is set to miles) and a step count. Today shows a step ring. If you say no to Health, wears and cost per wear still work.
+
+**Why**
+
+SoleCount only reads steps and walking distance for the days you marked a pair as worn. It does not write to Health, and it does not send the numbers anywhere. App Privacy stays Data Not Collected because nothing is transmitted.
+
+When you add a pair, type a brand or tap one from the list (Nike, Adidas, and about 30 others). Pick a type such as Running. Running shoes start with a 600 km replacement target. You can change it or turn it off.
 
 📸 Screenshot needed: Xcode with the SoleCount project open.
 
@@ -430,12 +447,12 @@ If Cmd + R says the simulator is missing, install it from Xcode Settings, then C
 
 Stop after step 5 until Apple emails you that the paid membership is active. These items stay manual because Apple does not let a script do them:
 
-- Paying, and waiting for the welcome email.
-- The Paid Apps agreement, tax, and bank. The $0.99 purchase cannot be sold until those are accepted.
+- Paying, and waiting for the welcome email. You still need the paid Developer membership (the program that lets you upload). That is separate from the Paid Apps agreement.
+- The Paid Apps agreement, tax, and bank are **not needed**. The app is free.
 - Creating the API key and downloading the `.p8` file once.
 - Typing the Team ID and the Issuer ID once. The Key ID is read from the file name. The Issuer ID is not.
 - A 2FA code, if you want the script to create the app record.
-- The first time only, adding SoleCount Pro to version 1.0 on the website. You do that click after `make release`, in the next section of this page.
+- HealthKit on the App ID, only if `make doctor` prints a red line. The Fix line says the clicks. `make release` tries to turn it on for you.
 
 If you have not enrolled yet, this is Apple's public enrollment page. The button to click is **Start your enrollment**. If you already paid, do not enroll again. Wait for the email.
 
@@ -447,14 +464,14 @@ After the email, sign in to App Store Connect. This is the public sign-in page. 
 
 Then do these clicks once:
 
-1. Open **Business** (older accounts say **Agreements, Tax, and Banking**). Accept the **Paid Apps** agreement. Add your bank and your tax forms. Wait until the status is Active. The $0.99 purchase cannot be sold before this.
+1. You can skip **Business** (older accounts say **Agreements, Tax, and Banking**). The Paid Apps agreement is not needed, because the app is free. The free agreement is enough.
 2. Open [developer.apple.com/account](https://developer.apple.com/account), then **Membership details**. Copy the 10-character Team ID.
 3. Back in App Store Connect, open **Users and Access**, then **Integrations**, then **App Store Connect API**, then **Team Keys**. If you see **Request Access**, click it and accept the terms.
 4. Click **+** (**Generate API Key**). Name it `SoleCount`. Access: **Admin**. Click **Generate**.
 5. Copy the Key ID (10 characters, in the list) and the Issuer ID (the long code above the table).
 6. Click **Download API Key**. Apple lets you download this file only once. Leave it in **Downloads**. Do not put it inside the SoleCount folder. Do not edit the inside. The name must end in `.p8`, not `.p8.txt`.
 
-📸 Screenshot needed: the Business page with the Paid Apps agreement.
+The Paid Apps agreement page is not needed for this app.
 
 📸 Screenshot needed: Membership details, with the 10-character Team ID visible.
 
@@ -506,11 +523,12 @@ It also prints this reminder, which is normal even when the checks pass:
 
 ```text
 Still manual, because Apple does not allow a script to do them:
-  - Pay for the membership and wait for the welcome email
-  - Accept the Paid Apps agreement, tax, and bank
+  - Pay for the Developer membership and wait for the welcome email
+  - The Paid Apps agreement is not needed. The app is free
   - Create the API key and download the .p8 file once
   - Type a 2FA code if you saved an Apple ID
-  - The first time only: add SoleCount Pro to version 1.0 on the website
+  - If HealthKit is off, tick it: developer.apple.com > Certificates, Identifiers & Profiles > Identifiers > com.krishnav.SoleCount > HealthKit > Save
+  - Widget App Group group.com.krishnav.SoleCount on com.krishnav.SoleCount and com.krishnav.SoleCount.widget, same Identifiers page, App Groups
   - Wait for Apple's review (about 1 to 2 days, sometimes longer)
 ```
 
@@ -591,15 +609,15 @@ Build 1 is on TestFlight.
 What this command does, in order:
 
 1. Finds the `.p8` file and saves the Key ID from its name.
-2. Registers the bundle ID `com.krishnav.SoleCount` and turns on In-App Purchase.
+2. Registers the bundle ID `com.krishnav.SoleCount`, turns on HealthKit when Apple's API allows it, and registers `com.krishnav.SoleCount.widget` for the Home Screen widget.
 3. Creates the app record if you typed an Apple ID. You get one 2FA code. If you pressed Return on the Apple ID question, it stops and tells you to use the website. That website form is the next step on this page.
 4. Sets the price to free, the countries, and the age rating (4+).
-5. Creates the $0.99 purchase `com.krishnav.SoleCount.pro` from `fastlane/iap.json`, including the English name, the description, the price, and the review screenshot when that picture exists.
+5. Skips the in-app purchase. The app is free, so there is nothing to attach for review.
 6. Takes the 6.9-inch App Store screenshots in the iPhone 17 Pro Max simulator if they are not saved yet. The test uses sample shoes, not your real pairs. Apple scales that size to the other iPhone sizes.
 7. Runs the tests.
 8. Builds, signs, and uploads to TestFlight.
 9. Uploads the name, subtitle, description, keywords, promo text, support URL, privacy URL, Lifestyle category, and screenshots from `fastlane/metadata`.
-10. Submits for review when Apple allows it. The first time, Apple usually still wants the website click in the next step. After that purchase has been approved once, this command submits by itself. The app goes live automatically when Apple approves it.
+10. Submits for review. There is no purchase to attach. The app goes live automatically when Apple approves it.
 
 If you typed an Apple ID, the privacy answers (SoleCount collects no data) are sent after the same 2FA code. If you did not, you will see:
 
@@ -611,7 +629,7 @@ A finished records step prints `App Store records are ready.`
 
 **Why**
 
-One command does every upload step Apple allows. Running it again does not create a second app or a second purchase.
+One command does every upload step Apple allows. Running it again does not create a second app. The paid purchase is not needed.
 
 **If it goes wrong**
 
@@ -629,7 +647,7 @@ That ends with `Stopped after TestFlight (--beta-only).` More cases are in Troub
 
 **What you do**
 
-Do this step if `make release` stopped because the app record does not exist, or if it uploaded everything and then told you to add SoleCount Pro for review.
+Do this step if `make release` stopped because the app record does not exist. The old "add the purchase for review" click is not needed. The app is free.
 
 Apple's API key is not allowed to create the app. Either run `make release` again and type your Apple ID when asked (one 2FA code), or fill in this form. This picture is the real empty form.
 
@@ -655,38 +673,21 @@ The same release text as the previous step. When the records exist, fastlane pri
 
 **Why**
 
-The installed app, the $0.99 purchase, and the store listing must share `com.krishnav.SoleCount`. The SKU is a private ID only you see. You cannot change it later. The tools find the app by the bundle ID, not by the SKU.
+The installed app and the store listing must share `com.krishnav.SoleCount`. The SKU is a private ID only you see. You cannot change it later. The tools find the app by the bundle ID, not by the SKU.
 
-Then attach the purchase. `make release` creates it. Apple still wants the **first** one attached on the website:
+The in-app purchase step is not needed. The app is free, so there is no SoleCount Pro product to add for review.
 
-1. Open SoleCount in App Store Connect.
-2. Open **Monetization**, then **In-App Purchases**, then **SoleCount Pro**.
-3. Click **Add for Review** and choose iOS version **1.0**.
-4. Submit for review.
-
-Also open **App Privacy** and publish **Data Not Collected**, unless the command already did that because you saved your Apple ID. SoleCount keeps every sneaker on the phone. The privacy text is already in `PRIVACY.md` at the top of the project. You do not have to rewrite it.
-
-📸 Screenshot needed: Monetization, In-App Purchases, SoleCount Pro, with Add for Review.
+Also open **App Privacy** and publish **Data Not Collected**, unless the command already did that because you saved your Apple ID. SoleCount keeps every sneaker, and any Apple Health reading, on the phone. Nothing is transmitted, so "Data Not Collected" is the right answer. The privacy text is already in `PRIVACY.md` at the top of the project. You do not have to rewrite it.
 
 📸 Screenshot needed: App Privacy, with Data Not Collected selected.
 
-**What you should see** from the command, when the purchase still needs that click:
+**What you should see**
 
-```text
-Everything is uploaded (version 1.0, build 1, text, screenshots, Pro).
-ONE click flow is left, because Apple requires the FIRST In-App Purchase to be submitted
-together with an app version on the website:
-  1. https://appstoreconnect.apple.com > Apps > SoleCount
-  2. Sidebar: Monetization > In-App Purchases > SoleCount Pro > "Add for Review"
-  3. When asked, select iOS app version 1.0 > review the list > "Submit for Review"
-After Pro is approved once, `fastlane release` submits future versions by itself.
-```
-
-The build number may be higher than 1.
+`make release` submits the version itself. You should not see a message asking you to add a purchase.
 
 **Why**
 
-Apple reviews the app and the first purchase together. After Pro is approved once, later runs submit by themselves.
+There is no purchase for Apple to review alongside the app. HealthKit still has to be on the App ID, or the uploaded build can be rejected. If `make doctor` is red about HealthKit, use the Fix line. It is the same clicks as: developer.apple.com, Certificates, Identifiers & Profiles, Identifiers, `com.krishnav.SoleCount`, tick HealthKit, Save.
 
 **If it goes wrong**
 
@@ -717,7 +718,8 @@ App: SoleCount (id ...)
 Version 1.0: WAITING FOR REVIEW
 Latest TestFlight build: 1 (ready).
 Next upload will use build 2.
-IAP: WAITING_FOR_REVIEW
+HealthKit capability: on.
+IAP: skipped (the app is free).
 On the App Store: not yet.
 ```
 
@@ -744,7 +746,7 @@ This asks App Store Connect for the latest TestFlight build and the review state
 
 **If it goes wrong**
 
-A line that says the API key was rejected means the Key ID, the Issuer ID, and the `.p8` file do not match, or the Paid Apps agreement is not accepted yet. Fix that, then run `make doctor`. More cases are in Troubleshooting at the end of this page.
+A line that says the API key was rejected means the Key ID, the Issuer ID, and the `.p8` file do not match. The Paid Apps agreement is not required. Fix the key, then run `make doctor`. More cases are in Troubleshooting at the end of this page.
 
 <a id="step-11"></a>
 
@@ -854,7 +856,7 @@ If the Action says a secret is missing, add that row from the table and run the 
 **The New App form**
 
 - **The name is already being used.** Type `SoleCount: Sneaker Tracker`.
-- **The bundle ID is not in the list.** Run `make release`, then refresh. Or register `com.krishnav.SoleCount` under Certificates, Identifiers & Profiles, with In-App Purchase on.
+- **The bundle ID is not in the list.** Run `make release`, then refresh. Or register `com.krishnav.SoleCount` under Certificates, Identifiers & Profiles, and tick HealthKit.
 - **Create stays grey.** A field is empty.
 
 **Upload**

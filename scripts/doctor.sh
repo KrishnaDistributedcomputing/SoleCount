@@ -8,6 +8,11 @@ cd "$(dirname "$0")/.." || exit 1
 source "$(dirname "$0")/lib.sh"
 
 FAIL=0
+MONETIZATION=1
+if [ -f SoleCount/FeatureFlags.swift ] && grep -Eq 'monetizationEnabled[[:space:]]*=[[:space:]]*false' SoleCount/FeatureFlags.swift; then
+  MONETIZATION=0
+  pass "SoleCount is free (no In-App Purchase)"
+fi
 
 pass() { printf '\033[1;32m✔ %s\033[0m\n' "$1"; }
 bad() {
@@ -183,24 +188,40 @@ if [ "$can_call_api" -eq 1 ] && command -v ruby >/dev/null 2>&1; then
       fi
       ;;
     *)
-      bad "The API key was rejected" "Check the Key ID, Issuer ID, and .p8 file. Accept the Paid Apps agreement, tax, and bank. Then run: make doctor"
+      if [ "$MONETIZATION" -eq 0 ]; then
+        bad "The API key was rejected" "Check the Key ID, Issuer ID, and .p8 file. Accept the free apps agreement if Apple shows one. Then run: make doctor"
+      else
+        bad "The API key was rejected" "Check the Key ID, Issuer ID, and .p8 file. Accept the Paid Apps agreement, tax, and bank. Then run: make doctor"
+      fi
       ;;
   esac
-  if printf '%s\n' "$api_out" | grep -q "IAP: not created"; then
+  if [ "$MONETIZATION" -eq 1 ] && printf '%s\n' "$api_out" | grep -q "IAP: not created"; then
     warn "The \$0.99 purchase is not created yet" "make release creates com.krishnav.SoleCount.pro from fastlane/iap.json."
   fi
+  if printf '%s\n' "$api_out" | grep -q "HealthKit capability: off."; then
+    bad "HealthKit is off for this App ID" "Open developer.apple.com, then Certificates, Identifiers & Profiles, then Identifiers, then com.krishnav.SoleCount. Tick HealthKit and click Save. Then run: make doctor"
+  fi
+  if printf '%s\n' "$api_out" | grep -q "HealthKit capability: could not check."; then
+    warn "Could not check HealthKit on the App ID" "Open developer.apple.com, then Certificates, Identifiers & Profiles, then Identifiers, then com.krishnav.SoleCount, and make sure HealthKit is ticked."
+  fi
   if printf '%s\n' "$api_out" | grep -q "Bundle ID com.krishnav.SoleCount: not registered"; then
-    warn "The bundle ID is not registered yet" "make release registers com.krishnav.SoleCount and turns on In-App Purchase."
+    warn "The bundle ID is not registered yet" "make release registers com.krishnav.SoleCount and turns on HealthKit."
   fi
 fi
 
 echo ""
 echo "Still manual, because Apple does not allow a script to do them:"
-echo "  - Pay for the membership and wait for the welcome email"
-echo "  - Accept the Paid Apps agreement, tax, and bank"
+echo "  - Pay for the Developer membership and wait for the welcome email"
+if [ "$MONETIZATION" -eq 0 ]; then
+  echo "  - The Paid Apps agreement is not needed. The app is free"
+else
+  echo "  - Accept the Paid Apps agreement, tax, and bank"
+  echo "  - The first time only: add SoleCount Pro to version 1.0 on the website"
+fi
 echo "  - Create the API key and download the .p8 file once"
 echo "  - Type a 2FA code if you saved an Apple ID"
-echo "  - The first time only: add SoleCount Pro to version 1.0 on the website"
+echo "  - If HealthKit is off, tick it: developer.apple.com > Certificates, Identifiers & Profiles > Identifiers > com.krishnav.SoleCount > HealthKit > Save"
+echo "  - Widget App Group group.com.krishnav.SoleCount on com.krishnav.SoleCount and com.krishnav.SoleCount.widget, same Identifiers page, App Groups"
 echo "  - Wait for Apple's review (about 1 to 2 days, sometimes longer)"
 echo ""
 

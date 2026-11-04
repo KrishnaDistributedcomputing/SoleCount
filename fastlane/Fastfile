@@ -94,6 +94,12 @@ def find_app!
     UI.user_error!("No App Store Connect app for #{APP_IDENTIFIER} yet. Run `make release` on your Mac. See docs/START-HERE.md.")
 end
 
+# SoleCount/FeatureFlags.swift is the switch. false means the app is free.
+def monetization_enabled?
+  source = File.read(File.join(ROOT, "SoleCount/FeatureFlags.swift"))
+  source.match?(/monetizationEnabled\s*=\s*true/)
+end
+
 def ensure_iap(app_id, with_screenshot:)
   asc.ensure_iap(
     app_id,
@@ -153,8 +159,9 @@ platform :ios do
   desc "One-time App Store Connect setup (safe to run again)"
   lane :setup do
     apply_review_contact_from_env!
-    # 1. Bundle ID (API key)
-    asc.ensure_bundle_id(APP_IDENTIFIER, "SoleCount")
+    # 1. Bundle IDs (API key). HealthKit is turned on for the app. The widget ID is registered too.
+    asc.ensure_bundle_id(APP_IDENTIFIER, "SoleCount", iap: monetization_enabled?, health: true)
+    asc.ensure_bundle_id("#{APP_IDENTIFIER}.widget", "SoleCount Widget")
 
     # 2. App record. Apple's API does not allow creating apps with an API key,
     #    so this one step uses your Apple ID (one 2FA prompt), or you click it on the website.
@@ -187,7 +194,12 @@ platform :ios do
     asc.set_app_price_free(app["id"])
     asc.set_app_availability(app["id"], exclude_eu: ENV["EXCLUDE_EU"] == "1")
     asc.set_age_rating(app["id"])
-    ensure_iap(app["id"], with_screenshot: true)
+    if monetization_enabled?
+      ensure_iap(app["id"], with_screenshot: true)
+    else
+      UI.message("Monetization is off. Skipping the In-App Purchase. SoleCount is free.")
+    end
+    UI.important("Widget: if the Home Screen widget is blank on a phone, tick App Groups for group.com.krishnav.SoleCount on com.krishnav.SoleCount and com.krishnav.SoleCount.widget. developer.apple.com > Certificates, Identifiers & Profiles > Identifiers.")
 
     # 4. App Privacy ("Data Not Collected"). Apple has no API-key endpoint for this.
     if !ENV["APPLE_ID"].to_s.strip.empty? && !is_ci
@@ -216,6 +228,8 @@ platform :ios do
     # blank, and the iPhone Simulator still runs these tests (this is the same
     # setup the GitHub macOS runner uses). Do not force CODE_SIGN_IDENTITY=-
     # here: a bare "-" is easy for xcodebuild to misread.
+    # Signing is off so the widget extension can build on a Mac with no Team ID.
+    # The simulator still installs an unsigned debug app. Release signing is unchanged.
     run_tests(
       project: PROJECT,
       scheme: SCHEME,
@@ -223,6 +237,7 @@ platform :ios do
       skip_testing: ["SoleCountUITests/ScreenshotTests"],
       code_coverage: true,
       result_bundle: true,
+      xcargs: "CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO",
       output_directory: File.join(ROOT, "fastlane/test_output")
     )
   end
@@ -236,10 +251,12 @@ platform :ios do
       devices: [SIM_DEVICE],
       output_directory: SCREENSHOTS
     )
-    paywall = Dir[File.join(SCREENSHOTS, "en-US", "*05_Paywall*.png")].first
-    if paywall
-      FileUtils.cp(paywall, IAP_REVIEW_SHOT)
-      UI.success("Saved the Pro screen as the In-App Purchase review screenshot.")
+    if monetization_enabled?
+      paywall = Dir[File.join(SCREENSHOTS, "en-US", "*05_Paywall*.png")].first
+      if paywall
+        FileUtils.cp(paywall, IAP_REVIEW_SHOT)
+        UI.success("Saved the Pro screen as the In-App Purchase review screenshot.")
+      end
     end
   end
 
@@ -290,11 +307,16 @@ platform :ios do
 
     screenshots if Dir[File.join(SCREENSHOTS, "en-US", "*.png")].empty?
 
-    iap = ensure_iap(app["id"], with_screenshot: true)
-    iap_state = iap.to_h.dig("attributes", "state").to_s
     first_release = asc.live_version(app["id"]).nil?
-    # Apple only lets the FIRST In-App Purchase be added to a submission on the website.
-    submit = iap_state == "APPROVED" || ENV["FORCE_SUBMIT"] == "1"
+    if monetization_enabled?
+      iap = ensure_iap(app["id"], with_screenshot: true)
+      iap_state = iap.to_h.dig("attributes", "state").to_s
+      # Apple only lets the FIRST In-App Purchase be added to a submission on the website.
+      submit = iap_state == "APPROVED" || ENV["FORCE_SUBMIT"] == "1"
+    else
+      UI.message("Monetization is off. Not attaching an In-App Purchase.")
+      submit = true
+    end
 
     version = marketing_version
     build_number = latest_testflight_build_number(api_key: api_key, app_identifier: APP_IDENTIFIER, version: version)
@@ -322,7 +344,7 @@ platform :ios do
 
     if submit
       UI.success("Submitted SoleCount #{version} (#{build_number}) for review. It goes live automatically when approved.")
-    else
+    elsif monetization_enabled?
       UI.important(<<~MSG)
         Everything is uploaded (version #{version}, build #{build_number}, text, screenshots, Pro).
         ONE click flow is left, because Apple requires the FIRST In-App Purchase to be submitted

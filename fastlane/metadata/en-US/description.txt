@@ -1,25 +1,28 @@
-How much did that last pair really cost you? SoleCount turns your sneaker collection into simple numbers: how often you wear each pair and what every wear costs.
+Walk more, track every km your sneakers take you. SoleCount turns your collection into simple numbers: how often you wear each pair, what every wear costs, and how far you walked in them.
 
 TAP ONCE, SEE THE VALUE
-• Add a pair with a photo, brand, price and purchase date
+• Add a pair with photos, brand, type, size, colorway, price, and purchase date
+• Pick from a built-in list of popular brands and models
 • Tap "Wore today" whenever you wear them
 • Cost per wear updates instantly (price ÷ wears)
-• Undo a tap if you made a mistake
 
-KNOW YOUR ROTATION
-• See wears and cost per wear for every pair at a glance
-• Set an optional wear limit and get a reminder to retire a worn-out pair
-• Keep retired pairs in their own section
+APPLE HEALTH
+• Read steps and walking distance for the days you wore each pair
+• See kilometres (or miles) per shoe, a daily step ring, and a weekly goal
+• Set a replacement distance and get a gentle nudge when a pair has done its job
+• Nothing is sent off your iPhone, and nothing is written to Apple Health
+
+KEEP MOVING
+• A Today page with streaks, badges, and a short original tip
+• See how this week compares with last week
+• A calendar, a Hall of Fame for retired pairs, and a nudge when a pair has been sitting
+• Export a CSV. Optional reminders stay on the phone
 
 PRIVATE BY DESIGN
 • No account, no sign-up, no ads, no tracking
-• Everything stays on your iPhone
-
-FREE AND SOLECOUNT PRO
-SoleCount is free for up to 3 pairs. SoleCount Pro is a one-time purchase (no subscription) that unlocks:
-• Unlimited pairs
-• A wear history chart for every pair (last 6 months)
-Already bought Pro? Use Restore Purchases in Settings.
+• Everything stays on your iPhone, including Health numbers
+• SoleCount is free. Every feature is included
+• Not a medical app. Goals and tips are encouragement, not health advice
 
 Made by an independent developer. Questions or ideas? Tap Support in the app's Settings.
 

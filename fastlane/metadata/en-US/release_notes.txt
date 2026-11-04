@@ -1,1 +1,1 @@
-Bug fixes and improvements.
+SoleCount is free. Track kilometres per shoe, a Today page, and badges that encourage walking.
