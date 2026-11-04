@@ -325,7 +325,7 @@ module SoleCountASC
         end
       end
 
-      after = get("/v1/ageRatingDeclarations/#{decl['id']}")["data"]["attributes"].to_h
+      after = get("/v1/appInfos/#{info['id']}/ageRatingDeclaration")["data"]["attributes"].to_h
       missing = after.select { |k, v| v.nil? && !AGE_RATING_SKIP.include?(k) }.keys
       if missing.empty?
         say "Age rating questionnaire filled in (expected result: 4+)."
