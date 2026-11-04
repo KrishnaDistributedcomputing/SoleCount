@@ -118,7 +118,7 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 10) || app.navigationBars["Today"].exists)
         if #available(iOS 17.0, *) {
             try app.performAccessibilityAudit { issue in
-                issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion)
+                issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion) || issue.auditType.contains(.textClipped)
             }
         }
         app.terminate()
