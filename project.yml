@@ -39,6 +39,7 @@ targets:
       - path: Shared
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone only
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCount
         PRODUCT_NAME: SoleCount
         INFOPLIST_KEY_CFBundleDisplayName: SoleCount
@@ -68,6 +69,7 @@ targets:
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
+        UIRequiresFullScreen: true   # portrait-only app; tells Apple it does not use iPad split screen
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     attributes:
@@ -95,6 +97,7 @@ targets:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone only
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCount.widget
         PRODUCT_NAME: SoleCountWidget
         GENERATE_INFOPLIST_FILE: YES
@@ -117,6 +120,7 @@ targets:
       - target: SoleCount
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone only
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCountTests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/SoleCount.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SoleCount
@@ -131,6 +135,7 @@ targets:
       - target: SoleCount
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone only
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCountUITests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: SoleCount
