@@ -39,6 +39,14 @@ final class Sneaker {
     var healthUpdatedAt: Date?
     /// 0 means there is no replacement target.
     var replaceAtKilometers: Double = 0
+    /// Wears the pair already had before SoleCount. Added to the logged taps.
+    var startingWears: Int = 0
+    /// Kilometres already walked before SoleCount. Added to the tracked distance.
+    var startingKilometers: Double = 0
+    /// 0, 80, or 100. The highest retirement alert already handled.
+    var retirementAlertMark: Int = 0
+    /// The first pass only records the current mark, so an old pair does not ping at launch.
+    var retirementAlertBaselined: Bool = false
 
     @Relationship(deleteRule: .cascade, inverse: \SneakerPhotoItem.sneaker)
     var photos: [SneakerPhotoItem] = []
@@ -54,7 +62,9 @@ final class Sneaker {
          colorway: String = "",
          condition: ShoeCondition = .good,
          notes: String = "",
-         replaceAtKilometers: Double = 0) {
+         replaceAtKilometers: Double = 0,
+         startingWears: Int = 0,
+         startingKilometers: Double = 0) {
         self.name = name
         self.brand = brand
         self.price = price
@@ -70,6 +80,8 @@ final class Sneaker {
         self.conditionRaw = condition.rawValue
         self.notes = notes
         self.replaceAtKilometers = replaceAtKilometers
+        self.startingWears = startingWears
+        self.startingKilometers = startingKilometers
     }
 
     var shoeType: ShoeType {
@@ -82,11 +94,16 @@ final class Sneaker {
         set { conditionRaw = newValue.rawValue }
     }
 
-    var wearCount: Int { wearDates.count }
+    var wearCount: Int { PairTotals.wears(logged: wearDates.count, starting: startingWears) }
 
-    /// Price divided by number of wears. nil until the first wear.
+    /// Tracked distance plus the kilometres you entered when you added the pair.
+    var totalMeters: Double {
+        PairTotals.meters(tracked: cachedDistanceMeters, startingKilometers: startingKilometers)
+    }
+
+    /// Price divided by logged wears plus starting wears. nil until there is a wear.
     var costPerWear: Double? {
-        wearCount > 0 ? price / Double(wearCount) : nil
+        PairTotals.costPerWear(price: price, wears: wearCount)
     }
 
     var woreToday: Bool {
@@ -113,11 +130,15 @@ final class Sneaker {
 
     var averageMetersPerWear: Double? {
         guard wearCount > 0 else { return nil }
-        return cachedDistanceMeters / Double(wearCount)
+        return totalMeters / Double(wearCount)
+    }
+
+    var lifeFraction: Double? {
+        RetirementMath.fraction(meters: totalMeters, goalKilometers: replaceAtKilometers)
     }
 
     var reachedMileageGoal: Bool {
-        replaceAtKilometers > 0 && cachedDistanceMeters + 0.5 >= replaceAtKilometers * 1_000
+        replaceAtKilometers > 0 && totalMeters + 0.5 >= replaceAtKilometers * 1_000
     }
 
     /// Extra photos first. If there are none, the original single photo is used.
@@ -161,10 +182,11 @@ final class Sneaker {
             brand: brand,
             type: shoeType.rawValue,
             wears: wearCount,
-            meters: cachedDistanceMeters,
+            meters: totalMeters,
             costPerWear: costPerWear,
             createdAt: createdAt,
-            isRetired: isRetired
+            isRetired: isRetired,
+            lastWorn: lastWorn
         )
     }
 
@@ -173,7 +195,7 @@ final class Sneaker {
             name: name,
             wears: wearCount,
             price: price,
-            meters: cachedDistanceMeters,
+            meters: totalMeters,
             steps: cachedSteps,
             isRetired: isRetired,
             lastWorn: lastWorn
@@ -191,7 +213,7 @@ final class Sneaker {
             price: price,
             purchaseDate: purchaseDate,
             wears: wearCount,
-            meters: cachedDistanceMeters,
+            meters: totalMeters,
             steps: cachedSteps,
             retired: isRetired,
             notes: notes

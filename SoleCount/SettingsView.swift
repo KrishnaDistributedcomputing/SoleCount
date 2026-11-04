@@ -4,9 +4,9 @@ import SwiftData
 // Links you can change in one place.
 // The privacy policy page must be public for App Review.
 enum AppLinks {
-    static let privacyPolicy = URL(string: "https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/PRIVACY.md")!
+    static let privacyPolicy = URL(string: "https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/docs/PRIVACY.md")!
     static let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
-    static let support = URL(string: "https://github.com/KrishnaDistributedcomputing/SoleCount/issues")!
+    static let support = URL(string: "https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/docs/SUPPORT.md")!
 }
 
 // Goals, reminders, export, and the privacy links.
@@ -88,6 +88,10 @@ struct SettingsView: View {
                         get: { motivation.milestoneAlerts },
                         set: { newValue in Task { await setMilestones(newValue) } }
                     ))
+                    Toggle("Distance target at 80% and 100%", isOn: Binding(
+                        get: { motivation.retirementAlerts },
+                        set: { newValue in Task { await setRetirement(newValue) } }
+                    ))
                     if !reminderNote.isEmpty {
                         Text(reminderNote)
                             .font(.footnote)
@@ -153,6 +157,16 @@ struct SettingsView: View {
             motivation.setEvening(enabled: false, hour: motivation.eveningHour, minute: motivation.eveningMinute)
         }
         await reschedule()
+    }
+
+    private func setRetirement(_ enabled: Bool) async {
+        if enabled {
+            let allowed = await WearReminder.requestAccess()
+            motivation.setRetirementAlerts(allowed)
+            reminderNote = allowed ? "" : "Notifications are off. You can allow them in the iPhone Settings app."
+        } else {
+            motivation.setRetirementAlerts(false)
+        }
     }
 
     private func setMilestones(_ enabled: Bool) async {

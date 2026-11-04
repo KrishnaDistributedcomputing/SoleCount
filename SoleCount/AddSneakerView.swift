@@ -26,6 +26,8 @@ struct AddSneakerView: View {
     @State private var hasReplaceTarget: Bool
     @State private var replaceDisplay: Double
     @State private var replaceEdited: Bool
+    @State private var startingWears: Int
+    @State private var startingDisplay: Double
 
     init(existing: Sneaker? = nil) {
         self.existing = existing
@@ -45,6 +47,8 @@ struct AddSneakerView: View {
         _hasReplaceTarget = State(initialValue: goal > 0)
         _replaceDisplay = State(initialValue: goal > 0 ? DistanceFormat.displayValue(kilometers: goal) : 600)
         _replaceEdited = State(initialValue: existing != nil)
+        _startingWears = State(initialValue: existing?.startingWears ?? 0)
+        _startingDisplay = State(initialValue: DistanceFormat.displayValue(kilometers: existing?.startingKilometers ?? 0))
     }
 
     private var canSave: Bool {
@@ -189,6 +193,18 @@ struct AddSneakerView: View {
 
     private var optionalSection: some View {
         Section {
+            Stepper("Starting wears: \(startingWears)", value: $startingWears, in: 0...20_000, step: 1)
+            HStack {
+                Text("Starting distance")
+                Spacer()
+                TextField("0", value: $startingDisplay, format: .number)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: 80)
+                    .accessibilityIdentifier("startingDistanceField")
+                Text(DistanceFormat.unitWord())
+                    .foregroundStyle(.secondary)
+            }
             Toggle("Set a Wear Goal", isOn: $hasWearLimit)
             if hasWearLimit {
                 Stepper("Retire after \(wearLimit) wears", value: $wearLimit, in: 10...1000, step: 10)
@@ -232,7 +248,7 @@ struct AddSneakerView: View {
         } header: {
             Text("Optional")
         } footer: {
-            Text("Running, trail, walking, basketball, and training shoes start with a distance target. You can change it or turn it off.")
+            Text("Running and training start at 650. Walking starts higher. Casual shoes start with the target off. Starting distance is included in the total. You can change any of this.")
         }
     }
 
@@ -271,6 +287,7 @@ struct AddSneakerView: View {
     private func save() {
         let trimmedBrand = brand.trimmingCharacters(in: .whitespacesAndNewlines)
         let kilometers = hasReplaceTarget ? max(0, DistanceFormat.kilometers(fromDisplay: replaceDisplay)) : 0
+        let startingKilometers = max(0, DistanceFormat.kilometers(fromDisplay: startingDisplay))
         ShoeCatalog.rememberBrand(trimmedBrand)
         if let existing {
             existing.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -283,7 +300,14 @@ struct AddSneakerView: View {
             existing.colorway = colorway.trimmingCharacters(in: .whitespacesAndNewlines)
             existing.condition = condition
             existing.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            let previousGoal = existing.replaceAtKilometers
             existing.replaceAtKilometers = kilometers
+            if previousGoal != kilometers {
+                existing.retirementAlertBaselined = false
+                existing.retirementAlertMark = 0
+            }
+            existing.startingWears = startingWears
+            existing.startingKilometers = startingKilometers
             existing.replacePhotos(photos, in: modelContext)
         } else {
             let sneaker = Sneaker(
@@ -298,7 +322,9 @@ struct AddSneakerView: View {
                 colorway: colorway.trimmingCharacters(in: .whitespacesAndNewlines),
                 condition: condition,
                 notes: notes.trimmingCharacters(in: .whitespacesAndNewlines),
-                replaceAtKilometers: kilometers
+                replaceAtKilometers: kilometers,
+                startingWears: startingWears,
+                startingKilometers: startingKilometers
             )
             modelContext.insert(sneaker)
             sneaker.replacePhotos(photos, in: modelContext)

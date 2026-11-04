@@ -69,15 +69,60 @@ struct StatsDashboardView: View {
                             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
                         }
 
-                        Text("Badges")
-                            .font(.title3.bold())
-                        AchievementGrid(badges: badges)
+                        HStack {
+                            Text("Badges")
+                                .font(.title3.bold())
+                            Spacer()
+                            NavigationLink {
+                                BadgesView(badges: badges)
+                            } label: {
+                                Text("All badges")
+                            }
+                            .accessibilityIdentifier("allBadgesButton")
+                        }
+                        AchievementGrid(badges: Array(badges.prefix(4)))
+                        shareLinks
                     }
                 }
                 .padding()
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Stats")
+        }
+    }
+
+    private var shareLinks: some View {
+        let best = motivation.bestStreak()
+        let collection = ReviewMath.summarize(
+            title: "Your collection",
+            pairs: sneakers.map { (name: $0.name, wears: $0.wearCount, meters: $0.totalMeters) },
+            bestStreak: best
+        )
+        let calendar = Calendar.current
+        let monthPairs: [(name: String, wears: Int, meters: Double)] = sneakers.map { sneaker in
+            let wears = sneaker.wearDates.filter { calendar.isDate($0, equalTo: .now, toGranularity: .month) }.count
+            let meters = sneaker.monthlyMeters.last ?? 0
+            return (name: sneaker.name, wears: wears, meters: meters)
+        }
+        let month = ReviewMath.summarize(title: "This month", pairs: monthPairs, bestStreak: best)
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Share")
+                .font(.title3.bold())
+            if let data = CardRenderer.png({ ShareCardBody(summary: collection) }) {
+                ShareLink(item: PNGShare(data: data), preview: SharePreview("Collection")) {
+                    Label("Share collection card", systemImage: "square.and.arrow.up")
+                }
+                .accessibilityIdentifier("shareCollectionButton")
+            }
+            if let data = CardRenderer.png({ ShareCardBody(summary: month) }) {
+                ShareLink(item: PNGShare(data: data), preview: SharePreview("This month")) {
+                    Label("Share this month", systemImage: "calendar")
+                }
+                .accessibilityIdentifier("shareMonthButton")
+            }
+            Text("Pictures are made on this iPhone. Nothing is uploaded.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 

@@ -17,6 +17,8 @@ final class MotivationStore {
     static let eveningMinuteKey = "eveningMinute"
     static let seenBadgesKey = "seenBadges"
     static let seenReadyKey = "seenBadgesReady"
+    static let gentleKey = "gentleStreak"
+    static let retirementKey = "retirementAlerts"
 
     private let defaults: UserDefaults
 
@@ -32,6 +34,8 @@ final class MotivationStore {
     var eveningMinute: Int
     /// Bumps when a new badge unlocks, so the screen can celebrate.
     var celebration = 0
+    var retirementAlerts: Bool
+    private var gentle = GentleState()
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -57,11 +61,44 @@ final class MotivationStore {
         morningMinute = defaults.object(forKey: Self.morningMinuteKey) as? Int ?? 0
         eveningHour = defaults.object(forKey: Self.eveningHourKey) as? Int ?? 20
         eveningMinute = defaults.object(forKey: Self.eveningMinuteKey) as? Int ?? 0
+        retirementAlerts = defaults.bool(forKey: Self.retirementKey)
+        if let data = defaults.data(forKey: Self.gentleKey),
+           let decoded = try? JSONDecoder().decode(GentleState.self, from: data) {
+            gentle = decoded
+        }
+        refreshStreak()
+    }
+
+    func setRetirementAlerts(_ enabled: Bool) {
+        retirementAlerts = enabled
+        defaults.set(enabled, forKey: Self.retirementKey)
+    }
+
+    func bestStreak() -> Int { gentle.best }
+    func bankedRestDays() -> Int { gentle.banked }
+    func pause() -> StreakPause { gentle.pause }
+
+    /// A pause freezes the number. Turning it off does not punish the days you were away.
+    func setPause(_ pause: StreakPause, now: Date = .now, calendar: Calendar = .current) {
+        refreshStreak(now: now, calendar: calendar)
+        gentle.pause = pause
+        if pause != .none {
+            gentle.lastDay = calendar.startOfDay(for: now)
+        }
+        saveGentle()
+        publishWidget(now: now, calendar: calendar)
+    }
+
+    private func saveGentle() {
+        if let data = try? JSONEncoder().encode(gentle) {
+            defaults.set(data, forKey: Self.gentleKey)
+        }
     }
 
     func setStepGoal(_ value: Int) {
         stepGoal = min(100_000, max(1_000, value))
         defaults.set(stepGoal, forKey: Self.stepGoalKey)
+        // The saved streak is not rebuilt. A new goal only affects days that have not been counted yet.
         publishWidget()
     }
 
@@ -122,16 +159,23 @@ final class MotivationStore {
         days.first { calendar.isDate($0.day, inSameDayAs: now) }?.meters ?? 0
     }
 
-    func streak(now: Date = .now, calendar: Calendar = .current) -> Int {
+    func streak() -> Int {
+        gentle.current
+    }
+
+    /// Counts new days only. It does not replay days that were already saved.
+    func refreshStreak(now: Date = .now, calendar: Calendar = .current) {
         let hits = MotionMath.hitDays(from: days, stepGoal: stepGoal, calendar: calendar)
-        return MotionMath.streak(hitDays: hits, now: now, calendar: calendar)
+        gentle = GentleStreak.catchUp(state: gentle, hitDays: hits, now: now, calendar: calendar)
+        saveGentle()
     }
 
     func publishWidget(now: Date = .now, calendar: Calendar = .current) {
+        refreshStreak(now: now, calendar: calendar)
         let snapshot = WidgetSnapshot(
             todaySteps: Int(todaySteps(now: now, calendar: calendar).rounded()),
             stepGoal: stepGoal,
-            streak: streak(now: now, calendar: calendar),
+            streak: gentle.current,
             updatedAt: now
         )
         WidgetStore.save(snapshot)
@@ -172,6 +216,7 @@ final class MotivationStore {
         }
         defaults.set(8_000, forKey: stepGoalKey)
         defaults.set(20.0, forKey: weeklyKmKey)
+        defaults.removeObject(forKey: gentleKey)
         if let data = try? JSONEncoder().encode(seeded) {
             defaults.set(data, forKey: daysKey)
         }

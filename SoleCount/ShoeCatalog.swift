@@ -44,10 +44,10 @@ enum ShoeType: String, CaseIterable, Identifiable {
     /// Default "replace at" distance in kilometres. nil means the target starts off.
     var defaultReplaceKilometers: Double? {
         switch self {
-        case .running: 600
+        case .running, .training: 650
         case .trail: 650
         case .walking: 800
-        case .basketball, .training: 500
+        case .basketball: 500
         default: nil
         }
     }

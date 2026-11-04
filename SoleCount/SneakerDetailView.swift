@@ -15,6 +15,7 @@ struct SneakerDetailView: View {
     @State private var showingPaywall = false
     @State private var showingLimitAlert = false
     @State private var showingEdit = false
+    @State private var showingSendOff = false
     @State private var buttonScale: CGFloat = 1
 
     private var tint: Color { ShoeTheme.accent(for: sneaker.shoeType) }
@@ -36,9 +37,22 @@ struct SneakerDetailView: View {
                 if !sneaker.isRetired {
                     wearButton
                 }
+                if let fraction = sneaker.lifeFraction {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Distance target")
+                            .font(.headline)
+                        LifeBar(fraction: fraction)
+                        Text(DistanceFormat.string(meters: sneaker.totalMeters))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                }
                 if store.hasFullAccess, sneaker.replaceAtKilometers > 0 {
                     MileageGoalCard(
-                        meters: sneaker.cachedDistanceMeters,
+                        meters: sneaker.totalMeters,
                         goalKilometers: sneaker.replaceAtKilometers,
                         tint: tint
                     )
@@ -57,11 +71,15 @@ struct SneakerDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button("Edit", systemImage: "pencil") { showingEdit = true }
-                    Button(sneaker.isRetired ? "Bring back" : "Move to Hall of Fame", systemImage: "archivebox") {
-                        withAnimation(reduceMotion ? nil : .spring) {
-                            sneaker.isRetired.toggle()
+                    Button(sneaker.isRetired ? "Bring back" : "Retire this pair", systemImage: "archivebox") {
+                        if sneaker.isRetired {
+                            sneaker.isRetired = false
+                        } else {
+                            sneaker.isRetired = true
+                            showingSendOff = true
                         }
                     }
+                    .accessibilityIdentifier("retirePairButton")
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -69,13 +87,25 @@ struct SneakerDetailView: View {
             }
         }
         .alert("Time to Retire This Pair?", isPresented: $showingLimitAlert) {
-            Button("Retire Now") { sneaker.isRetired = true }
+            Button("Retire Now") {
+                sneaker.isRetired = true
+                showingSendOff = true
+            }
             Button("Keep Wearing", role: .cancel) { }
         } message: {
             Text("You've reached the wear limit you set for this pair. Congratulations!")
         }
         .sheet(isPresented: $showingPaywall) { PaywallView() }
         .sheet(isPresented: $showingEdit) { AddSneakerView(existing: sneaker) }
+        .sheet(isPresented: $showingSendOff) {
+            SendOffView(
+                name: sneaker.name,
+                meters: sneaker.totalMeters,
+                wears: sneaker.wearCount,
+                cost: sneaker.costPerWear,
+                daysOwned: PairTotals.daysOwned(from: sneaker.purchaseDate, to: .now, calendar: .current)
+            )
+        }
         .sensoryFeedback(.success, trigger: sneaker.wearCount)
     }
 

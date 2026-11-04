@@ -41,6 +41,7 @@ struct TodayView: View {
                         colors: ShoeTheme.today
                     )
                     rings
+                    streakCard
                     weekCard
                     tipCard
                     walkCard
@@ -111,6 +112,35 @@ struct TodayView: View {
         .padding()
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
         .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
+    }
+
+    private var streakCard: some View {
+        let paused = motivation.pause() != .none
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(paused ? "Paused. Your streak is waiting." : "\(motivation.streak())-day streak")
+                .font(.headline)
+            Text("Best is \(motivation.bestStreak()) days. Changing the step goal does not erase it.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(motivation.bankedRestDays() > 0
+                 ? "\(motivation.bankedRestDays()) rest day saved. Use it when you need a break."
+                 : "A rest day is saved after every 6 days you show up, up to 2.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Menu {
+                ForEach(StreakPause.allCases) { pause in
+                    Button(pause.title) { motivation.setPause(pause) }
+                }
+            } label: {
+                Label(motivation.pause() == .none ? "Pause for sick, travel, or rest" : "Paused: \(motivation.pause().title)", systemImage: "pause.circle")
+            }
+            .accessibilityIdentifier("streakPauseMenu")
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var weekCard: some View {
@@ -189,8 +219,9 @@ struct TodayView: View {
 
     private var rotationCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Time to rotate")
+            Text("Wear your forgotten pairs")
                 .font(.headline)
+                .accessibilityIdentifier("forgottenPairsCard")
             ForEach(hints.prefix(3), id: \.name) { hint in
                 Text(CollectionMath.hintLine(hint))
                     .font(.subheadline)

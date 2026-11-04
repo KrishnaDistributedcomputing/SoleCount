@@ -9,11 +9,11 @@ struct ShoeCatalogTests {
         #expect(ShoeCatalog.brands.contains("Onitsuka Tiger"))
         #expect(ShoeCatalog.brands.contains("Lululemon"))
         #expect(ShoeType.allCases.count == 15)
-        #expect(ShoeType.running.defaultReplaceKilometers == 600)
+        #expect(ShoeType.running.defaultReplaceKilometers == 650)
         #expect(ShoeType.trail.defaultReplaceKilometers == 650)
         #expect(ShoeType.walking.defaultReplaceKilometers == 800)
         #expect(ShoeType.basketball.defaultReplaceKilometers == 500)
-        #expect(ShoeType.training.defaultReplaceKilometers == 500)
+        #expect(ShoeType.training.defaultReplaceKilometers == 650)
         #expect(ShoeType.lifestyle.defaultReplaceKilometers == nil)
     }
 
@@ -76,7 +76,10 @@ struct MotivationTests {
             stepStreak: 30,
             bestDaySteps: 10_000,
             woreEveryActivePairThisMonth: true,
-            pairReachedReplaceTarget: true
+            pairReachedReplaceTarget: true,
+            totalWears: 100,
+            lowestCostPerWear: 0.5,
+            pairCount: 10
         ))
         #expect(unlocked.filter(\.unlocked).count == unlocked.count)
         #expect(unlocked.map(\.id).contains("km-10"))

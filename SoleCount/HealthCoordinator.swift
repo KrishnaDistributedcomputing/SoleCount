@@ -26,14 +26,19 @@ enum HealthCoordinator {
 
     static func badges(motivation: MotivationStore, sneakers: [Sneaker]) -> [Badge] {
         let active = sneakers.filter { !$0.isRetired }.map(\.wearDates)
+        let costs = sneakers.compactMap(\.costPerWear)
         let input = MotivationEngine.makeInput(
-            totalMeters: sneakers.reduce(0) { $0 + $1.cachedDistanceMeters },
+            totalMeters: sneakers.reduce(0) { $0 + $1.totalMeters },
             days: motivation.days,
             stepGoal: motivation.stepGoal,
             activeWearDates: active,
             replaceReached: sneakers.contains(where: \.reachedMileageGoal),
             now: .now,
-            calendar: .current
+            calendar: .current,
+            totalWears: sneakers.reduce(0) { $0 + $1.wearCount },
+            lowestCostPerWear: costs.min(),
+            pairCount: sneakers.count,
+            stepStreakOverride: motivation.streak()
         )
         return MotivationEngine.badges(input)
     }
@@ -48,6 +53,7 @@ enum HealthCoordinator {
                 await WearReminder.celebrate(title: badge.title)
             }
         }
+        await retirementAlerts(motivation: motivation, sneakers: sneakers)
         let steps = Int(motivation.todaySteps().rounded())
         let evening = motivation.eveningNudge
             ? WearReminder.eveningCopy(stepsToday: steps, goal: motivation.stepGoal)
@@ -61,5 +67,27 @@ enum HealthCoordinator {
             eveningMinute: motivation.eveningMinute,
             eveningBody: evening
         )
+    }
+
+    /// Baselines the current distance first, so opening the app does not notify.
+    /// Later crossings notify only when the retirement reminder is on.
+    private static func retirementAlerts(motivation: MotivationStore, sneakers: [Sneaker]) async {
+        let allowed = motivation.retirementAlerts && await WearReminder.isAuthorized()
+        for sneaker in sneakers where !sneaker.isRetired {
+            let water = RetirementMath.highWater(for: sneaker.lifeFraction)
+            if !sneaker.retirementAlertBaselined {
+                sneaker.retirementAlertBaselined = true
+                sneaker.retirementAlertMark = water
+                continue
+            }
+            guard allowed, water > sneaker.retirementAlertMark else { continue }
+            if sneaker.retirementAlertMark < 80, water >= 80 {
+                await WearReminder.retirement(name: sneaker.name, mark: .eighty)
+            }
+            if sneaker.retirementAlertMark < 100, water >= 100 {
+                await WearReminder.retirement(name: sneaker.name, mark: .full)
+            }
+            sneaker.retirementAlertMark = water
+        }
     }
 }

@@ -31,9 +31,15 @@ final class HealthSync {
         calendar: Calendar = .current,
         healthDataAvailable: Bool? = nil
     ) {
-        let available = healthDataAvailable ?? HealthKitActivityReader.isAvailable
+        let available = LaunchFlags.healthUnavailable ? false : (healthDataAvailable ?? HealthKitActivityReader.isAvailable)
         self.healthDataAvailable = available
-        self.reader = reader ?? HealthKitActivityReader()
+        if let reader {
+            self.reader = reader
+        } else if available {
+            self.reader = HealthKitActivityReader()
+        } else {
+            self.reader = UnavailableHealthReader()
+        }
         self.defaults = defaults
         self.calendar = calendar
         if !available {

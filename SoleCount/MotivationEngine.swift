@@ -17,6 +17,10 @@ struct BadgeInput: Equatable {
     var bestDaySteps: Double
     var woreEveryActivePairThisMonth: Bool
     var pairReachedReplaceTarget: Bool
+    var totalWears: Int = 0
+    /// Lowest cost per wear among pairs that have been worn. nil if none.
+    var lowestCostPerWear: Double? = nil
+    var pairCount: Int = 0
 }
 
 /// A real, approximate distance used only as a fun comparison. The UI labels these with ≈.
@@ -41,7 +45,12 @@ enum MotivationEngine {
             Badge(id: "streak-30", title: "30-day streak", detail: "Step goal hit 30 days in a row", symbol: "flame.circle.fill", unlocked: input.stepStreak >= 30),
             Badge(id: "steps-10k", title: "10,000-step day", detail: "One day at 10,000 steps or more", symbol: "bolt.fill", unlocked: input.bestDaySteps >= 10_000),
             Badge(id: "full-rotation", title: "Full rotation", detail: "Every active pair worn this month", symbol: "calendar", unlocked: input.woreEveryActivePairThisMonth),
-            Badge(id: "full-life", title: "Full life", detail: "A pair reached its replace-at distance", symbol: "checkmark.seal.fill", unlocked: input.pairReachedReplaceTarget)
+            Badge(id: "full-life", title: "Full life", detail: "A pair reached its distance target", symbol: "checkmark.seal.fill", unlocked: input.pairReachedReplaceTarget),
+            Badge(id: "first-wear", title: "First wear", detail: "The first time a pair was logged", symbol: "shoe.2", unlocked: input.totalWears >= 1),
+            Badge(id: "wears-50", title: "50 wears", detail: "50 wears across the collection", symbol: "figure.walk", unlocked: input.totalWears >= 50),
+            Badge(id: "wears-100", title: "100 wears", detail: "100 wears across the collection", symbol: "figure.walk.motion", unlocked: input.totalWears >= 100),
+            Badge(id: "cost-under-1", title: "Under 1 a wear", detail: "A pair costs less than 1 per wear", symbol: "dollarsign.circle", unlocked: (input.lowestCostPerWear ?? .greatestFiniteMagnitude) < 1),
+            Badge(id: "collection-10", title: "10 pairs", detail: "Ten pairs in the collection", symbol: "square.grid.3x3.fill", unlocked: input.pairCount >= 10)
         ]
     }
 
@@ -59,16 +68,23 @@ enum MotivationEngine {
         activeWearDates: [[Date]],
         replaceReached: Bool,
         now: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        totalWears: Int = 0,
+        lowestCostPerWear: Double? = nil,
+        pairCount: Int = 0,
+        stepStreakOverride: Int? = nil
     ) -> BadgeInput {
         let hits = MotionMath.hitDays(from: days, stepGoal: stepGoal, calendar: calendar)
         return BadgeInput(
             totalMeters: totalMeters,
             bestWeekMeters: MotionMath.bestWeekMeters(days: days, calendar: calendar),
-            stepStreak: MotionMath.streak(hitDays: hits, now: now, calendar: calendar),
+            stepStreak: stepStreakOverride ?? MotionMath.streak(hitDays: hits, now: now, calendar: calendar),
             bestDaySteps: days.map(\.steps).max() ?? 0,
             woreEveryActivePairThisMonth: woreEveryActivePair(wearDates: activeWearDates, month: now, calendar: calendar),
-            pairReachedReplaceTarget: replaceReached
+            pairReachedReplaceTarget: replaceReached,
+            totalWears: totalWears,
+            lowestCostPerWear: lowestCostPerWear,
+            pairCount: pairCount
         )
     }
 

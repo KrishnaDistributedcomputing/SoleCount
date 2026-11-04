@@ -38,6 +38,8 @@ enum CollectionSort: String, CaseIterable, Identifiable {
     case type
     case distance
     case wears
+    case leastWorn
+    case lastWorn
     case cost
 
     var id: String { rawValue }
@@ -48,7 +50,9 @@ enum CollectionSort: String, CaseIterable, Identifiable {
         case .brand: "Brand"
         case .type: "Type"
         case .distance: "Distance"
-        case .wears: "Wears"
+        case .wears: "Most worn"
+        case .leastWorn: "Least worn"
+        case .lastWorn: "Last worn"
         case .cost: "Cost per wear"
         }
     }
@@ -63,6 +67,7 @@ struct CollectionRow: Equatable {
     var costPerWear: Double?
     var createdAt: Date
     var isRetired: Bool
+    var lastWorn: Date? = nil
 }
 
 enum CollectionMath {
@@ -172,6 +177,19 @@ enum CollectionMath {
                 if left.element.meters != right.element.meters { return left.element.meters > right.element.meters }
             case .wears:
                 if left.element.wears != right.element.wears { return left.element.wears > right.element.wears }
+            case .leastWorn:
+                if left.element.wears != right.element.wears { return left.element.wears < right.element.wears }
+            case .lastWorn:
+                switch (left.element.lastWorn, right.element.lastWorn) {
+                case let (lhs?, rhs?) where lhs != rhs:
+                    return lhs > rhs
+                case (.some, nil):
+                    return true
+                case (nil, .some):
+                    return false
+                default:
+                    break
+                }
             case .cost:
                 let leftCost = left.element.costPerWear ?? .greatestFiniteMagnitude
                 let rightCost = right.element.costPerWear ?? .greatestFiniteMagnitude

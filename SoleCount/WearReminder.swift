@@ -49,6 +49,26 @@ enum WearReminder {
         }
     }
 
+    /// 80% or 100% of a pair's distance. Only call this after the person turned reminders on.
+    static func retirement(name: String, mark: RetirementMark) async {
+        guard await isAuthorized() else { return }
+        let content = UNMutableNotificationContent()
+        content.title = name
+        switch mark {
+        case .eighty:
+            content.body = "About 80% of the distance target. Still fine to wear."
+        case .full:
+            content.body = "This pair reached its distance target. Retiring it is optional."
+        }
+        content.sound = .default
+        let request = UNNotificationRequest(
+            identifier: "solecount.retire.\(name).\(mark == .eighty ? "80" : "100")",
+            content: content,
+            trigger: nil
+        )
+        try? await UNUserNotificationCenter.current().add(request)
+    }
+
     static func celebrate(title: String) async {
         guard await isAuthorized() else { return }
         let content = UNMutableNotificationContent()

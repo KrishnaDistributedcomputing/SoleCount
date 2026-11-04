@@ -12,6 +12,7 @@ struct SneakerListView: View {
     @State private var showingAdd = false
     @State private var showingPaywall = false
     @State private var showingSettings = false
+    @State private var showingWishlist = false
     @State private var brandFilter: String?
     @State private var typeFilter: String?
     @State private var sort: CollectionSort = .newest
@@ -62,6 +63,13 @@ struct SneakerListView: View {
                         }
                         .accessibilityLabel("Settings")
                         filterMenu
+                        Button {
+                            showingWishlist = true
+                        } label: {
+                            Image(systemName: "gift")
+                        }
+                        .accessibilityLabel("Next pairs")
+                        .accessibilityIdentifier("nextPairsButton")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -79,6 +87,7 @@ struct SneakerListView: View {
             .sheet(isPresented: $showingAdd) { AddSneakerView() }
             .sheet(isPresented: $showingPaywall) { PaywallView() }
             .sheet(isPresented: $showingSettings) { SettingsView() }
+            .sheet(isPresented: $showingWishlist) { WishlistView() }
         }
     }
 
@@ -118,7 +127,7 @@ struct SneakerListView: View {
                             cardLink(sneaker)
                         }
                     } header: {
-                        SectionHeader(title: "Hall of Fame", count: retired.count)
+                        SectionHeader(title: "Retired", count: retired.count)
                     }
                 }
                 if !store.hasFullAccess {
@@ -266,8 +275,8 @@ struct SneakerCard: View {
                 }
                 HStack(spacing: 12) {
                     Label("\(sneaker.wearCount)", systemImage: "figure.walk")
-                    if sneaker.healthUpdatedAt != nil || sneaker.cachedDistanceMeters > 0 {
-                        Text(DistanceFormat.string(meters: sneaker.cachedDistanceMeters))
+                    if sneaker.healthUpdatedAt != nil || sneaker.totalMeters > 0 {
+                        Text(DistanceFormat.string(meters: sneaker.totalMeters))
                     }
                     if let cost = sneaker.costPerWear {
                         Text(cost.asCurrency)
@@ -275,19 +284,11 @@ struct SneakerCard: View {
                 }
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
+                if let fraction = sneaker.lifeFraction {
+                    LifeBar(fraction: fraction)
+                }
             }
             Spacer(minLength: 8)
-            if sneaker.replaceAtKilometers > 0 {
-                ProgressRing(
-                    progress: sneaker.cachedDistanceMeters / (sneaker.replaceAtKilometers * 1_000),
-                    tint: ShoeTheme.accent(for: sneaker.shoeType),
-                    lineWidth: 5,
-                    label: "",
-                    caption: ""
-                )
-                .frame(width: 36)
-                .accessibilityHidden(true)
-            }
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)

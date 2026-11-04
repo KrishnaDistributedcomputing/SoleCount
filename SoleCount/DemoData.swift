@@ -11,7 +11,7 @@ enum DemoData {
         let calendar = Calendar.current
         let now = Date.now
         let samples: [(name: String, brand: String, type: ShoeType, price: Double, wears: Int, color: UIColor, km: Double, steps: Double, recent: Int, goal: Double)] = [
-            ("Daily Runners", "Running", .running, 140, 48, .systemOrange, 180, 230_000, 0, 600),
+            ("Daily Runners", "Running", .running, 140, 48, .systemOrange, 520, 230_000, 0, 650),
             ("White Court Lows", "Everyday", .lifestyle, 95, 31, .systemTeal, 42, 60_000, 1, 0),
             ("Trail Hikers", "Outdoor", .hiking, 180, 12, .systemGreen, 30, 40_000, 40, 0),
         ]
@@ -42,8 +42,14 @@ enum DemoData {
             }.joined(separator: ",")
             sneaker.healthUpdatedAt = now
             sneaker.createdAt = calendar.date(byAdding: .minute, value: -index, to: now) ?? now
+            if index == 1 {
+                sneaker.startingKilometers = 8
+                sneaker.startingWears = 4
+            }
             context.insert(sneaker)
         }
+        let wish = WishlistItem(brand: "Nike", modelName: "Air Max 90", targetPrice: 120, notes: "A pair to look at next")
+        context.insert(wish)
         try? context.save()
     }
 

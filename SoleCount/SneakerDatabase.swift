@@ -10,7 +10,12 @@ enum SneakerDatabase {
         if !inMemory, let disk { return disk }
         let config = ModelConfiguration(isStoredInMemoryOnly: inMemory, cloudKitDatabase: .none)
         do {
-            let container = try ModelContainer(for: Sneaker.self, SneakerPhotoItem.self, configurations: config)
+            let container = try ModelContainer(
+                for: Sneaker.self,
+                SneakerPhotoItem.self,
+                WishlistItem.self,
+                configurations: config
+            )
             #if DEBUG
             if inMemory && LaunchFlags.demoData {
                 DemoData.insert(into: container.mainContext)
