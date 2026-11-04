@@ -28,7 +28,7 @@ final class SoleCountUITests: XCTestCase {
     }
 
     @MainActor
-    func testFourthPairIsFree() throws {
+    func testAddFourthPair() throws {
         let firstAdd = app.buttons["Add a pair"]
         XCTAssertTrue(firstAdd.waitForExistence(timeout: 10))
         firstAdd.tap()
