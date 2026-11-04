@@ -108,13 +108,13 @@ struct StatsDashboardView: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text("Share")
                 .font(.title3.bold())
-            if let data = CardRenderer.png({ ShareCardBody(summary: collection) }) {
+            if let data = CardRenderer.png(content: { ShareCardBody(summary: collection) }) {
                 ShareLink(item: PNGShare(data: data), preview: SharePreview("Collection")) {
                     Label("Share collection card", systemImage: "square.and.arrow.up")
                 }
                 .accessibilityIdentifier("shareCollectionButton")
             }
-            if let data = CardRenderer.png({ ShareCardBody(summary: month) }) {
+            if let data = CardRenderer.png(content: { ShareCardBody(summary: month) }) {
                 ShareLink(item: PNGShare(data: data), preview: SharePreview("This month")) {
                     Label("Share this month", systemImage: "calendar")
                 }

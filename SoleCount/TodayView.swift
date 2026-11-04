@@ -263,9 +263,10 @@ struct TodayView: View {
                 }
             }
             .frame(height: 160)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Steps for the last 7 days")
             .padding()
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-            .accessibilityLabel("Steps for the last 7 days")
         }
     }
 

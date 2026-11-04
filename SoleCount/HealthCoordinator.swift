@@ -72,7 +72,8 @@ enum HealthCoordinator {
     /// Baselines the current distance first, so opening the app does not notify.
     /// Later crossings notify only when the retirement reminder is on.
     private static func retirementAlerts(motivation: MotivationStore, sneakers: [Sneaker]) async {
-        let allowed = motivation.retirementAlerts && await WearReminder.isAuthorized()
+        let authorized = await WearReminder.isAuthorized()
+        let allowed = motivation.retirementAlerts && authorized
         for sneaker in sneakers where !sneaker.isRetired {
             let water = RetirementMath.highWater(for: sneaker.lifeFraction)
             if !sneaker.retirementAlertBaselined {

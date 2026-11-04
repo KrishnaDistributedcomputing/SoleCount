@@ -9,8 +9,10 @@ final class JourneyTests: XCTestCase {
     @MainActor
     func testFirstLaunchAddPairAndLogWear() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-UITesting"]
+        app.launchArguments += ["-UITesting", "-HealthUnavailable"]
         app.launch()
+        let healthOff = app.staticTexts["Apple Health isn't on this device. Wears, cost per wear, and the rest of SoleCount still work."]
+        XCTAssertTrue(healthOff.waitForExistence(timeout: 10), "The app should explain Health is off and keep working")
         app.tabBars.buttons["Collection"].tap()
         let add = app.buttons["Add a pair"]
         XCTAssertTrue(add.waitForExistence(timeout: 10), "A new phone should offer Add a pair")
@@ -32,12 +34,14 @@ final class JourneyTests: XCTestCase {
         price.tap()
         price.typeText("80")
 
-        var starting = app.textFields["startingDistanceField"]
-        if !starting.waitForExistence(timeout: 2) {
+        var starting = app.descendants(matching: .any)["startingDistanceField"]
+        var swipes = 0
+        while !starting.waitForExistence(timeout: 1), swipes < 4 {
             app.swipeUp()
-            starting = app.textFields["startingDistanceField"]
+            starting = app.descendants(matching: .any)["startingDistanceField"]
+            swipes += 1
         }
-        XCTAssertTrue(starting.waitForExistence(timeout: 4), "Starting distance should be on the add form")
+        XCTAssertTrue(starting.waitForExistence(timeout: 2), "Starting distance should be on the add form")
         starting.tap()
         starting.typeText("12")
 
