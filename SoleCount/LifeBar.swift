@@ -22,9 +22,9 @@ struct LifeBar: View {
 
     private var color: Color {
         switch band {
-        case .none, .green: Color.green
-        case .yellow: Color(red: 0.72, green: 0.52, blue: 0.0)
-        case .red: Color.red
+        case .none, .green: ShoeTheme.mintTint
+        case .yellow: ShoeTheme.adaptive(light: (0.70, 0.48, 0.0), dark: (0.98, 0.78, 0.30))
+        case .red: ShoeTheme.adaptive(light: (0.80, 0.22, 0.18), dark: (1.0, 0.45, 0.40))
         }
     }
 

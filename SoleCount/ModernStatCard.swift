@@ -20,7 +20,7 @@ struct ModernStatCard: View {
                 .contentTransition(.numericText())
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)

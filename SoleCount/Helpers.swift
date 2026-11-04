@@ -87,7 +87,7 @@ struct StatCard: View {
                 .minimumScaleFactor(0.5)
             Text(title)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
                 .textCase(.uppercase)
         }
         .frame(maxWidth: .infinity)

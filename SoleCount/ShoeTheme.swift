@@ -41,6 +41,39 @@ enum ShoeTheme {
         adaptive(light: (0.95, 0.62, 0.32), dark: (0.95, 0.72, 0.45))
     }
 
+    /// Quiet text on cards. Warm brown by day, soft cream at night. At least 4.5:1 on every card and canvas.
+    static var softText: Color {
+        adaptive(light: (0.45, 0.33, 0.27), dark: (0.86, 0.78, 0.72))
+    }
+
+    /// The main button colour. Deep coral by day so white words read clearly, bright coral at night with dark words.
+    static var coral: Color {
+        adaptive(light: (0.74, 0.30, 0.23), dark: (0.96, 0.58, 0.48))
+    }
+
+    /// Words on a `coral` button.
+    static var onCoral: Color {
+        adaptive(light: (1.0, 1.0, 1.0), dark: (0.24, 0.12, 0.08))
+    }
+
+    /// Ring, bar, and icon tints. Each one is at least 3:1 on a card in both modes.
+    static var coralTint: Color {
+        adaptive(light: (0.80, 0.33, 0.26), dark: (0.96, 0.52, 0.42))
+    }
+
+    static var goldTint: Color {
+        adaptive(light: (0.74, 0.46, 0.08), dark: (0.97, 0.74, 0.38))
+    }
+
+    static var mintTint: Color {
+        adaptive(light: (0.16, 0.55, 0.42), dark: (0.45, 0.80, 0.64))
+    }
+
+    /// Flame and star icons, in place of the system orange that faded on peach.
+    static var flame: Color {
+        adaptive(light: (0.80, 0.38, 0.10), dark: (0.98, 0.64, 0.36))
+    }
+
     /// Backgrounds for a pair. Bright enough for `ink` in the day, deep enough for cream at night.
     static func colors(for type: ShoeType) -> [Color] {
         switch type {
@@ -107,6 +140,22 @@ enum ShoeTheme {
             light: (lightRed, lightGreen, lightBlue),
             dark: (darkRed, darkGreen, darkBlue)
         )
+    }
+}
+
+/// The big coral call-to-action button used on empty screens.
+struct SunriseButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(ShoeTheme.onCoral)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 22)
+            .frame(minHeight: 50)
+            .background(ShoeTheme.coral, in: Capsule())
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .shadow(color: ShoeTheme.shadow.opacity(0.25), radius: 8, y: 4)
     }
 }
 

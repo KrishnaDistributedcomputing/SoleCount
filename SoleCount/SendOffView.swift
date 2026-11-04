@@ -31,10 +31,10 @@ struct SendOffView: View {
                 .warmCard()
                 Text("This pair has a story worth keeping. Retired pairs keep their stats, and you can bring this pair back any time.")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                     .fixedSize(horizontal: false, vertical: true)
                 Button("Keep in the Hall of Fame") { dismiss() }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(SunriseButtonStyle())
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)

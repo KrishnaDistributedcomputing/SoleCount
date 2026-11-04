@@ -26,7 +26,7 @@ struct DistanceChartView: View {
             if data.allSatisfy({ $0.amount < 0.05 }) {
                 Text("No distance in the last 6 months yet")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                     .frame(maxWidth: .infinity, minHeight: 160)
             } else {
                 Chart(data) { item in

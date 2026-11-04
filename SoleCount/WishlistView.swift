@@ -26,7 +26,7 @@ struct WishlistView: View {
                             if !item.brand.isEmpty, !item.modelName.isEmpty {
                                 Text(item.brand)
                                     .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(ShoeTheme.softText)
                             }
                             if item.targetPrice > 0 {
                                 Text(item.targetPrice.asCurrency)
@@ -35,7 +35,7 @@ struct WishlistView: View {
                             if !item.notes.isEmpty {
                                 Text(item.notes)
                                     .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(ShoeTheme.softText)
                             }
                             Button("I bought it") { buy(item) }
                                 .accessibilityIdentifier("boughtItButton")

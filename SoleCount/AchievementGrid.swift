@@ -30,12 +30,12 @@ struct AchievementGrid: View {
                         .fixedSize(horizontal: false, vertical: true)
                     Text(badge.detail)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
-                .foregroundStyle(badge.unlocked ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                .foregroundStyle(badge.unlocked ? AnyShapeStyle(.primary) : AnyShapeStyle(ShoeTheme.softText))
                 .background(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .fill(badge.unlocked ? AnyShapeStyle(ShoeTheme.cardFill) : AnyShapeStyle(ShoeTheme.canvas))
@@ -44,7 +44,6 @@ struct AchievementGrid: View {
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .strokeBorder(badge.unlocked ? ShoeTheme.glow.opacity(0.7) : Color.clear, lineWidth: 1.5)
                 )
-                .opacity(badge.unlocked ? 1 : 0.85)
                 .shadow(color: badge.unlocked ? ShoeTheme.glow.opacity(popped ? 0.55 : 0.2) : .clear, radius: popped ? 14 : 6)
                 .scaleEffect(popped && badge.unlocked ? 1.04 : 1)
                 .accessibilityElement(children: .combine)

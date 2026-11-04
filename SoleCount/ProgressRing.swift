@@ -40,7 +40,7 @@ struct ProgressRing: View {
 
             Text(caption)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
         }
