@@ -10,6 +10,7 @@ Do every command on the Mac. Copy a grey box by hovering and clicking the copy i
 
 - [ ] [1. Mac basics](#mac-basics)
 - [ ] [2. Get the code](#get-the-code)
+- [ ] [Delete SoleCount and start fresh](#delete-solecount)
 - [ ] [3. Set up with no Apple membership](#setup-local)
 - [ ] [4. Run the tests](#make-test)
 - [ ] [5. Run the app](#run-the-app)
@@ -54,6 +55,8 @@ Press Cmd + Tab to switch between Safari and Terminal. In Finder, press Cmd + Sh
 
 ### 2. Get the code
 
+Already have an old SoleCount folder and want it gone? Do [Delete SoleCount and start fresh](#delete-solecount) first. Then come back here.
+
 If you do not have a SoleCount folder yet:
 
 ```bash
@@ -82,15 +85,134 @@ git checkout cursor/setup-without-apple-043d && git pull
 
 **Why:** `git checkout` switches which copy of the project this folder is using. After the branch is merged into `main`, go back with `git checkout main && git pull`.
 
-To throw away a broken copy and start over, only if you have not saved notes inside that folder:
+<a id="delete-solecount"></a>
+
+### Delete SoleCount and start fresh
+
+Use this when a SoleCount folder is already on the Mac and you want to throw it away. This deletes the copy on this Mac only. It does not delete the code on GitHub, and it does not delete the app in App Store Connect.
+
+**1. Check whether the folder exists.**
 
 ```bash
-cd ~/Desktop && rm -rf SoleCount
+ls -d ~/Desktop/SoleCount
 ```
 
-Then run the clone command again.
+**Why:** This asks the Mac if that one folder is there. You want to see which of these two answers you get before you delete anything.
 
-**Why:** `rm -rf` deletes that folder. The `.p8` key is stored outside it, in your home folder, so this does not delete the key.
+- The path, such as `/Users/you/Desktop/SoleCount`, means the folder is there.
+- `No such file or directory` means there is no SoleCount folder on the Desktop. Skip the delete and use the clone command in step 2.
+
+The project might be somewhere else. Search your home folder:
+
+```bash
+mdfind -name SoleCount -onlyin ~ | head
+```
+
+**Why:** This lists up to 10 files and folders named SoleCount under your home folder. You can also press Cmd + Space, type `SoleCount`, and look at the Spotlight results. Only delete a folder you recognize as the project.
+
+**2. Save your answers first, if you want them.**
+
+```bash
+cp ~/Desktop/SoleCount/fastlane/.env ~/solecount-env-backup
+```
+
+**Why:** `fastlane/.env` holds the Team ID, Key ID, Issuer ID, and Apple ID you already typed. This copies that file to your home folder so you can put it back later. If the command says the file does not exist, there was nothing to save. This does not copy the `.p8` key. That key lives outside the project folder.
+
+**3. Close Xcode.** Click Xcode, then press Cmd + Q.
+
+**Why:** Xcode keeps the project open. A delete can fail, or leave a half-deleted folder, while Xcode is still using it.
+
+**4. Delete the folder.**
+
+```bash
+cd ~
+```
+
+**Why:** `cd ~` moves you to your home folder. You cannot delete a folder you are currently inside.
+
+```bash
+rm -rf ~/Desktop/SoleCount
+```
+
+**Why:** This deletes `~/Desktop/SoleCount` permanently. It does not go to the Trash, and there is no undo. Read the path before you press Return. It must be `~/Desktop/SoleCount` and nothing else. The `.p8` key is outside this folder, so this command does not delete it.
+
+Or use Finder: open the Desktop, drag the SoleCount folder to the Trash, click the Trash, and choose **Empty Trash**.
+
+Check that it is gone:
+
+```bash
+ls -d ~/Desktop/SoleCount
+```
+
+**Why:** `No such file or directory` means the folder is gone. If you still see the path, the delete did not happen.
+
+**5. Optional deeper clean.** Skip any line you do not need.
+
+Xcode build cache for SoleCount only:
+
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData/SoleCount-*
+```
+
+**Why:** Xcode keeps old build files. This removes SoleCount's cache so the next build starts clean. Other apps' build files stay.
+
+The copy inside the iPhone Simulator: open Simulator, long-press the SoleCount icon, and choose **Remove App**. Or, with a simulator already open:
+
+```bash
+xcrun simctl uninstall booted com.krishnav.SoleCount
+```
+
+**Why:** This removes the app from the simulator that is running. Sneaker data in that simulator copy is deleted with the app.
+
+The copy on your iPhone: long-press the SoleCount icon, tap **Remove App**, then **Delete App**.
+
+**Why:** This removes the installed app from your phone. It does not remove an App Store listing.
+
+Only if you also want to delete the App Store key files:
+
+```bash
+rm -f ~/.appstoreconnect/private_keys/AuthKey_*.p8
+```
+
+**Why:** These files are how SoleCount signs in to Apple. Apple lets you download each `.p8` file only once. If you delete it and you have no other copy, you must revoke that key on the App Store Connect website and create a new one. Leave the file alone unless you are sure.
+
+Homebrew, XcodeGen, and fastlane can stay. The next setup reuses them.
+
+**6. Start fresh.**
+
+```bash
+cd ~/Desktop && git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git && cd SoleCount
+```
+
+**Why:** This downloads a clean SoleCount onto the Desktop and moves into that folder.
+
+While Apple is still processing the membership:
+
+```bash
+make setup-local
+```
+
+**Why:** This installs any missing tools, creates the Xcode project, and opens Xcode. It skips the Apple questions.
+
+If Apple has already emailed you and you want to answer the Apple questions:
+
+```bash
+make setup
+```
+
+**Why:** This does the same tool setup. If the Team ID and keys are still missing, it continues as the local setup.
+
+If you saved `fastlane/.env` in the save step above, put it back:
+
+```bash
+cp ~/solecount-env-backup ~/Desktop/SoleCount/fastlane/.env
+```
+
+**Why:** This restores the answers you saved. The file stays on this Mac. Git does not upload it.
+
+**7. GitHub and App Store Connect stay as they are.**
+
+**Why:** Deleting the folder on your Mac does not delete the GitHub repository, and it does not delete the app record in App Store Connect. Removing that record is a separate step on the website. Apple keeps the app name reserved after a record is removed, so you usually do not need to remove it.
 
 <a id="part-b"></a>
 

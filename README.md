@@ -16,6 +16,8 @@ Do this on the Mac. Copy each grey box, click Terminal, press Cmd + V, then pres
 
 **A. Get ready**
 
+Already have an old SoleCount folder? [Delete SoleCount and start fresh](docs/MAC-STEP-BY-STEP.md#delete-solecount), then clone again.
+
 ```bash
 cd ~/Desktop && git clone https://github.com/KrishnaDistributedcomputing/SoleCount.git && cd SoleCount
 ```
