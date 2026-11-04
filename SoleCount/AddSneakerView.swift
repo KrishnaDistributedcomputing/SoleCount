@@ -16,6 +16,8 @@ struct AddSneakerView: View {
     @State private var hasWearLimit: Bool
     @State private var wearLimit: Int
     @State private var photoItem: PhotosPickerItem?
+    @State private var showingLibrary = false
+    @State private var showingCamera = false
     @State private var extraItems: [PhotosPickerItem] = []
     @State private var photos: [Data]
     @State private var shoeType: ShoeType
@@ -86,6 +88,11 @@ struct AddSneakerView: View {
                         .accessibilityIdentifier("saveSneakerButton")
                 }
             }
+            .photosPicker(isPresented: $showingLibrary, selection: $photoItem, matching: .images)
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraPicker { data in setMainPhoto(data) }
+                    .ignoresSafeArea()
+            }
             .onChange(of: photoItem) { _, item in
                 Task { await loadMainPhoto(from: item) }
             }
@@ -108,21 +115,51 @@ struct AddSneakerView: View {
         Section {
             HStack {
                 Spacer()
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    VStack(spacing: 12) {
-                        SneakerPhoto(data: photos.first, size: 140)
-                            .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
-                        Text(photos.isEmpty ? "Add Photo" : "Change Photo")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.accentColor)
+                if canTakePhoto {
+                    Menu {
+                        Button {
+                            showingCamera = true
+                        } label: {
+                            Label("Take Photo", systemImage: "camera")
+                        }
+                        .accessibilityIdentifier("takePhotoOption")
+                        Button {
+                            showingLibrary = true
+                        } label: {
+                            Label("Choose from Library", systemImage: "photo.on.rectangle")
+                        }
+                        .accessibilityIdentifier("chooseLibraryOption")
+                    } label: {
+                        photoLabel
                     }
-                    .padding(.vertical, 8)
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("photoMenu")
+                } else {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        photoLabel
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
                 Spacer()
             }
         }
         .listRowBackground(Color.clear)
+    }
+
+    /// Take Photo only shows on a device with a camera.
+    private var canTakePhoto: Bool {
+        CameraPicker.isAvailable || LaunchFlags.showCameraOption
+    }
+
+    private var photoLabel: some View {
+        VStack(spacing: 12) {
+            SneakerPhoto(data: photos.first, size: 140)
+                .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+            Text(photos.isEmpty ? "Add Photo" : "Change Photo")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.accentColor)
+        }
+        .padding(.vertical, 8)
     }
 
     private var detailsSection: some View {
@@ -133,7 +170,7 @@ struct AddSneakerView: View {
             labeledField(symbol: "building.2.fill", tint: Color.accentColor) {
                 TextField("Brand (e.g. Nike)", text: $brand)
             }
-            labeledField(symbol: "dollarsign.circle.fill", tint: .green) {
+            labeledField(symbol: "dollarsign.circle.fill", tint: ShoeTheme.mintTint) {
                 TextField("Price paid (e.g. 129.99)", value: $price, format: .number)
                     .keyboardType(.decimalPad)
             }
@@ -204,7 +241,7 @@ struct AddSneakerView: View {
                     .frame(maxWidth: 80)
                     .accessibilityIdentifier("startingDistanceField")
                 Text(DistanceFormat.unitWord())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
             }
             Toggle("Set a Wear Goal", isOn: $hasWearLimit)
             if hasWearLimit {
@@ -223,7 +260,7 @@ struct AddSneakerView: View {
                         .multilineTextAlignment(.trailing)
                         .frame(maxWidth: 80)
                     Text(DistanceFormat.unitWord())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                 }
             }
             if photos.count > 1 {
@@ -265,6 +302,11 @@ struct AddSneakerView: View {
 
     private func loadMainPhoto(from item: PhotosPickerItem?) async {
         guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
+        setMainPhoto(data)
+    }
+
+    /// Camera and library photos are stored the same way.
+    private func setMainPhoto(_ data: Data) {
         guard let shrunk = ImageHelper.downsized(data) else { return }
         if photos.isEmpty {
             photos = [shrunk]
