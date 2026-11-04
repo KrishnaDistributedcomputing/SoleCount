@@ -47,7 +47,7 @@ struct WearCalendarView: View {
                         ForEach(weekdaySymbols, id: \.self) { symbol in
                             Text(symbol)
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(ShoeTheme.softText)
                         }
                         ForEach(Array(days.enumerated()), id: \.offset) { _, day in
                             if let day {
@@ -65,8 +65,8 @@ struct WearCalendarView: View {
                         Text(selected, format: .dateTime.weekday(.wide).month().day())
                             .font(.headline)
                         if names.isEmpty {
-                            Text("No pairs logged.")
-                                .foregroundStyle(.secondary)
+                            Text(sneakers.isEmpty ? "Add a pair to start your calendar." : "Tap Wore Today on a pair and your days will fill with color.")
+                                .foregroundStyle(ShoeTheme.softText)
                         } else {
                             ForEach(names, id: \.self) { name in
                                 Label(name, systemImage: "shoe.fill")
