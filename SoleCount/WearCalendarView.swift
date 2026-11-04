@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 /// A month of wears. Tap a day to see which pairs were on your feet.

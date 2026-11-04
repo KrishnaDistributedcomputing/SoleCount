@@ -1,4 +1,5 @@
 import Charts
+import SwiftData
 import SwiftUI
 
 /// The home tab: today's steps, a short walk, and a reason to head out.

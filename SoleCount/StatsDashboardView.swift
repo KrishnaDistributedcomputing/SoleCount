@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 /// The whole collection in one place: wears, distance, value, and badges.
