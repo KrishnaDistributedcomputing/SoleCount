@@ -6,7 +6,6 @@ import SwiftUI
 struct TodayView: View {
     @Environment(HealthSync.self) private var health
     @Environment(MotivationStore.self) private var motivation
-    @Environment(StoreManager.self) private var store
     @Query(sort: \Sneaker.createdAt, order: .reverse) private var sneakers: [Sneaker]
 
     @State private var showingWalk = false

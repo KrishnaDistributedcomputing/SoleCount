@@ -73,30 +73,3 @@ struct SneakerPhoto: View {
         .accessibilityHidden(true)
     }
 }
-
-/// A small box with a big number and a label underneath.
-struct StatCard: View {
-    let title: String
-    let value: String
-
-    var body: some View {
-        VStack(spacing: 6) {
-            Text(value)
-                .font(.title3.bold())
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
-        )
-        .accessibilityElement(children: .combine)
-    }
-}

@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: First-time Mac setup
+    url: https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/docs/START-HERE.md
+    about: Setting up Xcode and the first upload. Day-to-day changes use the developer guide.
+  - name: Day-to-day changes
+    url: https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/docs/DEVELOPER.md
+    about: How a change goes from an idea to a reviewed pull request.
+  - name: Next App Store upload
+    url: https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/docs/RELEASE-CHECKLIST.md
+    about: Read this before TestFlight or App Review. Reconcile the Mac folder first.

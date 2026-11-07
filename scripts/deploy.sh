@@ -1,6 +1,7 @@
 #!/bin/bash
-# Upload half of a release: tests, TestFlight, then App Review.
-# The command that does the WHOLE path (setup + this upload) is: make release
+# Tests, then TestFlight, then the store listing.
+# This does not send the app to App Review. `make submit` does that.
+# The command that does setup plus this upload is: make release
 #
 # Options:
 #   bash scripts/deploy.sh --beta-only    stop after TestFlight
@@ -27,5 +28,5 @@ step() { printf "\n\033[1;34m==> %s\033[0m\n" "$1"; }
 step "1/3 Tests";             fastlane ios test
 step "2/3 TestFlight upload"; fastlane ios beta
 if [ "$BETA_ONLY" = 1 ]; then echo "Stopped after TestFlight (--beta-only)."; exit 0; fi
-step "3/3 App Review";        fastlane ios release
-printf "\n\033[1;32mAll done.\033[0m Check https://appstoreconnect.apple.com for review status.\n"
+step "3/3 Store listing";      fastlane ios release
+printf "\n\033[1;32mUpload finished.\033[0m The build is on TestFlight. Review starts after: make submit\n"
