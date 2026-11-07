@@ -15,9 +15,9 @@ A few words used below:
 | | |
 |---|---|
 | Written | 7 November 2026 |
-| Branch | `cursor/ai-adlc-foundation-a2e5` |
-| App-code baseline | GitHub `main` commit `d41209a` (4 November 2026) |
-| Extra code on this branch | `SoleCountTests/IdentityTests.swift` only. Docs, templates, and CI text around it do not change the app. |
+| Branch | `cursor/consistency-kudos-a2e5` |
+| App-code baseline | GitHub `main` commit `d41209a` (4 November 2026), plus the foundation branch under it |
+| Extra app behavior on this branch | Logging streak in `SoleCount/LoggingConsistency.swift` and `SoleCount/LoggingStreakCard.swift`. It reads saved wear dates. It does not add a model field. |
 | Marketing version in `project.yml` | `1.0` |
 | Committed build number | `1` |
 
@@ -35,7 +35,7 @@ Commits named as Mac-only, and absent from this clone: `740a4a8`, `d99297c`, `90
 
 What that means for this design:
 
-- If those commits add screens, fields, or permissions, this page under-describes the binary Apple approved.
+- If those commits add screens, fields, or permissions, this page under-describes the binary Apple approved. Levels, quests, or a weekly challenge were reported as possible Mac-only work. Their source was not in this clone. The logging streak below is a GitHub feature. It is not a description of that Mac work, and it does not replace it.
 - `docs/PRIVACY.md` on GitHub mentions a camera and a "Sole check". `project.yml` has no camera purpose string, and no Swift file here implements a sole check. The root `PRIVACY.md` does not mention the camera. Which text matches the approved app is **Unknown (Mac copy)**.
 - `project.yml` says build `1`. fastlane does not upload that number. At upload it asks App Store Connect for the latest TestFlight build and adds one. A later upload is a new build. It is not a rebuild of build 2.
 - GitHub branch `cursor/setup-without-apple-043d` points at `8707a16`, which is already in `main` through pull request 7. A Mac branch can reuse that name and still differ.
@@ -294,7 +294,8 @@ Stored distance is metres. Replacement goals and the weekly goal are kilometres.
 | Forgotten pairs | `CollectionMath.forgotten` | Active pairs never worn, or last worn at least 30 days ago. Retired pairs are skipped. Never-worn sorts first |
 | Health split | `HealthAttribution.attribute` | A day's steps and metres are divided evenly by the number of pairs worn that day. Days outside the latest six calendar months stay in the totals and out of `monthlyMeters` |
 | Share note | `HealthAttribution.shareNote` | `nil` when the pair had every day to itself. Mixed other-pair counts become "shared with other pairs on some days" |
-| Step streak used by some badges | `MotionMath.streak` | Counts back from today, or from yesterday if today is not a hit yet |
+| Step streak used by some badges | `MotionMath.streak` | Counts back from today, or from yesterday if today is not a hit yet. This is the step-goal streak on Today and on the widget. It is not the logging streak |
+| Logging streak | `LoggingConsistencyMath` | One local calendar day per saved wear date, at or before today. Several pairs or several taps on that day still count once. Starting wears are not dates, so they do not count. A future date does not count. Current uses `MotionMath.streak` on those days. Best is the longest run still in the saved dates, so removing a date can shorten it. Milestones, chosen for this screen, are 3, 7, 14, and 30 current days |
 | Gentle streak | `GentleStreak` | One banked rest day per 6 hit days, cap 2. A miss spends a banked day or resets. Pause freezes the number. Changing the step goal does not replay old days |
 | Walk suggestion | `MotionMath.walkPlan` | Brisk pace is 115 steps per minute. Suggestion is 5 to 30 minutes. Health off uses a 10-minute plan and does not claim the goal is done |
 | Weekly trend | `MotionMath.trend` | Flat when the two weeks differ by less than 1 metre |
@@ -304,6 +305,22 @@ Stored distance is metres. Replacement goals and the weekly goal are kilometres.
 | CSV distance | `CollectionExport` | Header says `Distance km`. Values are metres / 1000, two decimal places, POSIX locale. Dates are `yyyy-MM-dd` |
 
 Logging a wear appends a `Date`. It does not reject a second tap on the same day at the model layer. `woreToday` is true if any stored date is today, and undo removes only the last today entry (`Sneaker.undoTodayWear`).
+
+### Logging streak
+
+**Implemented** in this GitHub tree. Today and Stats show `LoggingStreakCard`. The numbers come from `LoggingConsistencyMath.evaluate` over every sneaker's `wearDates`, including retired pairs. Nothing new is written to SwiftData or UserDefaults. There is no new notification.
+
+What the card says is the rule:
+
+- A local day counts when any pair has a wear date on that day.
+- Today with no log still leaves yesterday's run in place. If yesterday is missing too, the current run is 0.
+- The best line is whatever consecutive run remains after a log is added, moved, or removed.
+- Copy thanks a run and names the next milestone. It does not scold, and it does not sell anything.
+- The step-goal streak, its pause, and its rest days are unchanged.
+
+**Unknown (Mac copy).** If the Mac folder has its own levels, quests, or weekly challenge, those files were not read here. Do not delete them to match this card.
+
+**Proposed.** No leaderboard, account, or shared streak. No change to that proposal is requested by this card.
 
 Health attribution builds a fresh `UUID` per pair per refresh and throws it away after matching results. It is not the SwiftData persistent ID.
 

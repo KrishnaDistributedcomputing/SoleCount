@@ -91,13 +91,17 @@ Only differences the code actually has:
 
 ### In the GitHub tree now
 
-**Implemented.** Today (steps, streak, tip, walk nudge), Collection (add, filter, retire), Stats, Calendar, detail with cost and distance, wishlist, local reminders, CSV export, on-device share card, Shortcuts phrase to log a wear, Home Screen widget, English, iPhone, iOS 18.
+**Implemented.** Today (steps, the step-goal streak, a separate logging streak, tip, walk nudge), Collection (add, filter, retire), Stats, Calendar, detail with cost and distance, wishlist, local reminders, CSV export, on-device share card, Shortcuts phrase to log a wear, Home Screen widget, English, iPhone, iOS 18.
+
+The logging streak thanks you for logging wears on consecutive local days. It is not a step goal, not a purchase, and not a notification. Milestones on the card are 3, 7, 14, and 30 days. Those four numbers are a product choice for this screen.
 
 ### Explicitly not the current product
 
 **Decided.** A paywall, a price on the download, ads, an account, a server, behavioral analytics, and writing to Apple Health.
 
-**Not in this tree, and not scheduled by this page.** iCloud sync, CSV import, deleting a pair (retire is the removal), iPad layout, a second language, and any donation or sponsor UI.
+**Not in this tree, and not scheduled by this page.** iCloud sync, CSV import, deleting a pair (retire is the removal), iPad layout, a second language, any donation or sponsor UI, a leaderboard, and kudos that require an account.
+
+**Unknown (Mac copy).** Levels, quests, or a weekly challenge may exist only on the Mac. This page has not seen that code. The logging streak here is not that feature.
 
 ### Historical scope that is no longer the plan
 

@@ -11,6 +11,14 @@ struct TodayView: View {
     @State private var showingWalk = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var logging: LoggingConsistency {
+        LoggingConsistencyMath.evaluate(
+            wearDates: sneakers.flatMap(\.wearDates),
+            now: .now,
+            calendar: .current
+        )
+    }
+
     private var steps: Double { motivation.todaySteps() }
     private var week: (thisWeek: Double, lastWeek: Double) {
         MotionMath.weekMeters(days: motivation.days, now: .now, calendar: .current)
@@ -41,6 +49,7 @@ struct TodayView: View {
                     )
                     rings
                     streakCard
+                    LoggingStreakCard(consistency: logging)
                     weekCard
                     tipCard
                     walkCard

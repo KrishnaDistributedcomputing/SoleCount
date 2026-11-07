@@ -99,6 +99,9 @@ final class JourneyTests: XCTestCase {
             app.tabBars.buttons["Stats"].tap()
         }
         XCTAssertTrue(app.navigationBars["Stats"].waitForExistence(timeout: 5), "Stats should open after the wishlist closes")
+        let logging = reveal(app, identifier: "loggingStreakCard")
+        XCTAssertTrue(logging.waitForExistence(timeout: 3), "Stats should explain the logging streak")
+        XCTAssertTrue(logging.label.contains("local day"), "The card should say a local day counts once")
         let badges = reveal(app, identifier: "allBadgesButton")
         XCTAssertTrue(badges.waitForExistence(timeout: 3), "Stats should offer All badges")
         badges.tap()
