@@ -17,6 +17,7 @@ steps and walking distance so each pair shows kilometres. It is not a medical ap
 
 ## How a change is made
 - Read docs/DEVELOPER.md. One issue, one small branch, one pull request.
+- The source-grounded design is docs/TECHNICAL-DESIGN.md. Update it in the same pull request when a model, formula, permission, or release lane changes.
 - Run `make check` before you say the change is ready. On a Mac, also run `make test` when Swift, project.yml, or fastlane behavior changes.
 - The owner reviews and merges. A release follows docs/RELEASE-CHECKLIST.md.
 - Do not run `make release`, `make submit`, TestFlight, or App Review unless the owner asked for that exact step.

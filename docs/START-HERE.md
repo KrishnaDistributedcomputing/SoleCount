@@ -2,7 +2,7 @@
 
 This is the only setup page. Read it from the top and do the steps in order. You do not need the other guides to set up the Mac.
 
-When SoleCount is already on the Mac and you want to change it, use [DEVELOPER.md](DEVELOPER.md). Before the next App Store upload, use [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md). If the Desktop folder is the copy you shipped, read the release checklist before step 2 deletes anything.
+When SoleCount is already on the Mac and you want to change it, use [DEVELOPER.md](DEVELOPER.md). How the app is built is in [TECHNICAL-DESIGN.md](TECHNICAL-DESIGN.md). Before the next App Store upload, use [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md). If the Desktop folder is the copy you shipped, read the release checklist before step 2 deletes anything.
 
 You are new to the Mac. Apple may still be processing the paid Developer membership (up to 48 hours). You can build and run SoleCount today. You send it to Apple after the welcome email.
 

@@ -1,6 +1,6 @@
 # SoleCount
 
-Read [CLAUDE.md](CLAUDE.md) and [docs/DEVELOPER.md](docs/DEVELOPER.md) before editing. Cursor loads this file. Claude Code loads `CLAUDE.md`. The rules match.
+Read [CLAUDE.md](CLAUDE.md), [docs/DEVELOPER.md](docs/DEVELOPER.md), and [docs/TECHNICAL-DESIGN.md](docs/TECHNICAL-DESIGN.md) before editing. Cursor loads this file. Claude Code loads `CLAUDE.md`. The rules match. The design page describes this GitHub tree, not an uninspected Mac copy.
 
 SoleCount is a free, offline iPhone app (SwiftUI, SwiftData, minimum iOS 18). The owner is a beginner and reviews every pull request.
 
