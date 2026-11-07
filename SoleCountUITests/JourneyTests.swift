@@ -116,6 +116,30 @@ final class JourneyTests: XCTestCase {
         }
     }
 
+    /// The audit's own timer is short. On a busy macOS runner it can report
+    /// "Audit failed to complete in time" (domain accessibilityAudit, code -56)
+    /// even when the screen has no finding. Give it two minutes, and one fresh
+    /// launch if that still times out. A real finding still fails the test.
+    @MainActor
+    private func auditToday(_ app: XCUIApplication) throws {
+        for attempt in 1...2 {
+            do {
+                try app.performAccessibilityAudit(for: .all, timeout: 120) { issue in
+                    issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion)
+                }
+                return
+            } catch let error as NSError {
+                let timedOut = error.domain == "com.apple.xcode.xctest.accessibilityAudit" && error.code == -56
+                if !timedOut || attempt == 2 {
+                    throw error
+                }
+                app.terminate()
+                app.launch()
+                XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 10) || app.navigationBars["Today"].exists)
+            }
+        }
+    }
+
     /// Stats puts badges and the share card below the summary. Scroll until the
     /// identifier exists. A short wait covers the tab animation on a slow runner.
     @MainActor
@@ -135,10 +159,8 @@ final class JourneyTests: XCTestCase {
         app.launchArguments += ["-UITesting", "-DemoData", "-HealthUnavailable"]
         app.launch()
         XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 10) || app.navigationBars["Today"].exists)
-        if #available(iOS 17.0, *) {
-            try app.performAccessibilityAudit { issue in
-                issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion)
-            }
+        if #available(iOS 18.0, *) {
+            try auditToday(app)
         }
         app.terminate()
         app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]
