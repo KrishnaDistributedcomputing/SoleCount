@@ -5,8 +5,6 @@ import SwiftUI
 struct SneakerListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(StoreManager.self) private var store
-    @Environment(HealthSync.self) private var health
-    @Environment(MotivationStore.self) private var motivation
     @Query(sort: \Sneaker.createdAt, order: .reverse) private var sneakers: [Sneaker]
 
     @State private var showingAdd = false
