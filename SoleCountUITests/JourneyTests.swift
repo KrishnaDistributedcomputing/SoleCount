@@ -116,15 +116,15 @@ final class JourneyTests: XCTestCase {
         }
     }
 
-    /// The audit's own timer is short. On a busy macOS runner it can report
-    /// "Audit failed to complete in time" (domain accessibilityAudit, code -56)
-    /// even when the screen has no finding. Give it two minutes, and one fresh
-    /// launch if that still times out. A real finding still fails the test.
+    /// On a busy macOS runner the audit can throw "Audit failed to complete in
+    /// time" (domain accessibilityAudit, code -56) without reporting a finding.
+    /// This SDK has no timeout argument, so try once more on a fresh launch.
+    /// A real finding still fails the test.
     @MainActor
     private func auditToday(_ app: XCUIApplication) throws {
         for attempt in 1...2 {
             do {
-                try app.performAccessibilityAudit(for: .all, timeout: 120) { issue in
+                try app.performAccessibilityAudit { issue in
                     issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion)
                 }
                 return
