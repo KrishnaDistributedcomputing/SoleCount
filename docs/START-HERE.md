@@ -1,6 +1,8 @@
 # Start here
 
-This is the only setup page. Read it from the top and do the steps in order. You do not need the other guides.
+This is the only setup page. Read it from the top and do the steps in order. You do not need the other guides to set up the Mac.
+
+When SoleCount is already on the Mac and you want to change it, use [DEVELOPER.md](DEVELOPER.md). Before the next App Store upload, use [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md). If the Desktop folder is the copy you shipped, read the release checklist before step 2 deletes anything.
 
 You are new to the Mac. Apple may still be processing the paid Developer membership (up to 48 hours). You can build and run SoleCount today. You send it to Apple after the welcome email.
 
@@ -85,7 +87,9 @@ This is the SoleCount page on GitHub. The green **Code** button is marked. You w
 
 ![The SoleCount repository on GitHub. A red box is around the green Code button.](images/github-repo-code.png)
 
-If you do not already have a SoleCount folder, skip to the clone command. If you do, delete it first. Deleting the folder on your Mac does not delete GitHub, and it does not delete the app in App Store Connect. Removing that website record is a separate step, and Apple keeps the app name reserved, so you usually do not remove it.
+If you do not already have a SoleCount folder, skip to the clone command. If you do, delete it first only when you are sure you can throw that folder away. If it is the copy you used to ship SoleCount, stop and read [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) before you delete it. That folder may hold commits that are not on GitHub.
+
+Deleting a spare folder on your Mac does not delete GitHub, and it does not delete the app in App Store Connect. Removing that website record is a separate step, and Apple keeps the app name reserved, so you usually do not remove it.
 
 **Copy this** to see if the folder is on the Desktop:
 
@@ -633,7 +637,7 @@ One command does every upload step Apple allows. Running it again does not creat
 
 **If it goes wrong**
 
-If you see `The App Store Connect app record doesn't exist yet`, do the next step on this page, then run `make release` again. If a red doctor line appears, do its `Fix:` line first. To stop after TestFlight and not submit:
+If you see `The App Store Connect app record doesn't exist yet`, do the next step on this page, then run `make release` again. If a red doctor line appears, do its `Fix:` line first. `make release` already stops before App Review. When the App Store records already exist and you want the shorter upload that stops after TestFlight, before the store listing:
 
 ```bash
 bash scripts/deploy.sh --beta-only
@@ -683,7 +687,7 @@ Also open **App Privacy** and publish **Data Not Collected**, unless the command
 
 **What you should see**
 
-`make release` submits the version itself. You should not see a message asking you to add a purchase.
+`make release` stops at TestFlight. You should not see a message asking you to add a purchase. When the build looks right on your iPhone, step 10 is `make submit`.
 
 **Why**
 
@@ -770,7 +774,7 @@ Or open this address for the current branch:
 
 [https://github.com/KrishnaDistributedcomputing/SoleCount/compare/main...cursor/setup-without-apple-043d](https://github.com/KrishnaDistributedcomputing/SoleCount/compare/main...cursor/setup-without-apple-043d)
 
-This is that page as it looked when those commits were already in `main`. There is no **Create pull request** button, because there is nothing left to merge. For a later branch, change the name at the end of the address. When that branch is not in `main` yet, the same page shows a green **Create pull request** button. Click it, then **Create pull request** again. Wait for the checks. Click **Merge pull request**, then **Confirm merge**.
+This is that page as it looked when those commits were already in `main`. There is no **Create pull request** button, because there is nothing left to merge. For a later branch, change the name at the end of the address. When that branch is not in `main` yet, the same page shows a green **Create pull request** button. Click it, then **Create pull request** again. The form asks for the plan and the checks. Wait for the checks. Click **Merge pull request**, then **Confirm merge**. Day-to-day changes are in [DEVELOPER.md](DEVELOPER.md).
 
 ![Comparing main with cursor/setup-without-apple-043d. The page says there isn't anything to compare.](images/github-compare-nothing-to-compare.png)
 
@@ -904,13 +908,14 @@ The prompt gives Claude the command and the real error, so the answer matches So
 |---|---|---|
 | `make setup-local` | Installs tools, builds the project, opens Xcode. Skips Apple questions. | Before the membership is active. |
 | `make setup` | Same as setup-local when the Team ID, key, and Issuer ID are missing. If a `.p8` file is already on the Mac, it saves that key. | First setup, or any time. |
+| `make check` | Checks the bundle ID, the free flag, the public links, and that no key file is committed. No Xcode. | Any time, including before a pull request. |
 | `make test` | Runs tests in the iPhone Simulator. No Team ID. | After setup. |
 | `make open` | Rebuilds the project and opens Xcode. Then press Cmd + R. | When you want to see the app. |
 | `make doctor` | Green and red checklist, including one real API call. | After Apple's email, before you release. |
-| `make release` | Finds the `.p8` file, then creates the records, tests, uploads a new build, and submits. Skips finished records. | The command to ship. Safe to run again. |
+| `make release` | Finds the `.p8` file, then creates the records, tests, and uploads a new TestFlight build and the store listing. It stops before App Review. | The command to ship a build. Safe to run again. Review is `make submit`. |
 | `make deploy` | Same as `make release`. | Same as `make release`. |
 | `make status` | Shows the TestFlight build and the review state. | While you wait for Apple. |
 | `make appstore-setup` | Only the App Store records. No upload. | When you want the records without a new build. |
-| `bash scripts/deploy.sh --beta-only` | Uploads to TestFlight and stops before review. | When you do not want review yet. |
+| `bash scripts/deploy.sh --beta-only` | Uploads to TestFlight and skips the store listing. | When the records already exist and you want to stop after TestFlight. |
 | `make clean` | Deletes build files and the generated Xcode project. | When you want a fresh project. Then run `make open`. |
 | `git checkout main && git pull` | Switches to `main` and downloads it. | After a branch is merged. |

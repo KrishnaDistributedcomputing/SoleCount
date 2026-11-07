@@ -13,3 +13,5 @@ Privacy policy: [PRIVACY.md](PRIVACY.md)
 ## 👉 Start here: [docs/START-HERE.md](docs/START-HERE.md)
 
 That page is the whole path, from a new Mac through App Store review. Read it from the top. Do not use the other guides for setup.
+
+After SoleCount is on the Mac, day-to-day changes are in [docs/DEVELOPER.md](docs/DEVELOPER.md). Before the next upload, read [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md). The Desktop folder may have commits that are not on GitHub.

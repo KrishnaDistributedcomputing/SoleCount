@@ -11,9 +11,16 @@ steps and walking distance so each pair shows kilometres. It is not a medical ap
 - All data stays on the device. Do not add networking code.
 - One main type per file. Keep files short and readable.
 - Use @Observable (not ObservableObject). Use NavigationStack.
-- Build must compile with zero errors before you say you are done.
+- On a Mac, the build must compile with zero errors before you say you are done. If you cannot run Xcode, say that the build is unproven.
 - Explain every change in plain English. I am a beginner.
 - Do not rename the bundle ID or the product ID.
+
+## How a change is made
+- Read docs/DEVELOPER.md. One issue, one small branch, one pull request.
+- Run `make check` before you say the change is ready. On a Mac, also run `make test` when Swift, project.yml, or fastlane behavior changes.
+- The owner reviews and merges. A release follows docs/RELEASE-CHECKLIST.md.
+- Do not run `make release`, `make submit`, TestFlight, or App Review unless the owner asked for that exact step.
+- Do not delete or pull over ~/Desktop/SoleCount. That Mac folder may hold commits that are not on GitHub.
 
 ## Files
 - SoleCountApp.swift — app entry, StoreManager, Health, motivation, SwiftData
@@ -49,5 +56,6 @@ steps and walking distance so each pair shows kilometres. It is not a medical ap
 
 ## Project generation and deployment
 - The Xcode project is generated from `project.yml` (XcodeGen). Edit project.yml, not the .xcodeproj.
-- Deployment is automated with fastlane (`fastlane/Fastfile`) and GitHub Actions (`.github/workflows/ios.yml` and `.github/workflows/release.yml`). The human setup page is `docs/START-HERE.md`.
+- Deployment is automated with fastlane (`fastlane/Fastfile`) and GitHub Actions (`.github/workflows/ios.yml`, `.github/workflows/release.yml`, and the Linux `.github/workflows/guard.yml`). The human setup page is `docs/START-HERE.md`. Day-to-day work is `docs/DEVELOPER.md`. The next upload is `docs/RELEASE-CHECKLIST.md`.
+- `make release` stops before App Review. `make submit` is the review command.
 - Never commit `*.p8`, `fastlane/.env`, or any key. The repo is public.

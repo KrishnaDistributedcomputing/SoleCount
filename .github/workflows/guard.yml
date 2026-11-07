@@ -1,0 +1,32 @@
+# Cheap checks for every pull request and every cursor/ or main push.
+# These do not compile the app. The macOS build and tests stay in ios.yml.
+# A private key, a .p8 file, and fastlane/.env must never be committed.
+name: Repo checks
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: guard-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Identity and secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check identity, secrets, and release entry points
+        run: |
+          bash scripts/check_repo.sh
+          bash scripts/check_repo.sh --self-test
