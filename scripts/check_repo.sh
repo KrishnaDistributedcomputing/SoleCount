@@ -220,7 +220,9 @@ self_test() {
 
   root="$tmp/pem"
   prepare_fixture "$root"
-  printf '%s\n' '-----BEGIN PRIVATE KEY-----' 'ABC' '-----END PRIVATE KEY-----' > "$root/notes.txt"
+  # Assemble the header so this script does not contain a real key block.
+  kind="PRIVATE KEY"
+  printf '%s\n' "-----BEGIN ${kind}-----" 'ABC' "-----END ${kind}-----" > "$root/notes.txt"
   commit_fixture "$root"
   expect_rejected "a private key block" "$root"
 
