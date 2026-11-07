@@ -95,19 +95,38 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(app.element(containing: "Air Max 90").waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Stats"].tap()
-        XCTAssertTrue(app.buttons["All badges"].waitForExistence(timeout: 5))
-        app.buttons["All badges"].tap()
+        if !app.navigationBars["Stats"].waitForExistence(timeout: 5) {
+            app.tabBars.buttons["Stats"].tap()
+        }
+        XCTAssertTrue(app.navigationBars["Stats"].waitForExistence(timeout: 5), "Stats should open after the wishlist closes")
+        let badges = reveal(app, identifier: "allBadgesButton")
+        XCTAssertTrue(badges.waitForExistence(timeout: 3), "Stats should offer All badges")
+        badges.tap()
         XCTAssertTrue(app.navigationBars["Badges"].waitForExistence(timeout: 5))
         if app.navigationBars["Badges"].buttons["Stats"].waitForExistence(timeout: 2) {
             app.navigationBars["Badges"].buttons["Stats"].tap()
         } else {
             app.navigationBars["Badges"].buttons.element(boundBy: 0).tap()
         }
-        XCTAssertTrue(app.buttons["Share collection card"].waitForExistence(timeout: 5))
-        app.buttons["Share collection card"].tap()
+        let share = reveal(app, identifier: "shareCollectionButton")
+        XCTAssertTrue(share.waitForExistence(timeout: 3), "Stats should offer the collection card")
+        share.tap()
         if app.buttons["Close"].waitForExistence(timeout: 3) {
             app.buttons["Close"].tap()
         }
+    }
+
+    /// Stats puts badges and the share card below the summary. Scroll until the
+    /// identifier exists. A short wait covers the tab animation on a slow runner.
+    @MainActor
+    private func reveal(_ app: XCUIApplication, identifier: String) -> XCUIElement {
+        let element = app.descendants(matching: .any)[identifier]
+        var swipes = 0
+        while !element.waitForExistence(timeout: 2), swipes < 4 {
+            app.swipeUp()
+            swipes += 1
+        }
+        return element
     }
 
     @MainActor
