@@ -39,7 +39,7 @@ steps and walking distance so each pair shows kilometres. It is not a medical ap
 - PrivacyInfo.xcprivacy — no tracking, no data collected, UserDefaults CA92.1
 
 ## Business rules
-- The app is free. `FeatureFlags.monetizationEnabled` is false. Do not show a paywall.
+- The app is free. `FeatureFlags.monetizationEnabled` is false. Do not show a paywall. Product choices live in docs/BUSINESS-CASE.md. Do not turn the flag on unless the owner asked in that pull request.
 - StoreKit code stays in the project. The product ID is still `com.krishnav.SoleCount.pro`. Do not rename it.
 - If that flag is turned back on, the paywall must show the StoreKit price, Restore Purchases, and the Privacy and Terms links. Never hard-code the price.
 - HealthKit is read-only (step count and walking/running distance). Never write to Health. The app must work if Health is unavailable or denied.

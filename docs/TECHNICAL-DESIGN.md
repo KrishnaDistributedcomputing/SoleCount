@@ -1,6 +1,6 @@
 # SoleCount technical design
 
-This page describes the app as it exists in this GitHub tree. It is the design record for later pull requests. Setup steps stay in [START-HERE.md](START-HERE.md). Day-to-day work stays in [DEVELOPER.md](DEVELOPER.md). The next upload stays in [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md).
+This page describes the app as it exists in this GitHub tree. It is the design record for later pull requests. Setup steps stay in [START-HERE.md](START-HERE.md). Day-to-day work stays in [DEVELOPER.md](DEVELOPER.md). Product choices stay in [BUSINESS-CASE.md](BUSINESS-CASE.md). The next upload stays in [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md).
 
 A few words used below:
 
@@ -568,6 +568,8 @@ Ordered by what should happen first. Items 1–3 protect the approved app. The r
 Branding edits are out of scope for the commit that added this page. No logo file was fetched.
 
 ## 18. Keeping this page true
+
+If the change also changes the free promise or who the app is for, update [BUSINESS-CASE.md](BUSINESS-CASE.md) in that same pull request.
 
 Update this file in the same pull request when you change any of these:
 

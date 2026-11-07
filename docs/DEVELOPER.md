@@ -1,6 +1,6 @@
 # Changing SoleCount
 
-This page is for the next change, after the Mac is set up. First-time setup stays in [START-HERE.md](START-HERE.md). How the app is put together stays in [TECHNICAL-DESIGN.md](TECHNICAL-DESIGN.md). The next App Store upload stays in [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md).
+This page is for the next change, after the Mac is set up. First-time setup stays in [START-HERE.md](START-HERE.md). How the app is put together stays in [TECHNICAL-DESIGN.md](TECHNICAL-DESIGN.md). Product choices, including why the app stays free, stay in [BUSINESS-CASE.md](BUSINESS-CASE.md). The next App Store upload stays in [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md).
 
 SoleCount is a free iPhone app. SwiftUI, SwiftData, and the Xcode project are generated from `project.yml`. You are the reviewer. An assistant can write the branch. You decide when it merges, and you decide when it ships.
 
@@ -13,7 +13,7 @@ SoleCount is a free iPhone app. SwiftUI, SwiftData, and the Xcode project are ge
 5. **Read the pull request.** You merge it when the checks match the acceptance criteria. The assistant does not merge it for you.
 6. **Release only when you say so.** TestFlight and App Review are a separate decision. Use the release checklist. A merged pull request is not an upload.
 
-When the change alters a model, a formula, a permission, navigation, or a release lane, update [TECHNICAL-DESIGN.md](TECHNICAL-DESIGN.md) in the same pull request. The maintenance rules are at the end of that page.
+When the change alters a model, a formula, a permission, navigation, or a release lane, update [TECHNICAL-DESIGN.md](TECHNICAL-DESIGN.md) in the same pull request. When it changes the free promise or who the app is for, update [BUSINESS-CASE.md](BUSINESS-CASE.md) too. The maintenance rules are at the end of each page.
 
 ## Commands
 
