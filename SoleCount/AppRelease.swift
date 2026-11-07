@@ -90,7 +90,7 @@ enum AppRelease {
         formatter.dateStyle = .long
         formatter.timeStyle = .short
         let when = formatter.string(from: date)
-        let style: NSTimeZone.NameStyle = timeZone.isDaylightSavingTime(for: date) ? .shortDaylight : .shortStandard
+        let style: NSTimeZone.NameStyle = timeZone.isDaylightSavingTime(for: date) ? .shortDaylightSaving : .shortStandard
         let zone = timeZone.localizedName(for: style, locale: locale)
             ?? timeZone.abbreviation(for: date)
             ?? timeZone.identifier
