@@ -1,8 +1,13 @@
-# SoleCount CI/CD
-#  - Every push to main or cursor/** (and every pull request): compile for device, then run tests.
-#  - Push a tag like v1.0.0: tests -> TestFlight -> submit to App Review.
-#  - Actions tab > "Release" > Run workflow: the full ship lane (see release.yml).
-#  - Actions tab > "iOS" > Run workflow: tests -> TestFlight, and App Review if you tick "release".
+# SoleCount CI
+#  - Pull requests into main, and every push to main: compile for a device, then run tests
+#    on a macOS runner. A pull request that only changes docs, templates, or the
+#    Linux checker skips this macOS job. A push to a cursor branch does not start
+#    it. Open a pull request to build. Repo checks (guard.yml) are the cheap Linux job.
+#  - Push a tag like v1.0.0: tests, then the TestFlight job below.
+#  - Actions tab > "Release" > Run workflow: the ship lane (see release.yml).
+#  - Actions tab > "iOS" > Run workflow: tests, then TestFlight. The listing step
+#    runs if you tick "release". App Review still waits for make submit on the Mac.
+#    See docs/RELEASE-CHECKLIST.md.
 #
 # Required repository secrets (Settings > Secrets and variables > Actions > New repository secret):
 #   ASC_KEY_ID      App Store Connect API Key ID (10 characters)
@@ -16,20 +21,30 @@ name: iOS
 
 on:
   push:
-    branches: [main, "cursor/**"]
+    branches: [main]
     tags: ["v*"]
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.pdf"
+      - "**/*.pptx"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".github/workflows/guard.yml"
+      - ".cursor/**"
+      - "scripts/check_repo.sh"
   workflow_dispatch:
     inputs:
       release:
-        description: "Also submit to App Review after TestFlight"
+        description: "Also upload the store listing after TestFlight. App Review still waits for make submit."
         type: boolean
         default: false
 
 concurrency:
   group: ios-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -47,6 +62,13 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check the repo before using the Mac runner
+        run: |
+          bash scripts/check_repo.sh
+          bash scripts/check_repo.sh --self-test
 
       - name: Use Xcode 26
         run: |
@@ -89,6 +111,13 @@ jobs:
       REVIEW_EMAIL: ${{ secrets.REVIEW_EMAIL }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check the repo before using the Mac runner
+        run: |
+          bash scripts/check_repo.sh
+          bash scripts/check_repo.sh --self-test
 
       - name: Use Xcode 26
         run: |
@@ -121,7 +150,7 @@ jobs:
       - name: Upload to TestFlight
         run: fastlane ios beta
 
-      - name: Submit to App Review
+      - name: Upload the store listing
         if: startsWith(github.ref, 'refs/tags/v') || inputs.release
         run: fastlane ios release
 

@@ -6,11 +6,18 @@ struct StatsDashboardView: View {
     @Environment(MotivationStore.self) private var motivation
     @Query(sort: \Sneaker.createdAt, order: .reverse) private var sneakers: [Sneaker]
 
+    private var logging: LoggingConsistency {
+        LoggingConsistencyMath.evaluate(
+            wearDates: sneakers.flatMap(\.wearDates),
+            now: .now,
+            calendar: .current
+        )
+    }
+
     private var summary: CollectionSummary {
-        let days = Set(sneakers.flatMap(\.wearDates).map { Calendar.current.startOfDay(for: $0) })
-        return CollectionMath.summarize(
+        CollectionMath.summarize(
             pairs: sneakers.map { $0.asPairStats() },
-            wearDays: days,
+            wearDays: logging.qualifyingDays,
             now: .now,
             calendar: .current
         )
@@ -41,15 +48,7 @@ struct StatsDashboardView: View {
                         }
                         highlight("Most worn", name: summary.mostWorn, symbol: "star.fill")
                         highlight("Ready for another day", name: summary.leastWorn, symbol: "sun.max.fill")
-                        HStack {
-                            Image(systemName: "flame.fill")
-                                .foregroundStyle(.orange)
-                            Text(summary.wearStreak > 0 ? "\(summary.wearStreak)-day wear streak" : "A wear streak begins whenever you log a pair.")
-                                .font(.headline)
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .warmCard()
+                        LoggingStreakCard(consistency: logging)
 
                         let facts = MotivationEngine.facts(meters: summary.totalMeters)
                         if !facts.isEmpty {

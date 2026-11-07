@@ -6,11 +6,18 @@ import SwiftUI
 struct TodayView: View {
     @Environment(HealthSync.self) private var health
     @Environment(MotivationStore.self) private var motivation
-    @Environment(StoreManager.self) private var store
     @Query(sort: \Sneaker.createdAt, order: .reverse) private var sneakers: [Sneaker]
 
     @State private var showingWalk = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var logging: LoggingConsistency {
+        LoggingConsistencyMath.evaluate(
+            wearDates: sneakers.flatMap(\.wearDates),
+            now: .now,
+            calendar: .current
+        )
+    }
 
     private var steps: Double { motivation.todaySteps() }
     private var week: (thisWeek: Double, lastWeek: Double) {
@@ -42,6 +49,7 @@ struct TodayView: View {
                     )
                     rings
                     streakCard
+                    LoggingStreakCard(consistency: logging)
                     weekCard
                     tipCard
                     walkCard

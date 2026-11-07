@@ -95,19 +95,65 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(app.element(containing: "Air Max 90").waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Stats"].tap()
-        XCTAssertTrue(app.buttons["All badges"].waitForExistence(timeout: 5))
-        app.buttons["All badges"].tap()
+        if !app.navigationBars["Stats"].waitForExistence(timeout: 5) {
+            app.tabBars.buttons["Stats"].tap()
+        }
+        XCTAssertTrue(app.navigationBars["Stats"].waitForExistence(timeout: 5), "Stats should open after the wishlist closes")
+        let logging = reveal(app, identifier: "loggingStreakCard")
+        XCTAssertTrue(logging.waitForExistence(timeout: 3), "Stats should explain the logging streak")
+        XCTAssertTrue(logging.label.contains("local day"), "The card should say a local day counts once")
+        let badges = reveal(app, identifier: "allBadgesButton")
+        XCTAssertTrue(badges.waitForExistence(timeout: 3), "Stats should offer All badges")
+        badges.tap()
         XCTAssertTrue(app.navigationBars["Badges"].waitForExistence(timeout: 5))
         if app.navigationBars["Badges"].buttons["Stats"].waitForExistence(timeout: 2) {
             app.navigationBars["Badges"].buttons["Stats"].tap()
         } else {
             app.navigationBars["Badges"].buttons.element(boundBy: 0).tap()
         }
-        XCTAssertTrue(app.buttons["Share collection card"].waitForExistence(timeout: 5))
-        app.buttons["Share collection card"].tap()
+        let share = reveal(app, identifier: "shareCollectionButton")
+        XCTAssertTrue(share.waitForExistence(timeout: 3), "Stats should offer the collection card")
+        share.tap()
         if app.buttons["Close"].waitForExistence(timeout: 3) {
             app.buttons["Close"].tap()
         }
+    }
+
+    /// On a busy macOS runner the audit can throw "Audit failed to complete in
+    /// time" (domain accessibilityAudit, code -56) without reporting a finding.
+    /// This SDK has no timeout argument, so try once more on a fresh launch.
+    /// A real finding still fails the test.
+    @MainActor
+    private func auditToday(_ app: XCUIApplication) throws {
+        for attempt in 1...2 {
+            do {
+                try app.performAccessibilityAudit { issue in
+                    issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion)
+                }
+                return
+            } catch let error as NSError {
+                let timedOut = error.domain == "com.apple.xcode.xctest.accessibilityAudit" && error.code == -56
+                if !timedOut || attempt == 2 {
+                    throw error
+                }
+                app.terminate()
+                app.launch()
+                XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 10) || app.navigationBars["Today"].exists)
+            }
+        }
+    }
+
+    /// Stats puts badges and the share card below the summary. Scroll until the
+    /// identifier exists. A short wait covers the tab animation on a slow runner.
+    @MainActor
+    private func reveal(_ app: XCUIApplication, identifier: String) -> XCUIElement {
+        let element = app.descendants(matching: .any)[identifier]
+        var swipes = 0
+        while !element.waitForExistence(timeout: 2), swipes < 4 {
+            app.swipeUp()
+            swipes += 1
+        }
+        return element
     }
 
     @MainActor
@@ -116,10 +162,8 @@ final class JourneyTests: XCTestCase {
         app.launchArguments += ["-UITesting", "-DemoData", "-HealthUnavailable"]
         app.launch()
         XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 10) || app.navigationBars["Today"].exists)
-        if #available(iOS 17.0, *) {
-            try app.performAccessibilityAudit { issue in
-                issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion)
-            }
+        if #available(iOS 18.0, *) {
+            try auditToday(app)
         }
         app.terminate()
         app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]

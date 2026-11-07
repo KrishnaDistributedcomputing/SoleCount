@@ -1,0 +1,45 @@
+name: Change
+description: Ask for a change to SoleCount
+title: "[Change]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe one change. The app stays free, offline, and on bundle ID `com.krishnav.SoleCount`.
+        Setup help is in docs/START-HERE.md. The working agreement is in docs/DEVELOPER.md.
+  - type: textarea
+    id: want
+    attributes:
+      label: What should change?
+      description: One or two sentences. Say which screen, if you know it.
+      placeholder: On the shoe page, the cost per wear should say "—" when the pair has never been worn.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: How will you know it works?
+      description: Write the checks as plain sentences. These are the acceptance criteria.
+      placeholder: |
+        - A pair with no wears shows no cost per wear.
+        - A pair with one wear shows the full price.
+        - make check passes. On a Mac, make test passes.
+    validations:
+      required: true
+  - type: textarea
+    id: out
+    attributes:
+      label: What is out of scope?
+      placeholder: Do not change the bundle ID, the price, or Health permissions.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: This change still fits SoleCount
+      options:
+        - label: The app stays free. Data stays on the iPhone. Health stays read-only.
+          required: true
+        - label: The bundle ID and the product ID stay the same.
+          required: true
+        - label: I will not put a .p8 key, fastlane/.env, or a phone number in the issue.
+          required: true
