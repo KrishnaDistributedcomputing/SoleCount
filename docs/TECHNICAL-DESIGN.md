@@ -15,9 +15,9 @@ A few words used below:
 | | |
 |---|---|
 | Written | 7 November 2026 |
-| Branch | `cursor/consistency-kudos-a2e5` |
-| App-code baseline | GitHub `main` commit `d41209a` (4 November 2026), plus the foundation branch under it |
-| Extra app behavior on this branch | Logging streak in `SoleCount/LoggingConsistency.swift` and `SoleCount/LoggingStreakCard.swift`. It reads saved wear dates. It does not add a model field. |
+| Branch | `cursor/about-release-a2e5` |
+| App-code baseline | GitHub `main` commit `d41209a` (4 November 2026), plus the foundation and logging-streak branches under it |
+| Extra app behavior on this branch | About screen in `SoleCount/AboutView.swift`. Release time comes only from `SoleCount/ReleaseManifest.json`. Version 1.0 has no release instant recorded. |
 | Marketing version in `project.yml` | `1.0` |
 | Committed build number | `1` |
 
@@ -565,6 +565,24 @@ Human gates, in order:
 
 No step in this document performs those gates.
 
+### About and the release manifest
+
+**Implemented.** Settings, opened from the gear on Collection, has an About row. About shows the app name, marketing version, and build from the bundle, then **Last update**.
+
+Last update means the App Store release of that marketing version. It is not the compile time, not the approval time, and not the day the phone installed or opened the app. The screen does not ask the network.
+
+The value comes from `SoleCount/ReleaseManifest.json`, keyed by marketing version:
+
+- `releasedAt: null`, or the key omitted, means **Not yet released**.
+- A missing version, a broken file, or a `releasedAt` string that is not an ISO-8601 instant with a timezone means **Release date unavailable**.
+- A valid instant is shown with the date, the time, and the timezone name, using the phone's locale and timezone.
+
+Version `1.0` is `null` in this tree. A reported approval email on 6 November 2026 is not a release time, so it is not written in the manifest and About does not show it. Do not fill `releasedAt` from the build clock.
+
+**Unknown (Mac copy).** The approved binary may already be on the store. This GitHub tree still has no verified release instant, so About on a build made from this tree says not yet released until someone records one.
+
+The feather About mark in the proposals table is still not started. This screen does not add that artwork.
+
 ## 17. Risks, debt, and proposals
 
 Ordered by what should happen first. Items 1–3 protect the approved app. The rest are improvements, not work started here.
@@ -580,7 +598,7 @@ Ordered by what should happen first. Items 1–3 protect the approved app. The r
 | 7 | Confirm the widget App Group on a Release install | **Implemented** entitlement file, **unproven** on device here | Debug tests sign off and skip Release entitlements |
 | 8 | Wire the GitHub Release checkbox to `SUBMIT=1` only in its own reviewed change | **Proposed** | Today the checkbox does not send the app to review |
 | 9 | Pin GitHub Actions to commit SHAs | **Proposed** | Not a complete hardening pass |
-| 10 | About / credits mark | **Proposed**, not started | A shared feather mark may be used for About and credits. The launcher icon stays SoleCount's own icon. No artwork change is in this tree |
+| 10 | About / credits feather mark | **Proposed**, not started | The version About screen is separate and has no shared feather. The launcher icon stays SoleCount's own icon |
 
 Branding edits are out of scope for the commit that added this page. No logo file was fetched.
 

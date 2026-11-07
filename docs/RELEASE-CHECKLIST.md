@@ -95,6 +95,7 @@ Use this only after the Mac comparison is merged or you have written down that t
 - [ ] Run `make release` on the Mac. It uploads a **new** TestFlight build and the store listing. It stops before App Review.
 - [ ] Install that build from the TestFlight app and use it on your iPhone.
 - [ ] When it looks right, run `make submit`.
+- [ ] After that version is actually released on the App Store, put that release instant in `SoleCount/ReleaseManifest.json` under the marketing version. Use an ISO-8601 time with a timezone, from the App Store release record. Leave `releasedAt` null until then. Do not write the approval time, the time Xcode compiled the app, or the time a phone installed it. The 6 November 2026 approval email is not that value. About reads this file and does not invent a date.
 
 `make release` calls `fastlane ios ship`. `make submit` sets `SUBMIT=1` and calls `fastlane ios release`. That split is the current release setup. This checklist does not change it.
 

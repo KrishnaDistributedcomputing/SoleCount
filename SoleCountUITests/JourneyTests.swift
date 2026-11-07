@@ -172,4 +172,32 @@ final class JourneyTests: XCTestCase {
         app.tabBars.buttons["Collection"].tap()
         XCTAssertTrue(app.element(containing: "Daily Runners").waitForExistence(timeout: 8))
     }
+
+    @MainActor
+    func testAboutShowsTheVersionAndDoesNotInventAReleaseDate() throws {
+        let app = XCUIApplication()
+        app.launchArguments += [
+            "-UITesting",
+            "-HealthUnavailable",
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityXL"
+        ]
+        app.launch()
+        app.tabBars.buttons["Collection"].tap()
+        let settings = app.buttons["Settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 10), "Collection should offer Settings")
+        settings.tap()
+        let about = app.descendants(matching: .any)["aboutButton"]
+        XCTAssertTrue(about.waitForExistence(timeout: 8), "Settings should offer About")
+        about.tap()
+        XCTAssertTrue(app.navigationBars["About"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Not yet released"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Last update"].exists)
+        XCTAssertTrue(app.staticTexts["Version"].exists)
+        XCTAssertTrue(app.staticTexts["Build"].exists)
+        XCTAssertFalse(app.staticTexts["November 6, 2026"].exists)
+        XCUIDevice.shared.appearance = .dark
+        XCTAssertTrue(app.staticTexts["Not yet released"].waitForExistence(timeout: 3))
+        XCUIDevice.shared.appearance = .light
+    }
 }

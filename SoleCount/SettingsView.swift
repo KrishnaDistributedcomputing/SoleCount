@@ -19,12 +19,6 @@ struct SettingsView: View {
     @State private var showingPaywall = false
     @State private var reminderNote = ""
 
-    private var appVersion: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-        return "\(version) (\(build))"
-    }
-
     var body: some View {
         @Bindable var store = store
 
@@ -108,11 +102,13 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("About") {
-                    Link("Privacy Policy", destination: AppLinks.privacyPolicy)
-                    Link("Terms of Use", destination: AppLinks.termsOfUse)
-                    Link("Support", destination: AppLinks.support)
-                    LabeledContent("Version", value: appVersion)
+                Section {
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        Label("About", systemImage: "info.circle")
+                    }
+                    .accessibilityIdentifier("aboutButton")
                 }
 
                 Section {
