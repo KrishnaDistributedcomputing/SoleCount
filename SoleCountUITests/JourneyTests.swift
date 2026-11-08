@@ -95,19 +95,86 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(app.element(containing: "Air Max 90").waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Stats"].tap()
-        XCTAssertTrue(app.buttons["All badges"].waitForExistence(timeout: 5))
-        app.buttons["All badges"].tap()
+        if !app.navigationBars["Stats"].waitForExistence(timeout: 5) {
+            app.tabBars.buttons["Stats"].tap()
+        }
+        XCTAssertTrue(app.navigationBars["Stats"].waitForExistence(timeout: 5), "Stats should open after the wishlist closes")
+        let logging = reveal(app, identifier: "loggingStreakCard")
+        XCTAssertTrue(logging.waitForExistence(timeout: 3), "Stats should explain the logging streak")
+        XCTAssertTrue(logging.label.contains("local day"), "The card should say a local day counts once")
+        let badges = reveal(app, identifier: "allBadgesButton")
+        XCTAssertTrue(badges.waitForExistence(timeout: 3), "Stats should offer All badges")
+        badges.tap()
         XCTAssertTrue(app.navigationBars["Badges"].waitForExistence(timeout: 5))
         if app.navigationBars["Badges"].buttons["Stats"].waitForExistence(timeout: 2) {
             app.navigationBars["Badges"].buttons["Stats"].tap()
         } else {
             app.navigationBars["Badges"].buttons.element(boundBy: 0).tap()
         }
-        XCTAssertTrue(app.buttons["Share collection card"].waitForExistence(timeout: 5))
-        app.buttons["Share collection card"].tap()
+        let share = reveal(app, identifier: "shareCollectionButton")
+        XCTAssertTrue(share.waitForExistence(timeout: 3), "Stats should offer the collection card")
+        share.tap()
         if app.buttons["Close"].waitForExistence(timeout: 3) {
             app.buttons["Close"].tap()
         }
+    }
+
+    /// On a busy macOS runner the audit can throw "Audit failed to complete in
+    /// time" (domain accessibilityAudit, code -56) without reporting a finding.
+    /// This SDK has no timeout argument, so try once more on a fresh launch.
+    /// A real finding still fails the test.
+    @MainActor
+    private func auditToday(_ app: XCUIApplication) throws {
+        for attempt in 1...2 {
+            do {
+                try app.performAccessibilityAudit { issue in
+                    issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion)
+                }
+                return
+            } catch let error as NSError {
+                let timedOut = error.domain == "com.apple.xcode.xctest.accessibilityAudit" && error.code == -56
+                if !timedOut || attempt == 2 {
+                    throw error
+                }
+                app.terminate()
+                app.launch()
+                XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 10) || app.navigationBars["Today"].exists)
+            }
+        }
+    }
+
+    /// Stats puts badges and the share card below the summary. Scroll until the
+    /// identifier exists. A short wait covers the tab animation on a slow runner.
+    @MainActor
+    private func reveal(_ app: XCUIApplication, identifier: String) -> XCUIElement {
+        let element = app.descendants(matching: .any)[identifier]
+        var swipes = 0
+        while !element.waitForExistence(timeout: 2), swipes < 4 {
+            app.swipeUp()
+            swipes += 1
+        }
+        return element
+    }
+
+    /// A long screen at large text does not build every row. Swipe until the
+    /// control is on screen and can be tapped, the way a person would.
+    @MainActor
+    private func scrollUntilHittable(
+        _ app: XCUIApplication,
+        _ element: XCUIElement,
+        limit: Int = 8,
+        swipeUp: Bool = true
+    ) -> XCUIElement {
+        var swipes = 0
+        while !(element.exists && element.isHittable), swipes < limit {
+            if swipeUp {
+                app.swipeUp()
+            } else {
+                app.swipeDown()
+            }
+            swipes += 1
+        }
+        return element
     }
 
     @MainActor
@@ -116,10 +183,8 @@ final class JourneyTests: XCTestCase {
         app.launchArguments += ["-UITesting", "-DemoData", "-HealthUnavailable"]
         app.launch()
         XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 10) || app.navigationBars["Today"].exists)
-        if #available(iOS 17.0, *) {
-            try app.performAccessibilityAudit { issue in
-                issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion)
-            }
+        if #available(iOS 18.0, *) {
+            try auditToday(app)
         }
         app.terminate()
         app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]
@@ -127,5 +192,60 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: 10) || app.navigationBars["Today"].exists)
         app.tabBars.buttons["Collection"].tap()
         XCTAssertTrue(app.element(containing: "Daily Runners").waitForExistence(timeout: 8))
+    }
+
+    @MainActor
+    func testAboutShowsTheVersionAndDoesNotInventAReleaseDate() throws {
+        let app = XCUIApplication()
+        app.launchArguments += [
+            "-UITesting",
+            "-HealthUnavailable",
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityXL"
+        ]
+        app.launch()
+        defer { XCUIDevice.shared.appearance = .light }
+        app.tabBars.buttons["Collection"].tap()
+        let settings = app.buttons["Settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 10), "Collection should offer Settings")
+        XCTAssertTrue(settings.isHittable, "Settings should be tappable at large text")
+        settings.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8), "Settings should open")
+        let about = scrollUntilHittable(app, app.descendants(matching: .any)["aboutButton"])
+        XCTAssertTrue(about.waitForExistence(timeout: 3), "Settings should offer About")
+        XCTAssertTrue(about.isHittable, "About should be on screen at large text")
+        XCTAssertTrue(about.label.contains("About"), "VoiceOver should name the About row")
+        about.tap()
+        XCTAssertTrue(app.navigationBars["About"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["aboutScreen"].waitForExistence(timeout: 5))
+        let release = scrollUntilHittable(app, app.descendants(matching: .any)["lastUpdateValue"])
+        XCTAssertTrue(release.waitForExistence(timeout: 3), "About should show the last-update value")
+        XCTAssertTrue(release.isHittable, "The release line should be readable at large text")
+        let shown = "\(release.label) \(release.value as? String ?? "")"
+        XCTAssertTrue(shown.contains("Release date unavailable"), "A missing release instant should say the date is unavailable. Shown: \(shown)")
+        XCTAssertFalse(shown.contains("Not yet released"), "Version 1.0 is not recorded as explicitly unreleased")
+        XCTAssertTrue(app.staticTexts["Last update"].exists)
+        XCTAssertTrue(app.staticTexts["Version"].exists)
+        XCTAssertTrue(app.staticTexts["Build"].exists)
+        let meaning = scrollUntilHittable(app, app.descendants(matching: .any)["releaseMeaning"])
+        XCTAssertTrue(meaning.waitForExistence(timeout: 3), "About should explain what Last update means")
+        XCTAssertTrue(meaning.isHittable, "The release explanation should be readable at large text")
+        XCTAssertEqual(
+            meaning.label,
+            "Last update is the App Store release of this version, when that time is on record. It is not when this iPhone installed or opened SoleCount."
+        )
+        XCTAssertFalse(app.staticTexts["November 6, 2026"].exists)
+        XCTAssertFalse(app.staticTexts["Not yet released"].exists)
+        let releaseAgain = scrollUntilHittable(
+            app,
+            app.descendants(matching: .any)["lastUpdateValue"],
+            limit: 4,
+            swipeUp: false
+        )
+        XCTAssertTrue(releaseAgain.isHittable, "The release line should stay reachable")
+        XCUIDevice.shared.appearance = .dark
+        let darkShown = "\(releaseAgain.label) \(releaseAgain.value as? String ?? "")"
+        XCTAssertTrue(darkShown.contains("Release date unavailable"), "Dark mode should keep the same release line. Shown: \(darkShown)")
+        XCUIDevice.shared.appearance = .light
     }
 }

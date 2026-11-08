@@ -1,5 +1,4 @@
 #if DEBUG
-import SwiftUI
 import SwiftData
 import UIKit
 

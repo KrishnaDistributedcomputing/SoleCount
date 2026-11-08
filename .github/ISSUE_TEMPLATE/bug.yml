@@ -1,0 +1,41 @@
+name: Bug
+description: Something in SoleCount looks wrong
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Say what you did and what the iPhone showed. Leave out your Apple ID, Team ID, and the .p8 key.
+  - type: textarea
+    id: did
+    attributes:
+      label: What did you do?
+      placeholder: I opened a pair and tapped Wore today.
+    validations:
+      required: true
+  - type: textarea
+    id: saw
+    attributes:
+      label: What did you see?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where did this happen?
+      description: Simulator or your iPhone, and the iOS version if you know it.
+      placeholder: iPhone 17 simulator, iOS 26
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Privacy
+      options:
+        - label: This report has no .p8 key, fastlane/.env, password, or App Review phone number.
+          required: true

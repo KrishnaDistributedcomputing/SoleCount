@@ -2,15 +2,15 @@
 # Actions tab > Release > Run workflow.
 #
 # This runs the same lane as `make release` (`fastlane ios ship`):
-# bundle ID, app records, the $0.99 purchase, tests, a new build number,
-# TestFlight, metadata, screenshots, then submit for review.
+# bundle ID, app records, tests, a new build number, TestFlight, metadata,
+# and screenshots. It stops before App Review. Review is `make submit` on the Mac.
 #
 # The app record and App Privacy cannot be created on GitHub. Apple requires
 # an Apple ID login with a 2FA code, and GitHub cannot type that code.
-# Run `make release` once on the Mac first. After that, this button can repeat it.
+# Run `make release` once on the Mac first. After that, this button can repeat the upload.
 #
-# The first In-App Purchase still needs one click on the App Store Connect website.
-# The lane prints that click if it is still required. Later releases submit themselves.
+# The submit box is kept so the button looks the same. The lane does not read it.
+# See docs/RELEASE-CHECKLIST.md.
 #
 # Required repository secrets (Settings > Secrets and variables > Actions):
 #   ASC_KEY_ID      App Store Connect API Key ID (10 characters)
@@ -21,13 +21,15 @@
 #   REVIEW_PHONE    App Review phone, with country code
 #   REVIEW_EMAIL    App Review email
 # Never commit the .p8 file, AuthKey_*, or fastlane/.env.
+# App Review still waits for `make submit` on the Mac. This workflow calls
+# `fastlane ios ship`, which does not set the submit switch. See docs/RELEASE-CHECKLIST.md.
 name: Release
 
 on:
   workflow_dispatch:
     inputs:
       submit:
-        description: "Submit to App Review after TestFlight"
+        description: "On: TestFlight and the store listing, same as make release. Off: stop after TestFlight. App Review is make submit on the Mac."
         type: boolean
         default: true
 
@@ -57,6 +59,13 @@ jobs:
       REVIEW_EMAIL: ${{ secrets.REVIEW_EMAIL }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check the repo before using the Mac runner
+        run: |
+          bash scripts/check_repo.sh
+          bash scripts/check_repo.sh --self-test
 
       - name: Use Xcode 26
         run: |

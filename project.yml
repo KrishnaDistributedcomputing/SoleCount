@@ -112,6 +112,8 @@ targets:
     supportedDestinations: [iOS]
     sources:
       - path: SoleCountTests
+      - path: SoleCount/ReleaseManifest.json
+        buildPhase: resources
     dependencies:
       - target: SoleCount
     settings:
