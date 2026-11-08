@@ -156,6 +156,27 @@ final class JourneyTests: XCTestCase {
         return element
     }
 
+    /// A long screen at large text does not build every row. Swipe until the
+    /// control is on screen and can be tapped, the way a person would.
+    @MainActor
+    private func scrollUntilHittable(
+        _ app: XCUIApplication,
+        _ element: XCUIElement,
+        limit: Int = 8,
+        swipeUp: Bool = true
+    ) -> XCUIElement {
+        var swipes = 0
+        while !(element.exists && element.isHittable), swipes < limit {
+            if swipeUp {
+                app.swipeUp()
+            } else {
+                app.swipeDown()
+            }
+            swipes += 1
+        }
+        return element
+    }
+
     @MainActor
     func testAccessibilityAndLargeType() throws {
         let app = XCUIApplication()
@@ -183,21 +204,46 @@ final class JourneyTests: XCTestCase {
             "UICTContentSizeCategoryAccessibilityXL"
         ]
         app.launch()
+        defer { XCUIDevice.shared.appearance = .light }
         app.tabBars.buttons["Collection"].tap()
         let settings = app.buttons["Settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 10), "Collection should offer Settings")
+        XCTAssertTrue(settings.isHittable, "Settings should be tappable at large text")
         settings.tap()
-        let about = app.descendants(matching: .any)["aboutButton"]
-        XCTAssertTrue(about.waitForExistence(timeout: 8), "Settings should offer About")
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8), "Settings should open")
+        let about = scrollUntilHittable(app, app.descendants(matching: .any)["aboutButton"])
+        XCTAssertTrue(about.waitForExistence(timeout: 3), "Settings should offer About")
+        XCTAssertTrue(about.isHittable, "About should be on screen at large text")
+        XCTAssertTrue(about.label.contains("About"), "VoiceOver should name the About row")
         about.tap()
         XCTAssertTrue(app.navigationBars["About"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Not yet released"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["aboutScreen"].waitForExistence(timeout: 5))
+        let release = scrollUntilHittable(app, app.descendants(matching: .any)["lastUpdateValue"])
+        XCTAssertTrue(release.waitForExistence(timeout: 3), "About should show the last-update value")
+        XCTAssertTrue(release.isHittable, "The release line should be readable at large text")
+        let shown = "\(release.label) \(release.value as? String ?? "")"
+        XCTAssertTrue(shown.contains("Release date unavailable"), "A missing release instant should say the date is unavailable. Shown: \(shown)")
+        XCTAssertFalse(shown.contains("Not yet released"), "Version 1.0 is not recorded as explicitly unreleased")
         XCTAssertTrue(app.staticTexts["Last update"].exists)
         XCTAssertTrue(app.staticTexts["Version"].exists)
         XCTAssertTrue(app.staticTexts["Build"].exists)
+        let meaning = scrollUntilHittable(
+            app,
+            app.staticTexts["Last update is the App Store release of this version, when that time is on record. It is not when this iPhone installed or opened SoleCount."]
+        )
+        XCTAssertTrue(meaning.isHittable, "The release explanation should be readable at large text")
         XCTAssertFalse(app.staticTexts["November 6, 2026"].exists)
+        XCTAssertFalse(app.staticTexts["Not yet released"].exists)
+        let releaseAgain = scrollUntilHittable(
+            app,
+            app.descendants(matching: .any)["lastUpdateValue"],
+            limit: 4,
+            swipeUp: false
+        )
+        XCTAssertTrue(releaseAgain.isHittable, "The release line should stay reachable")
         XCUIDevice.shared.appearance = .dark
-        XCTAssertTrue(app.staticTexts["Not yet released"].waitForExistence(timeout: 3))
+        let darkShown = "\(releaseAgain.label) \(releaseAgain.value as? String ?? "")"
+        XCTAssertTrue(darkShown.contains("Release date unavailable"), "Dark mode should keep the same release line. Shown: \(darkShown)")
         XCUIDevice.shared.appearance = .light
     }
 }

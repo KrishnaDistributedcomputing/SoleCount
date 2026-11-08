@@ -3,6 +3,8 @@ import Foundation
 /// What About shows for this installed build.
 /// `released` is an App Store release instant for that marketing version.
 /// It is not the compile time, the approval time, or the day the phone installed the app.
+/// `notYetReleased` is only for a version the manifest explicitly marks unreleased.
+/// `unavailable` means no verified instant is on record. That is not a claim that the version is unreleased.
 enum ReleaseStatus: Equatable {
     case released(Date)
     case notYetReleased
@@ -21,7 +23,7 @@ enum AppAboutCopy {
     static let build = "Build"
     static let notYetReleased = "Not yet released"
     static let releaseUnavailable = "Release date unavailable"
-    static let meaning = "Last update is when this version was released. It is not when this iPhone installed or opened SoleCount."
+    static let meaning = "Last update is the App Store release of this version, when that time is on record. It is not when this iPhone installed or opened SoleCount."
 }
 
 enum AppRelease {
@@ -36,24 +38,26 @@ enum AppRelease {
         )
     }
 
+    /// A valid `releasedAt` instant wins.
+    /// `unreleased: true` with no instant means the version is explicitly unreleased.
+    /// Null, a missing instant, a missing version, or a date that is not an instant means unknown.
     static func status(for version: String, json: Data) -> ReleaseStatus {
         guard let root = try? JSONSerialization.jsonObject(with: json) as? [String: Any],
-              let versions = root["versions"] as? [String: Any] else {
+              let versions = root["versions"] as? [String: Any],
+              let record = versions[version] as? [String: Any] else {
             return .unavailable
         }
-        guard let record = versions[version] as? [String: Any] else {
+        if let text = record["releasedAt"] as? String {
+            guard let date = parseReleaseInstant(text) else { return .unavailable }
+            return .released(date)
+        }
+        if let raw = record["releasedAt"], !(raw is NSNull) {
             return .unavailable
         }
-        guard let raw = record["releasedAt"] else {
+        if record["unreleased"] as? Bool == true {
             return .notYetReleased
         }
-        if raw is NSNull {
-            return .notYetReleased
-        }
-        guard let text = raw as? String, let date = parseReleaseInstant(text) else {
-            return .unavailable
-        }
-        return .released(date)
+        return .unavailable
     }
 
     static func status(for version: String, bundle: Bundle) -> ReleaseStatus {

@@ -17,7 +17,7 @@ A few words used below:
 | Written | 7 November 2026 |
 | Branch | `cursor/about-release-a2e5` |
 | App-code baseline | GitHub `main` commit `d41209a` (4 November 2026), plus the foundation and logging-streak branches under it |
-| Extra app behavior on this branch | About screen in `SoleCount/AboutView.swift`. Release time comes only from `SoleCount/ReleaseManifest.json`. Version 1.0 has no release instant recorded. |
+| Extra app behavior on this branch | About screen in `SoleCount/AboutView.swift`. Release time comes only from `SoleCount/ReleaseManifest.json`. Version 1.0 has no verified release instant, so About says **Release date unavailable**. |
 | Marketing version in `project.yml` | `1.0` |
 | Committed build number | `1` |
 
@@ -573,13 +573,13 @@ Last update means the App Store release of that marketing version. It is not the
 
 The value comes from `SoleCount/ReleaseManifest.json`, keyed by marketing version:
 
-- `releasedAt: null`, or the key omitted, means **Not yet released**.
-- A missing version, a broken file, or a `releasedAt` string that is not an ISO-8601 instant with a timezone means **Release date unavailable**.
-- A valid instant is shown with the date, the time, and the timezone name, using the phone's locale and timezone.
+- A `releasedAt` string that is an ISO-8601 instant with a timezone is shown with the date, the time, and the timezone name, using the phone's locale and timezone. That instant wins even if `unreleased` is also set.
+- `"unreleased": true`, with no instant, means **Not yet released**. Use that only when you know the marketing version has not gone on the store.
+- `releasedAt: null`, a missing instant, a missing version, a broken file, or a date that is not an instant with a timezone means **Release date unavailable**. That is unknown. It does not claim the version is unreleased.
 
-Version `1.0` is `null` in this tree. A reported approval email on 6 November 2026 is not a release time, so it is not written in the manifest and About does not show it. Do not fill `releasedAt` from the build clock.
+Version `1.0` is `null` in this tree, with no `unreleased` flag. A reported approval email on 6 November 2026 is not a release time, so it is not written in the manifest and About does not show it. Do not fill `releasedAt` from the build clock, the approval clock, or the day a phone installed the app.
 
-**Unknown (Mac copy).** The approved binary may already be on the store. This GitHub tree still has no verified release instant, so About on a build made from this tree says not yet released until someone records one.
+**Unknown (Mac copy).** The approved binary may already be on the store. This GitHub tree still has no verified release instant, so About on a build made from this tree says **Release date unavailable** until someone records one.
 
 The feather About mark in the proposals table is still not started. This screen does not add that artwork.
 

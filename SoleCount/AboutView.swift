@@ -14,7 +14,12 @@ struct AboutView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 LabeledContent(AppAboutCopy.version, value: identity.version)
                 LabeledContent(AppAboutCopy.build, value: identity.build)
-                LabeledContent(AppAboutCopy.lastUpdate, value: releaseLine)
+                LabeledContent(AppAboutCopy.lastUpdate) {
+                    Text(releaseLine)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("lastUpdateValue")
+                }
                 Text(AppAboutCopy.meaning)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
