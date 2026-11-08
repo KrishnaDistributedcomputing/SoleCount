@@ -24,6 +24,7 @@ struct AboutView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("releaseMeaning")
             }
             Section {
                 Link("Privacy Policy", destination: AppLinks.privacyPolicy)

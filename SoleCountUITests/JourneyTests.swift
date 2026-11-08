@@ -227,11 +227,13 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Last update"].exists)
         XCTAssertTrue(app.staticTexts["Version"].exists)
         XCTAssertTrue(app.staticTexts["Build"].exists)
-        let meaning = scrollUntilHittable(
-            app,
-            app.staticTexts["Last update is the App Store release of this version, when that time is on record. It is not when this iPhone installed or opened SoleCount."]
-        )
+        let meaning = scrollUntilHittable(app, app.descendants(matching: .any)["releaseMeaning"])
+        XCTAssertTrue(meaning.waitForExistence(timeout: 3), "About should explain what Last update means")
         XCTAssertTrue(meaning.isHittable, "The release explanation should be readable at large text")
+        XCTAssertEqual(
+            meaning.label,
+            "Last update is the App Store release of this version, when that time is on record. It is not when this iPhone installed or opened SoleCount."
+        )
         XCTAssertFalse(app.staticTexts["November 6, 2026"].exists)
         XCTAssertFalse(app.staticTexts["Not yet released"].exists)
         let releaseAgain = scrollUntilHittable(
