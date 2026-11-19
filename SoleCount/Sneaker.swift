@@ -53,6 +53,10 @@ final class Sneaker {
     @Relationship(deleteRule: .cascade, inverse: \SneakerPhotoItem.sneaker)
     var photos: [SneakerPhotoItem] = []
 
+    /// Sole photos over time. New in build 2; older pairs start with none.
+    @Relationship(deleteRule: .cascade, inverse: \SolePhoto.sneaker)
+    var solePhotos: [SolePhoto] = []
+
     init(name: String,
          brand: String,
          price: Double,

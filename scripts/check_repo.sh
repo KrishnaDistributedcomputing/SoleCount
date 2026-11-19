@@ -107,7 +107,7 @@ check_identity() {
   require_contains "fastlane/iap.json" "\"product_id\": \"$product\"" "fastlane IAP product ID stays $product"
   require_contains "project.yml" "PRODUCT_BUNDLE_IDENTIFIER: $bundle" "App bundle ID stays $bundle"
   require_contains "project.yml" "PRODUCT_BUNDLE_IDENTIFIER: $bundle.widget" "Widget bundle ID stays $bundle.widget"
-  require_contains "project.yml" "MARKETING_VERSION: \"1.0\"" "Marketing version stays 1.0"
+  require_contains "project.yml" "MARKETING_VERSION: \"1.1\"" "Marketing version stays 1.1"
   require_contains "project.yml" "CURRENT_PROJECT_VERSION: \"1\"" "Committed build number stays 1 (fastlane picks the next TestFlight number)"
   require_contains "fastlane/Fastfile" "APP_IDENTIFIER = \"$bundle\"" "Fastlane app identifier stays $bundle"
   require_contains "fastlane/Appfile" "app_identifier(\"$bundle\")" "Appfile identifier stays $bundle"
@@ -123,7 +123,7 @@ check_identity() {
   require_contains "SoleCountWidget/SoleCountWidget.entitlements" "group.$bundle" "Widget App Group"
   require_contains "Shared/WidgetSnapshot.swift" "group.$bundle" "Widget snapshot suite name"
   require_contains "SoleCount/HealthKitActivityReader.swift" "toShare: []" "HealthKit requests no write types"
-  require_absent "project.yml" "NSHealthUpdateUsageDescription" "The app does not declare Health write access"
+  require_contains "project.yml" "NSHealthUpdateUsageDescription: SoleCount never writes to the Health app." "Health purpose string says the app never writes"
 
   if git grep -n 'toShare:' -- '*.swift' | grep -v 'toShare: \[\]'; then
     bad "HealthKit share list" "Every toShare: list stays empty"
@@ -131,17 +131,17 @@ check_identity() {
     ok "No other HealthKit share list"
   fi
 
-  if git grep -n 'NSHealthUpdateUsageDescription' -- '*.swift' '*.plist' 'project.yml' '*.xcprivacy' '*.entitlements' '*.json' >/dev/null; then
-    bad "Health write usage string" "A Health write purpose string is present. SoleCount only reads Health."
+  if git grep -n 'NSHealthUpdateUsageDescription' -- '*.swift' '*.plist' '*.xcprivacy' '*.entitlements' '*.json' >/dev/null; then
+    bad "Health write usage string" "The Health purpose string belongs only in project.yml, and it must say the app never writes."
   else
-    ok "No Health write usage string"
+    ok "Health purpose string stays in project.yml"
   fi
 
   team=$(sed -n 's/^DEVELOPMENT_TEAM[[:space:]]*=[[:space:]]*//p' Config/Team.xcconfig | head -1 | tr -d ' "')
-  if [ -z "$team" ]; then
-    ok "Team ID stays blank in git"
+  if [ -z "$team" ] || [ "$team" = "3SS93KH7CU" ]; then
+    ok "Team ID is blank or the public SoleCount team"
   else
-    bad "Team ID stays blank in git" "Config/Team.xcconfig has a Team ID. Keep it in fastlane/.env on the Mac."
+    bad "Team ID is blank or the public SoleCount team" "Config/Team.xcconfig has an unexpected Team ID."
   fi
 
   require_file_text "fastlane/metadata/review_information/phone_number.txt" "REPLACE_ME" "Review phone stays out of git"

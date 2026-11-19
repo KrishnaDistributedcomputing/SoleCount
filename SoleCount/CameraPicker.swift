@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Opens the camera for one photo of a pair. The photo stays on this iPhone.
+/// Opens the camera to take one photo of a pair. The photo stays on this iPhone.
 struct CameraPicker: UIViewControllerRepresentable {
     var onPhoto: (Data) -> Void
     @Environment(\.dismiss) private var dismiss

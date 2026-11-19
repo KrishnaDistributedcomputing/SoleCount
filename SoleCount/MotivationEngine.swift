@@ -21,6 +21,7 @@ struct BadgeInput: Equatable {
     /// Lowest cost per wear among pairs that have been worn. nil if none.
     var lowestCostPerWear: Double? = nil
     var pairCount: Int = 0
+    var starterQuestDone: Bool = false
 }
 
 /// A real, approximate distance used only as a fun comparison. The UI labels these with ≈.
@@ -50,7 +51,8 @@ enum MotivationEngine {
             Badge(id: "wears-50", title: "50 wears", detail: "50 wears across the collection", symbol: "figure.walk", unlocked: input.totalWears >= 50),
             Badge(id: "wears-100", title: "100 wears", detail: "100 wears across the collection", symbol: "figure.walk.motion", unlocked: input.totalWears >= 100),
             Badge(id: "cost-under-1", title: "Under 1 a wear", detail: "A pair costs less than 1 per wear", symbol: "dollarsign.circle", unlocked: (input.lowestCostPerWear ?? .greatestFiniteMagnitude) < 1),
-            Badge(id: "collection-10", title: "10 pairs", detail: "Ten pairs in the collection", symbol: "square.grid.3x3.fill", unlocked: input.pairCount >= 10)
+            Badge(id: "collection-10", title: "10 pairs", detail: "Ten pairs in the collection", symbol: "square.grid.3x3.fill", unlocked: input.pairCount >= 10),
+            Badge(id: "starter-quest", title: "Quest complete", detail: "Finished the starter quest", symbol: "map.fill", unlocked: input.starterQuestDone)
         ]
     }
 
@@ -88,12 +90,12 @@ enum MotivationEngine {
         )
     }
 
-    static func facts(meters: Double) -> [DistanceFact] {
+    static func facts(meters: Double, locale: Locale = .current) -> [DistanceFact] {
         guard meters >= soccerFieldMeters else { return [] }
         var lines: [DistanceFact] = []
         let fields = Int(meters / soccerFieldMeters)
         let noun = fields == 1 ? "soccer field" : "soccer fields"
-        lines.append(DistanceFact(text: "You've walked the length of \(fields) \(noun)"))
+        lines.append(DistanceFact(text: "You've walked the length of \(fields.formatted(.number.locale(locale))) \(noun)"))
 
         let landmarks: [(name: String, meters: Double)] = [
             ("a running track", 400),
@@ -108,7 +110,7 @@ enum MotivationEngine {
             if count <= 1 {
                 lines.append(DistanceFact(text: "≈ \(best.name)"))
             } else {
-                lines.append(DistanceFact(text: "≈ \(count) × \(best.name)"))
+                lines.append(DistanceFact(text: "≈ \(count.formatted(.number.locale(locale))) × \(best.name)"))
             }
         }
         return lines

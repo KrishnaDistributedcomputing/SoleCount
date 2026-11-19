@@ -35,10 +35,10 @@ struct WearChartView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "chart.bar")
                         .font(.largeTitle)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                     Text("No wears in the last 6 months")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 200)
@@ -60,7 +60,7 @@ struct WearChartView: View {
                         if item.count > 0 {
                             Text("\(item.count)")
                                 .font(.caption2.bold())
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(ShoeTheme.softText)
                         }
                     }
                 }
@@ -68,7 +68,7 @@ struct WearChartView: View {
                     AxisMarks(values: .stride(by: .month)) { _ in
                         AxisValueLabel(format: .dateTime.month(.abbreviated), centered: true)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(ShoeTheme.softText)
                     }
                 }
                 .chartYAxis {
@@ -77,7 +77,7 @@ struct WearChartView: View {
                             if let intValue = value.as(Int.self) {
                                 Text("\(intValue)")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(ShoeTheme.softText)
                             }
                         }
                     }

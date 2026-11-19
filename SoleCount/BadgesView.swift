@@ -9,7 +9,7 @@ struct BadgesView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Unlocked badges stay on this iPhone. Locked ones are just next steps.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                     .fixedSize(horizontal: false, vertical: true)
                 AchievementGrid(badges: badges)
             }

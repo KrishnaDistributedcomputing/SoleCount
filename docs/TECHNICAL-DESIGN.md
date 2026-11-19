@@ -17,8 +17,8 @@ A few words used below:
 | Written | 7 November 2026 |
 | Branch | `cursor/about-release-a2e5` |
 | App-code baseline | GitHub `main` commit `d41209a` (4 November 2026), plus the foundation and logging-streak branches under it |
-| Extra app behavior on this branch | About screen in `SoleCount/AboutView.swift`. Release time comes only from `SoleCount/ReleaseManifest.json`. Version 1.0 has no verified release instant, so About says **Release date unavailable**. |
-| Marketing version in `project.yml` | `1.0` |
+| Extra app behavior on this branch | About screen, logging streak, shoe activities, and the shipped sole check, levels, and feedback. Version 1.0's release instant is the App Store `currentVersionReleaseDate`. Version 1.1 is explicitly not released yet. |
+| Marketing version in `project.yml` | `1.1` |
 | Committed build number | `1` |
 
 Three labels are used on purpose:
@@ -559,7 +559,7 @@ Signing material never belongs in the pull request. Upload signing uses the App 
 
 ## 16. Version and release path
 
-**Implemented numbers.** People see marketing version `1.0` from `project.yml`. The committed build number is `1`. fastlane's beta lane sets the uploaded build to the latest TestFlight build for that version plus one. The owner must approve each upload. A merged pull request is not an upload.
+**Implemented numbers.** People see marketing version `1.1` from `project.yml`. The committed build number stays `1`. fastlane's beta lane sets the uploaded build to the latest TestFlight build for that version plus one. The owner must approve each upload. A merged pull request is not an upload.
 
 Human gates, in order:
 
@@ -583,7 +583,7 @@ The value comes from `SoleCount/ReleaseManifest.json`, keyed by marketing versio
 - `"unreleased": true`, with no instant, means **Not yet released**. Use that only when you know the marketing version has not gone on the store.
 - `releasedAt: null`, a missing instant, a missing version, a broken file, or a date that is not an instant with a timezone means **Release date unavailable**. That is unknown. It does not claim the version is unreleased.
 
-Version `1.0` is `null` in this tree, with no `unreleased` flag. A reported approval email on 6 November 2026 is not a release time, so it is not written in the manifest and About does not show it. Do not fill `releasedAt` from the build clock, the approval clock, or the day a phone installed the app.
+Version `1.0` is `2026-11-06T19:17:40Z`. That is the App Store `currentVersionReleaseDate` for the live version, not a compile time or an install time. Version `1.1` is marked unreleased, so About says **Not yet released**. Do not fill a 1.1 instant until that version is actually on the store.
 
 **Unknown (Mac copy).** The approved binary may already be on the store. This GitHub tree still has no verified release instant, so About on a build made from this tree says **Release date unavailable** until someone records one.
 

@@ -27,7 +27,7 @@ struct MileageGoalCard: View {
                         .font(.headline)
                     Text("A gentle target for when this pair has done its job. SoleCount does not retire it for you.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                 }
             }
             if progress >= 1 {

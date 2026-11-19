@@ -3,4 +3,4 @@
 // Leave this blank until Apple finishes your membership. The iPhone Simulator
 // does not need a Team ID. scripts/setup_mac.sh fills this in later.
 // The Team ID is not a secret.
-DEVELOPMENT_TEAM =
+DEVELOPMENT_TEAM = 3SS93KH7CU

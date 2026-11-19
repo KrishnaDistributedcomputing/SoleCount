@@ -16,6 +16,8 @@ struct AddSneakerView: View {
     @State private var hasWearLimit: Bool
     @State private var wearLimit: Int
     @State private var photoItem: PhotosPickerItem?
+    @State private var showingLibrary = false
+    @State private var showingCamera = false
     @State private var extraItems: [PhotosPickerItem] = []
     @State private var showingCamera = false
     @State private var showingLibrary = false
@@ -89,6 +91,11 @@ struct AddSneakerView: View {
                         .accessibilityIdentifier("saveSneakerButton")
                 }
             }
+            .photosPicker(isPresented: $showingLibrary, selection: $photoItem, matching: .images)
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraPicker { data in setMainPhoto(data) }
+                    .ignoresSafeArea()
+            }
             .onChange(of: photoItem) { _, item in
                 Task { await loadMainPhoto(from: item) }
             }
@@ -145,9 +152,11 @@ struct AddSneakerView: View {
                         } label: {
                             Label("Choose from Library", systemImage: "photo.on.rectangle")
                         }
+                        .accessibilityIdentifier("chooseLibraryOption")
                     } label: {
                         photoLabel
                     }
+                    .buttonStyle(.plain)
                     .accessibilityIdentifier("photoMenu")
                 } else {
                     PhotosPicker(selection: $photoItem, matching: .images) {
@@ -179,7 +188,7 @@ struct AddSneakerView: View {
             labeledField(symbol: "building.2.fill", tint: Color.accentColor) {
                 TextField("Brand (e.g. Nike)", text: $brand)
             }
-            labeledField(symbol: "dollarsign.circle.fill", tint: .green) {
+            labeledField(symbol: "dollarsign.circle.fill", tint: ShoeTheme.mintTint) {
                 TextField("Price paid (e.g. 129.99)", value: $price, format: .number)
                     .keyboardType(.decimalPad)
             }
@@ -265,7 +274,7 @@ struct AddSneakerView: View {
                     .frame(maxWidth: 80)
                     .accessibilityIdentifier("startingDistanceField")
                 Text(DistanceFormat.unitWord())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
             }
             Toggle("Set a Wear Goal", isOn: $hasWearLimit)
             if hasWearLimit {
@@ -284,7 +293,7 @@ struct AddSneakerView: View {
                         .multilineTextAlignment(.trailing)
                         .frame(maxWidth: 80)
                     Text(DistanceFormat.unitWord())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                 }
             }
             if photos.count > 1 {

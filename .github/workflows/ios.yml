@@ -13,7 +13,7 @@
 #   ASC_KEY_ID      App Store Connect API Key ID (10 characters)
 #   ASC_ISSUER_ID   Issuer ID (a long UUID on the same page)
 #   ASC_KEY_P8      The .p8 file, base64-encoded:  base64 -i AuthKey_XXXX.p8 | pbcopy
-#   TEAM_ID         10-character Team ID (Config/Team.xcconfig in git is blank)
+#   TEAM_ID         10-character Team ID. The public team id is also in Config/Team.xcconfig.
 #   REVIEW_PHONE    App Review phone, with country code
 #   REVIEW_EMAIL    App Review email
 # Do not put the .p8 text itself in the repo. The workflow writes it to a temp file and deletes it.

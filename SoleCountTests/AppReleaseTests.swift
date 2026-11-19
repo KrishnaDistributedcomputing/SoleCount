@@ -78,17 +78,21 @@ struct AppReleaseTests {
         #expect(!french.contains("March"))
     }
 
-    @Test func theBundledManifestDoesNotClaimARelease() throws {
+    @Test func theBundledManifestRecordsOnlyTheKnownStoreDate() throws {
         let url = try #require(
             Bundle(for: ReleaseManifestAnchor.self).url(forResource: "ReleaseManifest", withExtension: "json")
                 ?? Bundle.main.url(forResource: "ReleaseManifest", withExtension: "json")
         )
         let data = try Data(contentsOf: url)
-        #expect(AppRelease.status(for: "1.0", json: data) == .unavailable)
-        #expect(AppRelease.lastUpdateValue(.unavailable, locale: Locale(identifier: "en_US"), timeZone: toronto) == "Release date unavailable")
+        guard case .released(let released) = AppRelease.status(for: "1.0", json: data) else {
+            Issue.record("Version 1.0 should use the App Store release instant")
+            return
+        }
+        let expected = try #require(AppRelease.parseReleaseInstant("2026-11-06T19:17:40Z"))
+        #expect(released == expected)
+        #expect(AppRelease.status(for: "1.1", json: data) == .notYetReleased)
         let text = String(decoding: data, as: UTF8.self)
-        #expect(!text.contains("2026-11-06"))
-        #expect(!text.contains("November"))
+        #expect(!text.contains("1.1") || text.contains("\"unreleased\": true"))
     }
 }
 
