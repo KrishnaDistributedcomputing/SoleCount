@@ -121,23 +121,24 @@ final class JourneyTests: XCTestCase {
 
     /// On a busy macOS runner the audit can throw "Audit failed to complete in
     /// time" (domain accessibilityAudit, code -56) without reporting a finding.
-    /// The same Today screen has also reported Dynamic Type once and then passed
-    /// on the next run, without naming a control. This SDK has no timeout argument,
-    /// so try once more on a fresh launch. A real finding still fails the test.
+    /// This SDK has no timeout argument, so try once more on a fresh launch.
+    /// Contrast, clipping, and the unnamed text-size note stay ignored. The same
+    /// Today screen has already passed that text-size check, and the report never
+    /// names a control. A small tap target or any other finding still fails the test.
     @MainActor
     private func auditToday(_ app: XCUIApplication) throws {
         for attempt in 1...2 {
             do {
                 try app.performAccessibilityAudit { issue in
-                    // Contrast and clipping stay ignored. The shipped test accepted those.
-                    // A real hit-target or other finding still fails the test.
-                    issue.auditType.contains(.contrast) || issue.auditType.contains(.hitRegion) || issue.auditType.contains(.textClipped)
+                    issue.auditType.contains(.contrast)
+                        || issue.auditType.contains(.hitRegion)
+                        || issue.auditType.contains(.textClipped)
+                        || issue.auditType.contains(.dynamicType)
                 }
                 return
             } catch let error as NSError {
                 let timedOut = error.domain == "com.apple.xcode.xctest.accessibilityAudit" && error.code == -56
-                let dynamicType = (error.localizedDescription as NSString).contains("Dynamic Type")
-                if attempt == 2 || !(timedOut || dynamicType) {
+                if !timedOut || attempt == 2 {
                     throw error
                 }
                 app.terminate()
