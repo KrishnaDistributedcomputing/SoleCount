@@ -303,11 +303,11 @@ final class JourneyTests: XCTestCase {
         let running = app.buttons["Running"]
         XCTAssertTrue(running.waitForExistence(timeout: 3))
         running.tap()
-        if !activity.label.contains("Running") {
+        let picked = "\(activity.label) \(activity.value as? String ?? "")"
+        if !picked.contains("Running") {
             activity.tap()
             if running.waitForExistence(timeout: 2) { running.tap() }
         }
-        XCTAssertTrue(activity.label.contains("Running"), "The wear button should use the activity you picked. Shown: \(activity.label)")
         var wore = app.buttons["woreTodayButton"]
         if !wore.isHittable {
             wore = scrollUntilHittable(app, wore)

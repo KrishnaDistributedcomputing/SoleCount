@@ -227,6 +227,7 @@ struct SneakerDetailView: View {
             }
             .pickerStyle(.menu)
             .accessibilityIdentifier("wearActivityPicker")
+            .accessibilityValue(nextActivity.rawValue)
             Button {
                 withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.6)) {
                     buttonScale = 0.95
