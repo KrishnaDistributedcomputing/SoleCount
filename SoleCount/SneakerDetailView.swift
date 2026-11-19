@@ -279,6 +279,7 @@ struct SneakerDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Wear history")
                         .font(.headline)
+                        .accessibilityIdentifier("wearHistoryTitle")
                     ForEach(Array(latest.enumerated()), id: \.offset) { _, record in
                         HStack {
                             Label(record.activity.rawValue, systemImage: record.activity.symbolName)
