@@ -5,8 +5,9 @@
 #    it. Open a pull request to build. Repo checks (guard.yml) are the cheap Linux job.
 #  - Push a tag like v1.0.0: tests, then the TestFlight job below.
 #  - Actions tab > "Release" > Run workflow: the ship lane (see release.yml).
-#  - Actions tab > "iOS" > Run workflow: tests, then TestFlight. The listing step
-#    runs if you tick "release". App Review still waits for make submit on the Mac.
+#  - Actions tab > "iOS" > Run workflow: tests, then TestFlight, unless you tick
+#    "tests_only". The listing step runs if you tick "release". App Review still
+#    waits for make submit on the Mac.
 #    See docs/RELEASE-CHECKLIST.md.
 #
 # Required repository secrets (Settings > Secrets and variables > Actions > New repository secret):
@@ -37,6 +38,10 @@ on:
       - "scripts/check_repo.sh"
   workflow_dispatch:
     inputs:
+      tests_only:
+        description: "Run the Mac build and tests only. Do not upload to TestFlight."
+        type: boolean
+        default: false
       release:
         description: "Also upload the store listing after TestFlight. App Review still waits for make submit."
         type: boolean
@@ -100,7 +105,7 @@ jobs:
   deploy:
     name: TestFlight / App Store
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && inputs.tests_only != true
     runs-on: macos-26
     timeout-minutes: 90
     env:
