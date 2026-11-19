@@ -326,15 +326,16 @@ final class JourneyTests: XCTestCase {
         if !undo.isHittable {
             _ = scrollUntilHittable(app, undo, limit: 6)
         }
-        let history = app.descendants(matching: .any)["wearHistoryRow"]
-        let title = app.descendants(matching: .any)["wearHistoryTitle"]
-        var swipes = 0
-        while !history.exists && !title.exists && swipes < 4 {
-            app.swipeUp(velocity: .slow)
-            swipes += 1
+        let history = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Running,")).firstMatch
+        var nudges = 0
+        while !history.exists && nudges < 6 {
+            let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+            let bottom = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+            top.press(forDuration: 0.05, thenDragTo: bottom)
+            nudges += 1
         }
-        XCTAssertTrue(history.waitForExistence(timeout: 3) || title.waitForExistence(timeout: 2), "Wear history should list the day")
-        XCTAssertTrue(history.label.contains("Running"), "Wear history should name the activity. Shown: \(history.label)")
+        let visible = app.staticTexts.allElementsBoundByIndex.prefix(25).map(\.label).joined(separator: " | ")
+        XCTAssertTrue(history.waitForExistence(timeout: 3), "Wear history should name the activity. Visible: \(visible)")
 
         app.tabBars.buttons["Stats"].tap()
         let breakdown = scrollUntilHittable(app, app.descendants(matching: .any)["activityBreakdown"])
