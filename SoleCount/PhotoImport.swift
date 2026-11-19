@@ -1,5 +1,6 @@
 import CoreTransferable
 import PhotosUI
+import SwiftUI
 import UniformTypeIdentifiers
 
 /// A library photo. The picker offers a picture (`public.image`, often HEIC).

@@ -19,8 +19,6 @@ struct AddSneakerView: View {
     @State private var showingLibrary = false
     @State private var showingCamera = false
     @State private var extraItems: [PhotosPickerItem] = []
-    @State private var showingCamera = false
-    @State private var showingLibrary = false
     @State private var photoNote = ""
     @State private var photos: [Data]
     @State private var shoeType: ShoeType
@@ -101,11 +99,6 @@ struct AddSneakerView: View {
             }
             .onChange(of: extraItems) { _, items in
                 Task { await loadExtra(from: items) }
-            }
-            .photosPicker(isPresented: $showingLibrary, selection: $photoItem, matching: .images)
-            .fullScreenCover(isPresented: $showingCamera) {
-                CameraPicker { data in setMainPhoto(data) }
-                    .ignoresSafeArea()
             }
             .onChange(of: shoeType) { _, newType in
                 guard !replaceEdited else { return }
