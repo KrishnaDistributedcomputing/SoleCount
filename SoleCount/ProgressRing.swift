@@ -26,13 +26,14 @@ struct ProgressRing: View {
                     )
                     .rotationEffect(.degrees(-90))
                     .shadow(color: tint.opacity(0.45), radius: 6)
-                Text(label)
-                    .font(.title3.bold())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .contentTransition(.numericText())
-                    .animation(reduceMotion ? nil : .snappy, value: label)
-                    .padding(.horizontal, lineWidth)
+                ViewThatFits(in: .horizontal) {
+                    Text(label).font(.title3.bold()).lineLimit(1)
+                    Text(label).font(.headline).lineLimit(1)
+                    Text(label).font(.caption.bold()).lineLimit(1)
+                }
+                .contentTransition(.numericText())
+                .animation(reduceMotion ? nil : .snappy, value: label)
+                .padding(.horizontal, lineWidth)
             }
             .aspectRatio(1, contentMode: .fit)
             .onAppear { animate(to: clamped) }

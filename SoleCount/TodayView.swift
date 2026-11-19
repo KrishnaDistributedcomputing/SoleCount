@@ -348,8 +348,13 @@ struct TodayView: View {
                 .foregroundStyle(ShoeTheme.coralTint)
             }
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day)) { _ in
-                    AxisValueLabel(format: .dateTime.weekday(.narrow))
+                AxisMarks(values: .stride(by: .day)) { value in
+                    AxisValueLabel {
+                        if let date = value.as(Date.self) {
+                            Text(date, format: .dateTime.weekday(.narrow))
+                                .font(.caption2)
+                        }
+                    }
                 }
             }
             .frame(height: 160)

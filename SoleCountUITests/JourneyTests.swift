@@ -320,8 +320,13 @@ final class JourneyTests: XCTestCase {
             wore.tap()
         }
         XCTAssertTrue(app.buttons["Undo Today's Wear"].waitForExistence(timeout: 5), "Logging a wear should offer undo")
-        let history = scrollUntilHittable(app, app.descendants(matching: .any)["wearHistoryRow"], limit: 6)
-        XCTAssertTrue(history.waitForExistence(timeout: 5), "Wear history should list the day")
+        let history = app.descendants(matching: .any)["wearHistoryRow"]
+        var swipes = 0
+        while !history.exists && swipes < 3 {
+            app.swipeUp(velocity: .slow)
+            swipes += 1
+        }
+        XCTAssertTrue(history.waitForExistence(timeout: 3), "Wear history should list the day")
         XCTAssertTrue(history.label.contains("Running"), "Wear history should name the activity. Shown: \(history.label)")
 
         app.tabBars.buttons["Stats"].tap()
