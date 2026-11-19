@@ -16,6 +16,8 @@ final class Sneaker {
 
     // Every time you tap "Wore today", the date is added here.
     var wearDates: [Date] = []
+    /// One activity name for each wear date. An empty list means those wears are Casual.
+    var wearActivityRaws: [String] = []
 
     var isRetired: Bool = false
 
@@ -149,14 +151,27 @@ final class Sneaker {
         return []
     }
 
-    func logWear(on date: Date = .now) {
+    func logWear(on date: Date = .now, activity: WearActivity = .casual) {
+        if wearActivityRaws.count < wearDates.count {
+            let missing = wearDates.count - wearActivityRaws.count
+            wearActivityRaws.append(contentsOf: Array(repeating: WearActivity.casual.rawValue, count: missing))
+        } else if wearActivityRaws.count > wearDates.count {
+            wearActivityRaws.removeLast(wearActivityRaws.count - wearDates.count)
+        }
         wearDates.append(date)
+        wearActivityRaws.append(activity.rawValue)
     }
 
     func undoTodayWear() {
-        if let index = wearDates.lastIndex(where: { Calendar.current.isDateInToday($0) }) {
-            wearDates.remove(at: index)
+        guard let index = wearDates.lastIndex(where: { Calendar.current.isDateInToday($0) }) else { return }
+        wearDates.remove(at: index)
+        if wearActivityRaws.indices.contains(index) {
+            wearActivityRaws.remove(at: index)
         }
+    }
+
+    var wearRecords: [WearRecord] {
+        WearActivityMath.records(dates: wearDates, activityRaws: wearActivityRaws)
     }
 
     func applyHealth(_ result: AttributedShoe) {

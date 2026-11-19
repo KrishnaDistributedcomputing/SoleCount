@@ -18,6 +18,7 @@ struct SneakerDetailView: View {
     @State private var showingSendOff = false
     @State private var buttonScale: CGFloat = 1
     @State private var cheer = 0
+    @State private var nextActivity: WearActivity = .casual
 
     private var tint: Color { ShoeTheme.accent(for: sneaker.shoeType) }
 
@@ -38,6 +39,7 @@ struct SneakerDetailView: View {
                 if !sneaker.isRetired {
                     wearButton
                 }
+                wearHistory
                 if let fraction = sneaker.lifeFraction {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Distance target")
@@ -128,6 +130,9 @@ struct SneakerDetailView: View {
                     .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("detailPhoto")
+        .accessibilityLabel(sneaker.gallery.isEmpty ? "No photo yet" : "Photo saved")
     }
 
     private var titleBlock: some View {
@@ -213,6 +218,13 @@ struct SneakerDetailView: View {
 
     private var wearButton: some View {
         VStack(spacing: 8) {
+            Picker("Activity", selection: $nextActivity) {
+                ForEach(WearActivity.allCases) { activity in
+                    Label(activity.rawValue, systemImage: activity.symbolName).tag(activity)
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("wearActivityPicker")
             Button {
                 withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.6)) {
                     buttonScale = 0.95
@@ -240,7 +252,7 @@ struct SneakerDetailView: View {
             }
             .scaleEffect(buttonScale)
             .accessibilityIdentifier("woreTodayButton")
-            .accessibilityHint("Logs that you wore this pair")
+            .accessibilityHint("Logs that you wore this pair for the activity you picked")
             .overlay { ConfettiBurst(trigger: cheer) }
 
             if sneaker.woreToday {
@@ -256,8 +268,44 @@ struct SneakerDetailView: View {
         }
     }
 
+    private var wearHistory: some View {
+        let records = sneaker.wearRecords
+        let latest = Array(records.reversed().prefix(12))
+        return Group {
+            if !latest.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Wear history")
+                        .font(.headline)
+                    ForEach(Array(latest.enumerated()), id: \.offset) { _, record in
+                        HStack {
+                            Label(record.activity.rawValue, systemImage: record.activity.symbolName)
+                            Spacer()
+                            Text(record.date.formatted(date: .abbreviated, time: .omitted))
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.subheadline)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier("wearHistoryRow")
+                        .accessibilityLabel("\(record.activity.rawValue), \(record.date.formatted(date: .abbreviated, time: .omitted))")
+                    }
+                    if records.count > latest.count {
+                        Text("Showing the latest \(latest.count).")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .warmCard()
+                .accessibilityIdentifier("wearHistory")
+            }
+        }
+    }
+
     private var details: some View {
         VStack(alignment: .leading, spacing: 8) {
+            LabeledContent("Type", value: sneaker.shoeType.rawValue)
+                .accessibilityIdentifier("shoeTypeValue")
             LabeledContent("Condition", value: sneaker.condition.rawValue)
             LabeledContent("Purchased", value: sneaker.purchaseDate.formatted(date: .abbreviated, time: .omitted))
             if !sneaker.notes.isEmpty {
@@ -308,7 +356,7 @@ struct SneakerDetailView: View {
 
     private func logWear() {
         cheer += 1
-        sneaker.logWear()
+        sneaker.logWear(activity: nextActivity)
         if let limit = sneaker.wearLimit, limit > 0, sneaker.wearCount == limit {
             showingLimitAlert = true
         }

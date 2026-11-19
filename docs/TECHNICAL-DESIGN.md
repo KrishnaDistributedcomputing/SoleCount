@@ -36,7 +36,7 @@ Commits named as Mac-only, and absent from this clone: `740a4a8`, `d99297c`, `90
 What that means for this design:
 
 - If those commits add screens, fields, or permissions, this page under-describes the binary Apple approved. Levels, quests, or a weekly challenge were reported as possible Mac-only work. Their source was not in this clone. The logging streak below is a GitHub feature. It is not a description of that Mac work, and it does not replace it.
-- `docs/PRIVACY.md` on GitHub mentions a camera and a "Sole check". `project.yml` has no camera purpose string, and no Swift file here implements a sole check. The root `PRIVACY.md` does not mention the camera. Which text matches the approved app is **Unknown (Mac copy)**.
+- `docs/PRIVACY.md` on GitHub mentions a camera and a "Sole check". This branch now has a camera purpose string for taking a photo of a pair. No Swift file here implements a sole check. Sole check remains on the shipped backup branch `backup/solecount-shipped-build2-20261108`. The root `PRIVACY.md` does not mention the camera. Which public page matches the approved app is **Unknown (Mac copy)**.
 - `project.yml` says build `1`. fastlane does not upload that number. At upload it asks App Store Connect for the latest TestFlight build and adds one. A later upload is a new build. It is not a rebuild of build 2.
 - GitHub branch `cursor/setup-without-apple-043d` points at `8707a16`, which is already in `main` through pull request 7. A Mac branch can reuse that name and still differ.
 - Open pull requests at the inspection: none. Nothing unreviewed was merged into this description.
@@ -230,6 +230,7 @@ State ownership:
 | `purchaseDate`, `createdAt` | `Date.now` | Purchase day, and when the row was created |
 | `photoData` | `nil` | Original photo. `@Attribute(.externalStorage)` |
 | `wearDates` | `[]` | One date per "Wore today" tap. Not de-duplicated by the model |
+| `wearActivityRaws` | `[]` | One activity name per wear date. A missing name is read as Casual, so older pairs keep their wears |
 | `isRetired` | `false` | Hall of Fame flag. The row stays |
 | `wearLimit` | `nil` | Optional wear-count goal |
 | `shoeTypeRaw` | `Other` | `ShoeType` raw value |
@@ -249,7 +250,9 @@ State ownership:
 
 `WishlistItem` (`SoleCount/WishlistItem.swift`): `brand`, `modelName`, `targetPrice` (default 0), `notes`, external-storage `photoData`, `createdAt`. It is not a `Sneaker` until "I bought it" copies fields through `WishlistMath.bought`.
 
-`ShoeType` and `ShoeCondition` live in `SoleCount/ShoeCatalog.swift`. Types with a default replace distance: running and training 650 km, trail 650 km, walking 800 km, basketball 500 km. Every other type starts with the target off (`nil`).
+`ShoeType` and `ShoeCondition` live in `SoleCount/ShoeCatalog.swift`. The add and edit form shows every type as a button, the detail screen names the type, and Collection filters by it. The list includes Running, Basketball, Lifestyle/Casual, Training/Gym, Skate, Hiking, Trail, Boots, and Other, plus a few more that were already saved on existing pairs. Hiking and Trail stay separate so an older saved value still matches. Types with a default replace distance: running and training 650 km, trail 650 km, walking 800 km, basketball 500 km. Every other type starts with the target off (`nil`).
+
+`WearActivity` (`SoleCount/WearActivity.swift`) is Casual, Walking, Running, Gym, Basketball, Hiking, or Other. The detail screen asks for one when you log a wear and lists it in Wear history. Stats counts them. A wear saved before this field existed has no name and is shown as Casual. That default is applied when the dates are read. Opening an older database does not rewrite it until the next wear is logged.
 
 ### Relationship and deletion
 
@@ -389,7 +392,7 @@ App Group entitlements are on the Release configuration only (`project.yml` sets
 | Data | Where | Leaves the phone? |
 |---|---|---|
 | Pairs, wears, wishlist | SwiftData store, CloudKit off | Only if the person shares a CSV or a card |
-| Photos | External storage blobs, JPEG at most 1024 px, quality 0.8 (`ImageHelper.downsized`) | Same. The picker copy is the app's copy |
+| Photos | External storage blobs, JPEG at most 1024 px, quality 0.8 (`ImageHelper.downsized`) | Same. The picker copy is the app's copy. Library photos are read as images, not as raw `Data`, because an iPhone picture is usually HEIC |
 | Goals, streak, reminder switches, recent brands, Health-asked flag, seen badges | `UserDefaults.standard` | No |
 | Widget snapshot | App Group `UserDefaults` in Release | No. The widget reads it on device |
 | Day totals for Today | JSON in `UserDefaults` key `motionDays` | No |
@@ -407,9 +410,12 @@ There is no backup screen and no import. A person who deletes the app deletes th
 |---|---|---|
 | Health read | `NSHealthShareUsageDescription` in `project.yml`. Share set is empty in `HealthKitActivityReader` | When the person connects Health. Not at launch |
 | Notifications | `WearReminder.requestAccess` with alert and sound | When a reminder switch is turned on, not at launch |
-| Photos | `PhotosPicker` in add and wishlist. No photo-library or camera purpose string in `project.yml` | The system picker. The app does not browse the library itself |
+| Photos | `PhotosPicker` in add and wishlist. No photo-library purpose string | The system picker. The app does not browse the library itself, so it does not ask for the whole library |
+| Camera | `NSCameraUsageDescription` in `project.yml`. `CameraPicker` on the add and edit form, only when the phone has a camera | When the person taps Take Photo. Not at launch |
 
-No `NSHealthUpdateUsageDescription`. No camera purpose string. The public page `docs/PRIVACY.md` still mentions a camera and a sole check. That mismatch is recorded in section "Baseline". Do not "fix" the public page until the approved binary is known.
+No `NSHealthUpdateUsageDescription`. The public page `docs/PRIVACY.md` still mentions a sole check, which this tree does not implement. That mismatch is recorded in section "Baseline". Do not rewrite the public page until the approved binary is known.
+
+Library photos used to be loaded with `loadTransferable(type: Data.self)`. The picker offers a picture, not raw data, so that load returned nothing and the photo was dropped. The same call is in the shipped build-2 add form, wishlist, and sole check. This tree now loads `public.image` and copies the bytes before the picker deletes its temporary file.
 
 In-app links (`SoleCount/SettingsView.swift`, `AppLinks`):
 

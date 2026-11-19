@@ -49,6 +49,7 @@ struct StatsDashboardView: View {
                         highlight("Most worn", name: summary.mostWorn, symbol: "star.fill")
                         highlight("Ready for another day", name: summary.leastWorn, symbol: "sun.max.fill")
                         LoggingStreakCard(consistency: logging)
+                        activityBreakdown
 
                         let facts = MotivationEngine.facts(meters: summary.totalMeters)
                         if !facts.isEmpty {
@@ -87,6 +88,33 @@ struct StatsDashboardView: View {
             }
             .background(ShoeTheme.canvas)
             .navigationTitle("Stats")
+        }
+    }
+
+    private var activityCounts: [ActivityCount] {
+        let records = sneakers.flatMap(\.wearRecords)
+        return WearActivityMath.counts(records)
+    }
+
+    @ViewBuilder
+    private var activityBreakdown: some View {
+        if !activityCounts.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Activities")
+                    .font(.title3.bold())
+                ForEach(activityCounts) { item in
+                    LabeledContent(item.activity.rawValue, value: "\(item.count)")
+                }
+                Text("Wears saved before activities were added count as Casual.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .warmCard()
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("activityBreakdown")
         }
     }
 

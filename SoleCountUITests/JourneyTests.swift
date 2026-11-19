@@ -248,4 +248,71 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(darkShown.contains("Release date unavailable"), "Dark mode should keep the same release line. Shown: \(darkShown)")
         XCUIDevice.shared.appearance = .light
     }
+
+    /// The system photo library is a separate app and is empty on CI.
+    /// The sample button saves a real JPEG through the same shrink-and-store path.
+    @MainActor
+    func testSamplePhotoTypeAndActivity() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-UITesting", "-HealthUnavailable"]
+        app.launch()
+        app.tabBars.buttons["Collection"].tap()
+        let add = app.buttons["Add a pair"]
+        XCTAssertTrue(add.waitForExistence(timeout: 10))
+        add.tap()
+
+        let sample = app.buttons["samplePhotoButton"]
+        XCTAssertTrue(sample.waitForExistence(timeout: 5), "UI tests should be able to save a sample photo")
+        if !sample.isHittable {
+            app.swipeUp()
+        }
+        sample.tap()
+        XCTAssertTrue(
+            app.staticTexts["Change Photo"].waitForExistence(timeout: 3) || app.buttons["Change Photo"].waitForExistence(timeout: 2),
+            "A saved photo should replace Add Photo"
+        )
+
+        let name = app.textFields["Name (e.g. Air Max 90)"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("Photo Runners")
+
+        let runningType = scrollUntilHittable(app, app.buttons["shoeType-Running"])
+        XCTAssertTrue(runningType.isHittable, "The shoe type list should include Running")
+        runningType.tap()
+
+        app.buttons["saveSneakerButton"].tap()
+        XCTAssertTrue(app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 5))
+        let saved = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "pairRow", "Photo Runners")).firstMatch
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        saved.tap()
+
+        let photo = app.descendants(matching: .any)["detailPhoto"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 5))
+        XCTAssertEqual(photo.label, "Photo saved")
+        let type = app.descendants(matching: .any)["shoeTypeValue"]
+        XCTAssertTrue(type.waitForExistence(timeout: 3))
+        let typeShown = "\(type.label) \(type.value as? String ?? "")"
+        XCTAssertTrue(typeShown.contains("Running"), "Detail should show the shoe type. Shown: \(typeShown)")
+
+        let activity = scrollUntilHittable(app, app.descendants(matching: .any)["wearActivityPicker"])
+        XCTAssertTrue(activity.isHittable, "A wear should let you pick an activity")
+        activity.tap()
+        let running = app.buttons["Running"]
+        XCTAssertTrue(running.waitForExistence(timeout: 3))
+        running.tap()
+        var wore = app.buttons["woreTodayButton"]
+        if !wore.isHittable {
+            wore = scrollUntilHittable(app, wore)
+        }
+        wore.tap()
+        let history = scrollUntilHittable(app, app.descendants(matching: .any)["wearHistoryRow"])
+        XCTAssertTrue(history.waitForExistence(timeout: 3))
+        XCTAssertTrue(history.label.contains("Running"), "Wear history should name the activity. Shown: \(history.label)")
+
+        app.tabBars.buttons["Stats"].tap()
+        let breakdown = scrollUntilHittable(app, app.descendants(matching: .any)["activityBreakdown"])
+        XCTAssertTrue(breakdown.waitForExistence(timeout: 5), "Stats should break wears down by activity")
+        XCTAssertTrue(breakdown.label.contains("Running") || app.staticTexts["Running"].exists)
+    }
 }
