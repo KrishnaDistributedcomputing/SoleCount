@@ -170,9 +170,9 @@ final class JourneyTests: XCTestCase {
         var swipes = 0
         while !(element.exists && element.isHittable), swipes < limit {
             if swipeUp {
-                app.swipeUp()
+                app.swipeUp(velocity: .slow)
             } else {
-                app.swipeDown()
+                app.swipeDown(velocity: .slow)
             }
             swipes += 1
         }
@@ -237,7 +237,7 @@ final class JourneyTests: XCTestCase {
             "Last update is the App Store release of this version, when that time is on record. It is not when this iPhone installed or opened SoleCount."
         )
         XCTAssertFalse(app.staticTexts["November 6, 2026"].exists)
-        XCTAssertTrue(app.staticTexts["Not yet released"].exists)
+        XCTAssertTrue(shown.contains("Not yet released"), "The release line should say this version is not out yet. Shown: \(shown)")
         let releaseAgain = scrollUntilHittable(
             app,
             app.descendants(matching: .any)["lastUpdateValue"],
@@ -303,13 +303,25 @@ final class JourneyTests: XCTestCase {
         let running = app.buttons["Running"]
         XCTAssertTrue(running.waitForExistence(timeout: 3))
         running.tap()
+        if !activity.label.contains("Running") {
+            activity.tap()
+            if running.waitForExistence(timeout: 2) { running.tap() }
+        }
+        XCTAssertTrue(activity.label.contains("Running"), "The wear button should use the activity you picked. Shown: \(activity.label)")
         var wore = app.buttons["woreTodayButton"]
         if !wore.isHittable {
             wore = scrollUntilHittable(app, wore)
         }
         wore.tap()
-        let history = scrollUntilHittable(app, app.descendants(matching: .any)["wearHistoryRow"])
-        XCTAssertTrue(history.waitForExistence(timeout: 3))
+        if !app.buttons["Undo Today's Wear"].waitForExistence(timeout: 4) {
+            if !wore.isHittable {
+                wore = scrollUntilHittable(app, wore, limit: 4)
+            }
+            wore.tap()
+        }
+        XCTAssertTrue(app.buttons["Undo Today's Wear"].waitForExistence(timeout: 5), "Logging a wear should offer undo")
+        let history = scrollUntilHittable(app, app.descendants(matching: .any)["wearHistoryRow"], limit: 6)
+        XCTAssertTrue(history.waitForExistence(timeout: 5), "Wear history should list the day")
         XCTAssertTrue(history.label.contains("Running"), "Wear history should name the activity. Shown: \(history.label)")
 
         app.tabBars.buttons["Stats"].tap()

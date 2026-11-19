@@ -488,7 +488,7 @@ struct TodayView: View {
             HStack(spacing: 12) {
                 Text("\(level.number)")
                     .font(.title3.bold())
-                    .frame(width: 44, height: 44)
+                    .padding(10)
                     .background(Circle().fill(ShoeTheme.goldTint.opacity(0.22)))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
@@ -501,7 +501,6 @@ struct TodayView: View {
                 Spacer(minLength: 8)
                 Text("\(level.xp.formatted()) XP")
                     .font(.subheadline.weight(.semibold))
-                    .monospacedDigit()
             }
             SunriseBar(fraction: level.progress, tint: ShoeTheme.goldTint)
             Text(levelLine(level))
