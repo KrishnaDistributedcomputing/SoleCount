@@ -23,17 +23,17 @@ struct HealthConnectCard: View {
             case .unavailable:
                 Text("Apple Health is not on this device, and that is okay. Wears, cost per wear, and the rest of SoleCount still work.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
             case .notAsked:
                 Text("SoleCount reads your steps and walking distance for the days you wore each pair. The numbers stay on this iPhone. Nothing is written to Health, and nothing is sent anywhere.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                 Button("Connect Apple Health", action: onConnect)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(SunriseButtonStyle())
             case .ready:
                 Text("Connected. Steps and distance stay on this iPhone.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                 Button(action: onRefresh) {
                     if health.isRefreshing {
                         ProgressView()
@@ -45,7 +45,7 @@ struct HealthConnectCard: View {
             case .failed(let message):
                 Text(message)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                 Button("Try Again", action: onConnect)
                     .buttonStyle(.bordered)
             }

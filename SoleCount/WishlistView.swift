@@ -26,7 +26,7 @@ struct WishlistView: View {
                             if !item.brand.isEmpty, !item.modelName.isEmpty {
                                 Text(item.brand)
                                     .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(ShoeTheme.softText)
                             }
                             if item.targetPrice > 0 {
                                 Text(item.targetPrice.asCurrency)
@@ -35,7 +35,7 @@ struct WishlistView: View {
                             if !item.notes.isEmpty {
                                 Text(item.notes)
                                     .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(ShoeTheme.softText)
                             }
                             Button("I bought it") { buy(item) }
                                 .accessibilityIdentifier("boughtItButton")
@@ -138,8 +138,8 @@ private struct WishlistEditor: View {
             }
             .onChange(of: photoItem) { _, item in
                 Task {
-                    if let item, let data = try? await item.loadTransferable(type: Data.self) {
-                        photo = ImageHelper.downsized(data)
+                    if let shrunk = await PhotoImport.data(from: item) {
+                        photo = shrunk
                     }
                 }
             }

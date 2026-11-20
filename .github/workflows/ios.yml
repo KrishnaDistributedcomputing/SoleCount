@@ -1,14 +1,20 @@
-# SoleCount CI/CD
-#  - Every push to main or cursor/** (and every pull request): compile for device, then run tests.
-#  - Push a tag like v1.0.0: tests -> TestFlight -> submit to App Review.
-#  - Actions tab > "Release" > Run workflow: the full ship lane (see release.yml).
-#  - Actions tab > "iOS" > Run workflow: tests -> TestFlight, and App Review if you tick "release".
+# SoleCount CI
+#  - Pull requests into main, and every push to main: compile for a device, then run tests
+#    on a macOS runner. A pull request that only changes docs, templates, or the
+#    Linux checker skips this macOS job. A push to a cursor branch does not start
+#    it. Open a pull request to build. Repo checks (guard.yml) are the cheap Linux job.
+#  - Push a tag like v1.0.0: tests, then the TestFlight job below.
+#  - Actions tab > "Release" > Run workflow: the ship lane (see release.yml).
+#  - Actions tab > "iOS" > Run workflow: tests, then TestFlight, unless you tick
+#    "tests_only". The listing step runs if you tick "release". App Review still
+#    waits for make submit on the Mac.
+#    See docs/RELEASE-CHECKLIST.md.
 #
 # Required repository secrets (Settings > Secrets and variables > Actions > New repository secret):
 #   ASC_KEY_ID      App Store Connect API Key ID (10 characters)
 #   ASC_ISSUER_ID   Issuer ID (a long UUID on the same page)
 #   ASC_KEY_P8      The .p8 file, base64-encoded:  base64 -i AuthKey_XXXX.p8 | pbcopy
-#   TEAM_ID         10-character Team ID (Config/Team.xcconfig in git is blank)
+#   TEAM_ID         10-character Team ID. The public team id is also in Config/Team.xcconfig.
 #   REVIEW_PHONE    App Review phone, with country code
 #   REVIEW_EMAIL    App Review email
 # Do not put the .p8 text itself in the repo. The workflow writes it to a temp file and deletes it.
@@ -16,20 +22,34 @@ name: iOS
 
 on:
   push:
-    branches: [main, "cursor/**"]
+    branches: [main]
     tags: ["v*"]
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "**/*.pdf"
+      - "**/*.pptx"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".github/workflows/guard.yml"
+      - ".cursor/**"
+      - "scripts/check_repo.sh"
   workflow_dispatch:
     inputs:
+      tests_only:
+        description: "Run the Mac build and tests only. Do not upload to TestFlight."
+        type: boolean
+        default: false
       release:
-        description: "Also submit to App Review after TestFlight"
+        description: "Also upload the store listing after TestFlight. App Review still waits for make submit."
         type: boolean
         default: false
 
 concurrency:
   group: ios-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -47,6 +67,13 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check the repo before using the Mac runner
+        run: |
+          bash scripts/check_repo.sh
+          bash scripts/check_repo.sh --self-test
 
       - name: Use Xcode 26
         run: |
@@ -78,7 +105,7 @@ jobs:
   deploy:
     name: TestFlight / App Store
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && inputs.tests_only != true
     runs-on: macos-26
     timeout-minutes: 90
     env:
@@ -89,6 +116,13 @@ jobs:
       REVIEW_EMAIL: ${{ secrets.REVIEW_EMAIL }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check the repo before using the Mac runner
+        run: |
+          bash scripts/check_repo.sh
+          bash scripts/check_repo.sh --self-test
 
       - name: Use Xcode 26
         run: |
@@ -121,7 +155,7 @@ jobs:
       - name: Upload to TestFlight
         run: fastlane ios beta
 
-      - name: Submit to App Review
+      - name: Upload the store listing
         if: startsWith(github.ref, 'refs/tags/v') || inputs.release
         run: fastlane ios release
 

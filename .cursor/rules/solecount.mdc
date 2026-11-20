@@ -1,0 +1,12 @@
+---
+description: SoleCount rules for Cursor
+alwaysApply: true
+---
+
+Follow CLAUDE.md, AGENTS.md, and docs/DEVELOPER.md.
+
+SoleCount stays free and offline. Bundle ID `com.krishnav.SoleCount`. Product ID `com.krishnav.SoleCount.pro`. HealthKit is read-only. Edit project.yml, not the generated Xcode project.
+
+Never commit a `.p8` key, `AuthKey_*`, `fastlane/.env`, or review contact details. Run `make check`. Say when `make test` could not be run.
+
+Open a pull request for review. Do not merge, and do not upload to TestFlight or App Review unless the owner asked. The Mac checkout may hold commits that are not on GitHub. Follow docs/RELEASE-CHECKLIST.md before any release command.

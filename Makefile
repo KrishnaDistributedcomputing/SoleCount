@@ -1,4 +1,4 @@
-.PHONY: setup setup-local appstore-setup test deploy release submit open clean help doctor status
+.PHONY: setup setup-local appstore-setup test deploy release submit open clean help doctor status check
 
 help:
 	@echo "SoleCount — Quick commands"
@@ -6,6 +6,7 @@ help:
 	@echo "  make setup-local     Setup with no Apple membership (tools, project, simulator, Xcode)"
 	@echo "  make setup           Same setup. If Apple details are missing, it does setup-local."
 	@echo "  make doctor          Green/red checklist, with the fix for each red item"
+	@echo "  make check           Fast identity and secret checks (no Xcode)"
 	@echo "  make test            Run all tests in the iPhone Simulator (no Team ID needed)"
 	@echo "  make open            Generate project and open in Xcode"
 	@echo "  make release         Records, tests, TestFlight, and the store listing. Does not submit."
@@ -38,6 +39,10 @@ appstore-setup:
 open:
 	@xcodegen generate
 	@open SoleCount.xcodeproj
+
+check:
+	@bash scripts/check_repo.sh
+	@bash scripts/check_repo.sh --self-test
 
 test:
 	@echo "Running tests in the iPhone Simulator. No Apple Team ID is needed."

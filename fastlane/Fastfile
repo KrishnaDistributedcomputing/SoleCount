@@ -81,6 +81,9 @@ end
 
 # Lets Xcode create/download certificates and profiles using the API key (cloud signing).
 def signing_xcargs
+  # Use the Apple ID signed in under Xcode > Settings > Accounts instead of the API key.
+  return "-allowProvisioningUpdates" if ENV["SIGN_WITH_XCODE_ACCOUNT"] == "1"
+
   [
     "-allowProvisioningUpdates",
     "-authenticationKeyPath", key_path.shellescape,

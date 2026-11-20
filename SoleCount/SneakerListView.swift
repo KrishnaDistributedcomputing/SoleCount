@@ -5,8 +5,6 @@ import SwiftUI
 struct SneakerListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(StoreManager.self) private var store
-    @Environment(HealthSync.self) private var health
-    @Environment(MotivationStore.self) private var motivation
     @Query(sort: \Sneaker.createdAt, order: .reverse) private var sneakers: [Sneaker]
 
     @State private var showingAdd = false
@@ -121,7 +119,7 @@ struct SneakerListView: View {
                     Section {
                         Text("Retired pairs keep their stats.")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(ShoeTheme.softText)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         ForEach(retired) { sneaker in
                             cardLink(sneaker)
@@ -184,13 +182,12 @@ struct SneakerListView: View {
                 .font(.title2.bold())
             Text("Add one pair. Log a wear when you feel like it. That is a lovely start.")
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
                 .multilineTextAlignment(.center)
             Button("Add a pair") {
                 addTapped()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(SunriseButtonStyle())
         }
         .padding()
     }
@@ -202,13 +199,13 @@ struct SneakerListView: View {
             HStack(spacing: 16) {
                 Image(systemName: "star.circle.fill")
                     .font(.title)
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(ShoeTheme.goldTint)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Unlock SoleCount Pro")
                         .font(.headline)
                     Text("Unlimited pairs, charts, and shoe mileage")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -241,7 +238,7 @@ struct SectionHeader: View {
                 .font(.title2.bold())
             Text("\(count)")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
                 .background(Capsule().fill(Color.secondary.opacity(0.2)))
@@ -271,7 +268,7 @@ struct SneakerCard: View {
                         .accessibilityHidden(true)
                     Text(sneaker.brand.isEmpty ? sneaker.shoeType.rawValue : sneaker.brand)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                         .lineLimit(1)
                 }
                 HStack(spacing: 12) {
@@ -284,7 +281,7 @@ struct SneakerCard: View {
                     }
                 }
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
                 if let fraction = sneaker.lifeFraction {
                     LifeBar(fraction: fraction)
                 }

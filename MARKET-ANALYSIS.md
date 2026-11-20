@@ -1,5 +1,7 @@
 # SoleCount Market Analysis (researched Nov 3, 2026)
 
+**Historical.** This note assumed a $0.99 Pro unlock and about $500 a year. The later decision is that SoleCount is free, with every feature unlocked and no paywall. Use [docs/BUSINESS-CASE.md](docs/BUSINESS-CASE.md) for product choices. Prices, ratings, and market sizes below were not re-checked, and some product statements (no widget, no export, a 3-pair limit) do not match the current GitHub tree.
+
 SoleCount is an iOS sneaker wear tracker. You log each wear, it shows cost per wear, and you can retire pairs. Data stays on the device. It's a free download with 3 pairs, plus a $0.99 one-time Pro unlock. The goal is about $500 a year.
 Every number below has its source next to it. Where I couldn't find a number, the file says so.
 

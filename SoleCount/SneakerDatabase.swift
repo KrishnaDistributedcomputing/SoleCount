@@ -13,6 +13,7 @@ enum SneakerDatabase {
             let container = try ModelContainer(
                 for: Sneaker.self,
                 SneakerPhotoItem.self,
+                SolePhoto.self,
                 WishlistItem.self,
                 configurations: config
             )

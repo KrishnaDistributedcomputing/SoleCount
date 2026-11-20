@@ -22,4 +22,6 @@ enum LaunchFlags {
     static var screenshots: Bool { has("-Screenshots") }
     /// UI tests pretend Apple Health is missing. The rest of the app still runs.
     static var healthUnavailable: Bool { has("-HealthUnavailable") }
+    /// Design previews only: list Take Photo in the photo menu on the simulator. It is never tapped there.
+    static var showCameraOption: Bool { has("-ShowCameraOption") }
 }

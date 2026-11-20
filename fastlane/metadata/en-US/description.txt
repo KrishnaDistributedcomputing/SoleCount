@@ -21,13 +21,23 @@ KEEP MOVING
 • A calendar, and a nudge when a pair has been sitting
 • Export a CSV. Optional reminders stay on the phone and are off until you turn them on
 
+LEVEL UP, GENTLY
+• Earn Sole Level XP for wears, distance, and badges, with named levels from First Steps to Sole Legend
+• A three-step starter quest to get going, with its own badge
+• A fresh weekly challenge, like wearing three different pairs or logging five wears
+
+SOLE CHECK
+• Take a photo of a pair's sole now and then and see a timeline with date and distance
+• Compare the first and latest photo side by side to see how the tread is wearing
+• A soft reminder every 100 km since the last sole photo
+
 PRIVATE BY DESIGN
 • No account, no sign-up, no ads, no tracking
 • Everything stays on your iPhone, including Health numbers
 • SoleCount is free. Every feature is included
 • Not a medical app. Goals and tips are encouragement, not health advice
 
-Made by an independent developer. Questions or ideas? Tap Support in the app's Settings.
+Made by an independent developer. Questions or ideas? Tap Send feedback or Suggest a feature in Settings. They open your email app, and nothing is sent until you tap Send.
 
 Terms of Use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
-Privacy Policy: https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/PRIVACY.md
+Privacy Policy: https://github.com/KrishnaDistributedcomputing/SoleCount/blob/main/docs/PRIVACY.md

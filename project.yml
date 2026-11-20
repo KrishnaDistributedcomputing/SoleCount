@@ -17,7 +17,7 @@ configFiles:
 
 settings:
   base:
-    MARKETING_VERSION: "1.0"        # the version people see in the App Store
+    MARKETING_VERSION: "1.1"        # the version people see in the App Store
     CURRENT_PROJECT_VERSION: "1"    # build number; fastlane bumps it automatically
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
@@ -39,6 +39,7 @@ targets:
       - path: Shared
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone only
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCount
         PRODUCT_NAME: SoleCount
         INFOPLIST_KEY_CFBundleDisplayName: SoleCount
@@ -64,9 +65,12 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false   # skips the export-compliance question
         NSHealthShareUsageDescription: SoleCount reads your steps and walking distance to show how far you've walked in each pair of shoes.
+        NSCameraUsageDescription: SoleCount uses the camera only when you choose to take a photo of your shoes. Photos stay on your iPhone.
+        NSHealthUpdateUsageDescription: SoleCount never writes to the Health app. It only reads your steps and walking distance to show how far you have walked in each pair of shoes.
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
+        UIRequiresFullScreen: true   # portrait-only app; tells Apple it does not use iPad split screen
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     attributes:
@@ -94,6 +98,7 @@ targets:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone only
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCount.widget
         PRODUCT_NAME: SoleCountWidget
         GENERATE_INFOPLIST_FILE: YES
@@ -112,10 +117,13 @@ targets:
     supportedDestinations: [iOS]
     sources:
       - path: SoleCountTests
+      - path: SoleCount/ReleaseManifest.json
+        buildPhase: resources
     dependencies:
       - target: SoleCount
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone only
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCountTests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/SoleCount.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SoleCount
@@ -130,6 +138,7 @@ targets:
       - target: SoleCount
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone only
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCountUITests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: SoleCount

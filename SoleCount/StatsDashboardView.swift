@@ -4,13 +4,22 @@ import SwiftUI
 /// The whole collection in one place: wears, distance, value, and badges.
 struct StatsDashboardView: View {
     @Environment(MotivationStore.self) private var motivation
+    @Environment(StoreManager.self) private var store
+    @State private var showingAdd = false
     @Query(sort: \Sneaker.createdAt, order: .reverse) private var sneakers: [Sneaker]
 
+    private var logging: LoggingConsistency {
+        LoggingConsistencyMath.evaluate(
+            wearDates: sneakers.flatMap(\.wearDates),
+            now: .now,
+            calendar: .current
+        )
+    }
+
     private var summary: CollectionSummary {
-        let days = Set(sneakers.flatMap(\.wearDates).map { Calendar.current.startOfDay(for: $0) })
-        return CollectionMath.summarize(
+        CollectionMath.summarize(
             pairs: sneakers.map { $0.asPairStats() },
-            wearDays: days,
+            wearDays: logging.qualifyingDays,
             now: .now,
             calendar: .current
         )
@@ -29,11 +38,21 @@ struct StatsDashboardView: View {
                             Label("Stats will bloom here", systemImage: "chart.bar")
                         } description: {
                             Text("Add a pair and log a wear. The good numbers show up after that.")
+                        } actions: {
+                            Button {
+                                if StoreManager.canAddPair(currentCount: sneakers.count, isPro: store.isPro) {
+                                    showingAdd = true
+                                }
+                            } label: {
+                                Label("Add a pair", systemImage: "plus.circle.fill")
+                            }
+                            .buttonStyle(SunriseButtonStyle())
+                            .accessibilityIdentifier("addPairStats")
                         }
                     } else {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                            stat("Pairs", value: "\(summary.pairCount)", symbol: "shoe.2.fill")
-                            stat("Wears", value: "\(summary.totalWears)", symbol: "figure.walk")
+                            stat("Pairs", value: summary.pairCount.formatted(), symbol: "shoe.2.fill")
+                            stat("Wears", value: summary.totalWears.formatted(), symbol: "figure.walk")
                             stat("Distance", value: DistanceFormat.string(meters: summary.totalMeters), symbol: "point.bottomleft.forward.to.point.topright.scurvepath")
                             stat("Steps", value: DistanceFormat.steps(summary.totalSteps), symbol: "shoe.fill")
                             stat("Value", value: summary.collectionValue.asCurrency, symbol: "tag.fill")
@@ -43,13 +62,15 @@ struct StatsDashboardView: View {
                         highlight("Ready for another day", name: summary.leastWorn, symbol: "sun.max.fill")
                         HStack {
                             Image(systemName: "flame.fill")
-                                .foregroundStyle(.orange)
-                            Text(summary.wearStreak > 0 ? "\(summary.wearStreak)-day wear streak" : "A wear streak begins whenever you log a pair.")
+                                .foregroundStyle(ShoeTheme.flame)
+                            Text(summary.wearStreak > 0 ? "\(summary.wearStreak.formatted())-day wear streak" : "A wear streak begins whenever you log a pair.")
                                 .font(.headline)
                         }
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .warmCard()
+                        LoggingStreakCard(consistency: logging)
+                        activityBreakdown
 
                         let facts = MotivationEngine.facts(meters: summary.totalMeters)
                         if !facts.isEmpty {
@@ -62,7 +83,7 @@ struct StatsDashboardView: View {
                                 }
                                 Text("Distances are approximate.")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(ShoeTheme.softText)
                             }
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -88,6 +109,34 @@ struct StatsDashboardView: View {
             }
             .background(ShoeTheme.canvas)
             .navigationTitle("Stats")
+            .sheet(isPresented: $showingAdd) { AddSneakerView() }
+        }
+    }
+
+    private var activityCounts: [ActivityCount] {
+        let records = sneakers.flatMap(\.wearRecords)
+        return WearActivityMath.counts(records)
+    }
+
+    @ViewBuilder
+    private var activityBreakdown: some View {
+        if !activityCounts.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Activities")
+                    .font(.title3.bold())
+                ForEach(activityCounts) { item in
+                    LabeledContent(item.activity.rawValue, value: "\(item.count)")
+                }
+                Text("Wears saved before activities were added count as Casual.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .warmCard()
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("activityBreakdown")
         }
     }
 
@@ -122,14 +171,14 @@ struct StatsDashboardView: View {
             }
             Text("Pictures are made on this iPhone. Nothing is uploaded.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
         }
     }
 
     private func stat(_ title: String, value: String, symbol: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Image(systemName: symbol)
-                .foregroundStyle(ShoeTheme.today[0])
+                .foregroundStyle(ShoeTheme.coralTint)
             Text(value)
                 .font(.title2.bold())
                 .lineLimit(1)
@@ -137,7 +186,7 @@ struct StatsDashboardView: View {
                 .contentTransition(.numericText())
             Text(title)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ShoeTheme.softText)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -149,11 +198,11 @@ struct StatsDashboardView: View {
     private func highlight(_ title: String, name: String?, symbol: String) -> some View {
         HStack {
             Image(systemName: symbol)
-                .foregroundStyle(.orange)
+                .foregroundStyle(ShoeTheme.flame)
             VStack(alignment: .leading) {
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
                 Text(name ?? "–")
                     .font(.headline)
             }

@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 import SwiftData
 
@@ -15,15 +16,10 @@ struct SettingsView: View {
     @Environment(HealthSync.self) private var health
     @Environment(MotivationStore.self) private var motivation
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.requestReview) private var requestReview
     @Query private var sneakers: [Sneaker]
     @State private var showingPaywall = false
     @State private var reminderNote = ""
-
-    private var appVersion: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-        return "\(version) (\(build))"
-    }
 
     var body: some View {
         @Bindable var store = store
@@ -34,7 +30,7 @@ struct SettingsView: View {
                     Section("SoleCount Pro") {
                         if store.isPro {
                             Label("Pro unlocked", systemImage: "checkmark.seal.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(ShoeTheme.mintTint)
                         } else {
                             Button {
                                 showingPaywall = true
@@ -51,7 +47,7 @@ struct SettingsView: View {
                     Section {
                         Text("SoleCount is free. Every feature is included, and your shoes stay on this iPhone.")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(ShoeTheme.softText)
                     }
                 }
 
@@ -95,7 +91,7 @@ struct SettingsView: View {
                     if !reminderNote.isEmpty {
                         Text(reminderNote)
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(ShoeTheme.softText)
                     }
                 }
 
@@ -108,17 +104,41 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("About") {
+                Section {
+                    FeedbackButton(kind: .feedback) {
+                        Label("Send feedback", systemImage: "envelope.fill")
+                    }
+                    .accessibilityIdentifier("sendFeedbackButton")
+                    FeedbackButton(kind: .idea) {
+                        Label("Suggest a feature", systemImage: "lightbulb.fill")
+                    }
+                    Button {
+                        requestReview()
+                    } label: {
+                        Label("Rate SoleCount", systemImage: "star.fill")
+                    }
+                } header: {
+                    Text("Help make SoleCount better")
+                } footer: {
+                    Text("Feedback opens your email app. Nothing is sent unless you press Send.")
+                }
+
+                Section {
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        Label("About", systemImage: "info.circle")
+                    }
+                    .accessibilityIdentifier("aboutButton")
                     Link("Privacy Policy", destination: AppLinks.privacyPolicy)
                     Link("Terms of Use", destination: AppLinks.termsOfUse)
                     Link("Support", destination: AppLinks.support)
-                    LabeledContent("Version", value: appVersion)
                 }
 
                 Section {
                     Text("Steps and distance are read from Apple Health and stay on this iPhone. They are not used for ads and they are not stored in iCloud. SoleCount is not a medical app.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                 }
             }
             .navigationTitle("Settings")

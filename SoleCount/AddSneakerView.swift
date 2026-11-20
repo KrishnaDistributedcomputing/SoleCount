@@ -16,7 +16,10 @@ struct AddSneakerView: View {
     @State private var hasWearLimit: Bool
     @State private var wearLimit: Int
     @State private var photoItem: PhotosPickerItem?
+    @State private var showingLibrary = false
+    @State private var showingCamera = false
     @State private var extraItems: [PhotosPickerItem] = []
+    @State private var photoNote = ""
     @State private var photos: [Data]
     @State private var shoeType: ShoeType
     @State private var size: String
@@ -86,6 +89,11 @@ struct AddSneakerView: View {
                         .accessibilityIdentifier("saveSneakerButton")
                 }
             }
+            .photosPicker(isPresented: $showingLibrary, selection: $photoItem, matching: .images)
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraPicker { data in setMainPhoto(data) }
+                    .ignoresSafeArea()
+            }
             .onChange(of: photoItem) { _, item in
                 Task { await loadMainPhoto(from: item) }
             }
@@ -104,23 +112,63 @@ struct AddSneakerView: View {
         }
     }
 
+    /// Take Photo only shows on a phone with a camera. The simulator keeps the library picker.
+    private var canTakePhoto: Bool {
+        CameraPicker.isAvailable || LaunchFlags.showCameraOption
+    }
+
+    private var photoLabel: some View {
+        VStack(spacing: 12) {
+            SneakerPhoto(data: photos.first, size: 140)
+                .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+                .accessibilityIdentifier(photos.isEmpty ? "mainPhotoEmpty" : "mainPhotoFilled")
+            Text(photos.isEmpty ? "Add Photo" : "Change Photo")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.accentColor)
+        }
+        .padding(.vertical, 8)
+    }
+
     private var photoSection: some View {
         Section {
-            HStack {
-                Spacer()
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    VStack(spacing: 12) {
-                        SneakerPhoto(data: photos.first, size: 140)
-                            .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
-                        Text(photos.isEmpty ? "Add Photo" : "Change Photo")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.accentColor)
+            VStack(spacing: 8) {
+                if canTakePhoto {
+                    Menu {
+                        Button {
+                            showingCamera = true
+                        } label: {
+                            Label("Take Photo", systemImage: "camera")
+                        }
+                        .accessibilityIdentifier("takePhotoOption")
+                        Button {
+                            showingLibrary = true
+                        } label: {
+                            Label("Choose from Library", systemImage: "photo.on.rectangle")
+                        }
+                        .accessibilityIdentifier("chooseLibraryOption")
+                    } label: {
+                        photoLabel
                     }
-                    .padding(.vertical, 8)
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("photoMenu")
+                } else {
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        photoLabel
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
-                Spacer()
+                if LaunchFlags.uiTesting {
+                    Button("Use a sample photo") { applySamplePhoto() }
+                        .accessibilityIdentifier("samplePhotoButton")
+                }
+                if !photoNote.isEmpty {
+                    Text(photoNote)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             }
+            .frame(maxWidth: .infinity)
         }
         .listRowBackground(Color.clear)
     }
@@ -133,7 +181,7 @@ struct AddSneakerView: View {
             labeledField(symbol: "building.2.fill", tint: Color.accentColor) {
                 TextField("Brand (e.g. Nike)", text: $brand)
             }
-            labeledField(symbol: "dollarsign.circle.fill", tint: .green) {
+            labeledField(symbol: "dollarsign.circle.fill", tint: ShoeTheme.mintTint) {
                 TextField("Price paid (e.g. 129.99)", value: $price, format: .number)
                     .keyboardType(.decimalPad)
             }
@@ -160,10 +208,25 @@ struct AddSneakerView: View {
                 }
                 .accessibilityLabel("Popular brands")
             }
-            Picker("Type", selection: $shoeType) {
-                ForEach(ShoeType.allCases) { type in
-                    Label(type.rawValue, systemImage: type.symbolName).tag(type)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Type of shoe")
+                    .font(.subheadline.weight(.semibold))
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(ShoeType.allCases) { type in
+                            Button {
+                                shoeType = type
+                            } label: {
+                                Label(type.rawValue, systemImage: type.symbolName)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(shoeType == type ? Color.accentColor : Color.secondary)
+                            .accessibilityIdentifier("shoeType-\(type.rawValue)")
+                            .accessibilityAddTraits(shoeType == type ? .isSelected : AccessibilityTraits())
+                        }
+                    }
                 }
+                .accessibilityIdentifier("shoeTypePicker")
             }
             if !modelIdeas.isEmpty && !brand.trimmingCharacters(in: .whitespaces).isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -204,7 +267,7 @@ struct AddSneakerView: View {
                     .frame(maxWidth: 80)
                     .accessibilityIdentifier("startingDistanceField")
                 Text(DistanceFormat.unitWord())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(ShoeTheme.softText)
             }
             Toggle("Set a Wear Goal", isOn: $hasWearLimit)
             if hasWearLimit {
@@ -223,7 +286,7 @@ struct AddSneakerView: View {
                         .multilineTextAlignment(.trailing)
                         .frame(maxWidth: 80)
                     Text(DistanceFormat.unitWord())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(ShoeTheme.softText)
                 }
             }
             if photos.count > 1 {
@@ -264,8 +327,21 @@ struct AddSneakerView: View {
     }
 
     private func loadMainPhoto(from item: PhotosPickerItem?) async {
-        guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
-        guard let shrunk = ImageHelper.downsized(data) else { return }
+        guard let item else { return }
+        guard let shrunk = await PhotoImport.data(from: item) else {
+            photoNote = "That photo could not be read. Try another one."
+            return
+        }
+        setMainPhoto(shrunk)
+    }
+
+    /// Camera and library photos are stored the same way. The bytes are already a small JPEG.
+    private func setMainPhoto(_ data: Data) {
+        guard let shrunk = ImageHelper.downsized(data) else {
+            photoNote = "That photo could not be read. Try another one."
+            return
+        }
+        photoNote = ""
         if photos.isEmpty {
             photos = [shrunk]
         } else {
@@ -273,13 +349,22 @@ struct AddSneakerView: View {
         }
     }
 
+    private func applySamplePhoto() {
+        guard let data = ImageHelper.sampleJPEG() else { return }
+        setMainPhoto(data)
+    }
+
     private func loadExtra(from items: [PhotosPickerItem]) async {
         var loaded: [Data] = []
         for item in items {
-            if let data = try? await item.loadTransferable(type: Data.self),
-               let shrunk = ImageHelper.downsized(data) {
+            if let shrunk = await PhotoImport.data(from: item) {
                 loaded.append(shrunk)
             }
+        }
+        if loaded.isEmpty && !items.isEmpty {
+            photoNote = "Those photos could not be read. Try another one."
+        } else if !loaded.isEmpty {
+            photoNote = ""
         }
         let main = photos.first
         photos = (main.map { [$0] } ?? []) + loaded

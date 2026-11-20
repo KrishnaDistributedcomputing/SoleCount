@@ -1,3 +1,4 @@
+import ImageIO
 import SwiftUI
 import UIKit
 
@@ -13,16 +14,28 @@ extension Double {
 // MARK: - Photo shrinking
 
 enum ImageHelper {
-    /// Shrinks a photo to at most 1024 pixels wide/tall and saves it as JPEG,
-    /// so the app stays small and fast.
+    /// Shrinks a photo to at most 1024 pixels on the long side and saves it as JPEG.
+    /// ImageIO builds a thumbnail, so a large camera photo is not decoded at full size first.
     static func downsized(_ data: Data, maxDimension: CGFloat = 1024) -> Data? {
-        guard let image = UIImage(data: data) else { return nil }
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else { return nil }
+        let thumbOptions: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: Int(maxDimension)
+        ]
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbOptions as CFDictionary) else { return nil }
+        return UIImage(cgImage: cgImage).jpegData(compressionQuality: 0.8)
+    }
+
+    /// Draws a camera image down before encoding it. The camera already has the full picture in memory.
+    static func jpeg(from image: UIImage, maxDimension: CGFloat = 1024) -> Data? {
         let size = image.size
         let longestSide = max(size.width, size.height)
         guard longestSide > 0 else { return nil }
         let scale = min(1, maxDimension / longestSide)
-        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
-
+        let newSize = CGSize(width: floor(size.width * scale), height: floor(size.height * scale))
+        guard newSize.width >= 1, newSize.height >= 1 else { return nil }
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1
         let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
@@ -30,6 +43,18 @@ enum ImageHelper {
             image.draw(in: CGRect(origin: .zero, size: newSize))
         }
         return resized.jpegData(compressionQuality: 0.8)
+    }
+
+    /// A tiny JPEG the UI test can save through the same path as a real photo.
+    static func sampleJPEG() -> Data? {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32), format: format)
+        let image = renderer.image { context in
+            UIColor.systemOrange.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 32, height: 32))
+        }
+        return image.jpegData(compressionQuality: 0.8)
     }
 }
 
@@ -71,32 +96,5 @@ struct SneakerPhoto: View {
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
         .accessibilityHidden(true)
-    }
-}
-
-/// A small box with a big number and a label underneath.
-struct StatCard: View {
-    let title: String
-    let value: String
-
-    var body: some View {
-        VStack(spacing: 6) {
-            Text(value)
-                .font(.title3.bold())
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
-        )
-        .accessibilityElement(children: .combine)
     }
 }
