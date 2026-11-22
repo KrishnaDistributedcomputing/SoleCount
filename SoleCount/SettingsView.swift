@@ -20,6 +20,14 @@ struct SettingsView: View {
     @Query private var sneakers: [Sneaker]
     @State private var showingPaywall = false
     @State private var reminderNote = ""
+    @AppStorage(ShoeSizeDefaults.systemKey) private var defaultSizeSystemRaw = SizeSystem.us.rawValue
+
+    private var defaultSizeSystem: Binding<SizeSystem> {
+        Binding(
+            get: { SizeSystem(rawValue: defaultSizeSystemRaw) ?? .us },
+            set: { defaultSizeSystemRaw = $0.rawValue }
+        )
+    }
 
     var body: some View {
         @Bindable var store = store
@@ -69,6 +77,21 @@ struct SettingsView: View {
                         get: { DistanceFormat.displayValue(kilometers: motivation.weeklyKilometers) },
                         set: { motivation.setWeeklyKilometers(DistanceFormat.kilometers(fromDisplay: $0)) }
                     ), in: 5.0...200.0, step: 1.0)
+                }
+
+                Section {
+                    Picker("Default size system", selection: defaultSizeSystem) {
+                        ForEach(SizeSystem.allCases) { system in
+                            Text(system.rawValue).tag(system)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("defaultSizeSystemPicker")
+                } header: {
+                    Text("Shoe sizes")
+                } footer: {
+                    Text("A new pair starts in this system. You can still choose US, UK, or EU on that pair. Men's, women's, and unisex fit is chosen on the pair too.")
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Section("Reminders") {

@@ -1,7 +1,9 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
-// One pair: wear button, distance, photos, and the charts.
+// One pair. The photo is the hero. The name, brand, and fit sit under it.
+// Size, wears, activities, and the other facts follow.
 struct SneakerDetailView: View {
     @Environment(StoreManager.self) private var store
     @Environment(HealthSync.self) private var health
@@ -27,6 +29,9 @@ struct SneakerDetailView: View {
             VStack(spacing: 20) {
                 hero
                 titleBlock
+                if !sneaker.sizeLabel.isEmpty {
+                    sizeBlock
+                }
                 stats
                 if let note = sneaker.shareNote {
                     Text(note)
@@ -117,23 +122,39 @@ struct SneakerDetailView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(LinearGradient(colors: ShoeTheme.colors(for: sneaker.shoeType), startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(height: 280)
             if sneaker.gallery.count > 1 {
                 TabView {
                     ForEach(Array(sneaker.gallery.enumerated()), id: \.offset) { _, data in
-                        SneakerPhoto(data: data, size: 220)
+                        heroPicture(data)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .automatic))
-                .frame(height: 260)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                SneakerPhoto(data: sneaker.gallery.first, size: 220)
-                    .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
+                heroPicture(sneaker.gallery.first)
             }
         }
+        .frame(maxWidth: .infinity)
+        .frame(height: 340)
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("detailPhoto")
         .accessibilityLabel(sneaker.gallery.isEmpty ? "No photo yet" : "Photo saved")
+    }
+
+    /// A large photo of the shoe, or the same placeholder the rest of the app uses.
+    @ViewBuilder
+    private func heroPicture(_ data: Data?) -> some View {
+        if let data, let image = UIImage(data: data) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity)
+                .frame(maxHeight: 300)
+                .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
+                .accessibilityHidden(true)
+        } else {
+            SneakerPhoto(data: nil, size: 240)
+        }
     }
 
     private var titleBlock: some View {
@@ -141,15 +162,31 @@ struct SneakerDetailView: View {
             Text(sneaker.name)
                 .font(.largeTitle.bold())
                 .multilineTextAlignment(.center)
-            HStack(spacing: 6) {
-                Image(systemName: sneaker.shoeType.symbolName)
-                    .foregroundStyle(tint)
-                    .accessibilityHidden(true)
-                Text(subtitle)
-                    .font(.title3)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("detailName")
+                .accessibilityAddTraits(.isHeader)
+            if !sneaker.brand.isEmpty {
+                Text(sneaker.brand)
+                    .font(.title2)
                     .foregroundStyle(ShoeTheme.softText)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("detailBrand")
             }
+            VStack(spacing: 2) {
+                Text("Fit")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(ShoeTheme.softText)
+                Text(sneaker.fit.label)
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("detailFit")
+            .accessibilityLabel("Fit, \(sneaker.fit.label)")
             if sneaker.isRetired {
                 Label("Hall of Fame", systemImage: "archivebox.fill")
                     .font(.headline)
@@ -161,13 +198,31 @@ struct SneakerDetailView: View {
         }
     }
 
-    private var subtitle: String {
-        var parts: [String] = []
-        if !sneaker.brand.isEmpty { parts.append(sneaker.brand) }
-        parts.append(sneaker.shoeType.rawValue)
-        if !sneaker.colorway.isEmpty { parts.append(sneaker.colorway) }
-        if !sneaker.size.isEmpty { parts.append("Size \(sneaker.size)") }
-        return parts.joined(separator: " · ")
+    private var sizeBlock: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Size")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(ShoeTheme.softText)
+            Text(sneaker.sizeLabel)
+                .font(.title2.bold())
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("shoeSizeValue")
+            if let line = sneaker.sizeEquivalentLine {
+                Text(line)
+                    .font(.body)
+                    .foregroundStyle(ShoeTheme.softText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("shoeSizeEquivalents")
+            } else {
+                Text("Saved as typed. This size is not on the conversion chart.")
+                    .font(.body)
+                    .foregroundStyle(ShoeTheme.softText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .warmCard()
     }
 
     private var stats: some View {
@@ -310,6 +365,10 @@ struct SneakerDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             LabeledContent("Type", value: sneaker.shoeType.rawValue)
                 .accessibilityIdentifier("shoeTypeValue")
+            if !sneaker.colorway.isEmpty {
+                LabeledContent("Colorway", value: sneaker.colorway)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             LabeledContent("Condition", value: sneaker.condition.rawValue)
             LabeledContent("Purchased", value: sneaker.purchaseDate.formatted(date: .abbreviated, time: .omitted))
             if !sneaker.notes.isEmpty {

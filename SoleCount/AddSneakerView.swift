@@ -23,6 +23,8 @@ struct AddSneakerView: View {
     @State private var photos: [Data]
     @State private var shoeType: ShoeType
     @State private var size: String
+    @State private var sizeSystem: SizeSystem
+    @State private var fit: ShoeFit
     @State private var colorway: String
     @State private var condition: ShoeCondition
     @State private var notes: String
@@ -43,6 +45,8 @@ struct AddSneakerView: View {
         _photos = State(initialValue: existing?.gallery ?? [])
         _shoeType = State(initialValue: existing?.shoeType ?? .other)
         _size = State(initialValue: existing?.size ?? "")
+        _sizeSystem = State(initialValue: existing?.sizeSystem ?? ShoeSizeDefaults.system())
+        _fit = State(initialValue: existing?.fit ?? .unisex)
         _colorway = State(initialValue: existing?.colorway ?? "")
         _condition = State(initialValue: existing?.condition ?? .good)
         _notes = State(initialValue: existing?.notes ?? "")
@@ -239,7 +243,29 @@ struct AddSneakerView: View {
                 }
                 .accessibilityLabel("Model ideas")
             }
-            TextField("Size (e.g. 10)", text: $size)
+            Picker("Fit", selection: $fit) {
+                ForEach(ShoeFit.allCases) { item in
+                    Text(item.rawValue).tag(item)
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("shoeFitPicker")
+            Picker("Size system", selection: $sizeSystem) {
+                ForEach(SizeSystem.allCases) { item in
+                    Text(item.rawValue).tag(item)
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("sizeSystemPicker")
+            TextField(sizePlaceholder, text: $size)
+                .keyboardType(.decimalPad)
+                .accessibilityIdentifier("sizeField")
+            if !sizeHint.isEmpty {
+                Text(sizeHint)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             TextField("Colorway (e.g. White/Black)", text: $colorway)
             Picker("Condition", selection: $condition) {
                 ForEach(ShoeCondition.allCases) { item in
@@ -251,7 +277,7 @@ struct AddSneakerView: View {
         } header: {
             Text("Shoe")
         } footer: {
-            Text("Type any brand. The list is only a shortcut. No logos are stored.")
+            Text("Type any brand. The list is only a shortcut. No logos are stored. Fit picks the men's or women's chart. Unisex uses the men's chart. Equivalents follow Nike's published sizes.")
         }
     }
 
@@ -314,6 +340,23 @@ struct AddSneakerView: View {
         } footer: {
             Text("Running and training start at 650. Walking starts higher. Casual shoes start with the target off. Starting distance is included in the total. You can change any of this.")
         }
+    }
+
+    private var sizePlaceholder: String {
+        switch sizeSystem {
+        case .us: "Size (e.g. 10)"
+        case .uk: "Size (e.g. 9)"
+        case .eu: "Size (e.g. 44)"
+        }
+    }
+
+    private var sizeHint: String {
+        let trimmed = size.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        if let line = ShoeSizeChart.equivalentLine(size: trimmed, system: sizeSystem, fit: fit) {
+            return line
+        }
+        return "That size is saved as typed. It is not on the chart, so the other systems are not shown."
     }
 
     private func labeledField(symbol: String, tint: Color, @ViewBuilder content: () -> some View) -> some View {
@@ -383,6 +426,8 @@ struct AddSneakerView: View {
             existing.wearLimit = hasWearLimit ? wearLimit : nil
             existing.shoeType = shoeType
             existing.size = size.trimmingCharacters(in: .whitespacesAndNewlines)
+            existing.sizeSystem = sizeSystem
+            existing.fit = fit
             existing.colorway = colorway.trimmingCharacters(in: .whitespacesAndNewlines)
             existing.condition = condition
             existing.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -410,7 +455,9 @@ struct AddSneakerView: View {
                 notes: notes.trimmingCharacters(in: .whitespacesAndNewlines),
                 replaceAtKilometers: kilometers,
                 startingWears: startingWears,
-                startingKilometers: startingKilometers
+                startingKilometers: startingKilometers,
+                sizeSystem: sizeSystem,
+                fit: fit
             )
             modelContext.insert(sneaker)
             sneaker.replacePhotos(photos, in: modelContext)
