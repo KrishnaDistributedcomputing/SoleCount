@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftData
 import SwiftUI
+import UIKit
 
 // The form for a new pair, or for editing one you already saved.
 struct AddSneakerView: View {
@@ -33,6 +34,7 @@ struct AddSneakerView: View {
     @State private var replaceEdited: Bool
     @State private var startingWears: Int
     @State private var startingDisplay: Double
+    @State private var didSave = false
 
     init(existing: Sneaker? = nil) {
         self.existing = existing
@@ -87,10 +89,8 @@ struct AddSneakerView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .font(.body.weight(.semibold))
-                        .disabled(!canSave)
-                        .accessibilityIdentifier("saveSneakerButton")
+                    SavePairButton(enabled: canSave) { save() }
+                        .fixedSize()
                 }
             }
             .photosPicker(isPresented: $showingLibrary, selection: $photoItem, matching: .images)
@@ -219,12 +219,15 @@ struct AddSneakerView: View {
                     HStack {
                         ForEach(ShoeType.allCases) { type in
                             Button {
-                                shoeType = type
+                                selectShoeType(type)
                             } label: {
                                 Label(type.rawValue, systemImage: type.symbolName)
                             }
                             .buttonStyle(.bordered)
                             .tint(shoeType == type ? Color.accentColor : Color.secondary)
+                            // The form can use the first tap only to close the keyboard.
+                            // This gesture still picks the type on that tap.
+                            .highPriorityGesture(TapGesture().onEnded { selectShoeType(type) })
                             .accessibilityIdentifier("shoeType-\(type.rawValue)")
                             .accessibilityAddTraits(shoeType == type ? .isSelected : AccessibilityTraits())
                         }
@@ -413,7 +416,25 @@ struct AddSneakerView: View {
         photos = (main.map { [$0] } ?? []) + loaded
     }
 
+    /// Picks a shoe type and closes the keyboard in the same tap.
+    private func selectShoeType(_ type: ShoeType) {
+        shoeType = type
+        endTyping()
+    }
+
+    private func endTyping() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+
     private func save() {
+        guard !didSave, canSave else { return }
+        didSave = true
+        endTyping()
         let trimmedBrand = brand.trimmingCharacters(in: .whitespacesAndNewlines)
         let kilometers = hasReplaceTarget ? max(0, DistanceFormat.kilometers(fromDisplay: replaceDisplay)) : 0
         let startingKilometers = max(0, DistanceFormat.kilometers(fromDisplay: startingDisplay))

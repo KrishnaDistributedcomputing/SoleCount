@@ -17,7 +17,7 @@ configFiles:
 
 settings:
   base:
-    MARKETING_VERSION: "1.1"        # the version people see in the App Store
+    MARKETING_VERSION: "1.2"        # the version people see in the App Store. The widget uses this too.
     CURRENT_PROJECT_VERSION: "1"    # build number; fastlane bumps it automatically
     SWIFT_VERSION: "5.0"
     CODE_SIGN_STYLE: Automatic
@@ -99,6 +99,7 @@ targets:
     settings:
       base:
         TARGETED_DEVICE_FAMILY: "1"   # iPhone only
+        MARKETING_VERSION: "1.2"      # same version people see on the app
         PRODUCT_BUNDLE_IDENTIFIER: com.krishnav.SoleCount.widget
         PRODUCT_NAME: SoleCountWidget
         GENERATE_INFOPLIST_FILE: YES

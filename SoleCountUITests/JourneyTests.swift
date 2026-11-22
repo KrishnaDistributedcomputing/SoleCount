@@ -227,8 +227,8 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(release.waitForExistence(timeout: 3), "About should show the last-update value")
         XCTAssertTrue(release.isHittable, "The release line should be readable at large text")
         let shown = "\(release.label) \(release.value as? String ?? "")"
-        XCTAssertTrue(shown.contains("Not yet released"), "Version 1.1 has not been released. Shown: \(shown)")
-        XCTAssertFalse(shown.contains("2026"), "Version 1.1 must not invent a release time")
+        XCTAssertTrue(shown.contains("Not yet released"), "Version 1.2 has not been released. Shown: \(shown)")
+        XCTAssertFalse(shown.contains("2026"), "Version 1.2 must not invent a release time")
         XCTAssertTrue(app.staticTexts["Last update"].exists)
         XCTAssertTrue(app.staticTexts["Version"].exists)
         XCTAssertTrue(app.staticTexts["Build"].exists)
@@ -288,18 +288,11 @@ final class JourneyTests: XCTestCase {
 
         let save = app.buttons["saveSneakerButton"]
         XCTAssertTrue(save.waitForExistence(timeout: 3))
-        if !save.isHittable {
-            app.swipeDown(velocity: .fast)
-        }
+        XCTAssertTrue(save.isHittable, "Save should be tappable while the keyboard is up")
         save.tap()
-        // A text keyboard can take the first tap. If the form is still open, tap Save again.
-        let closed = app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 3)
-        if !closed, save.exists, save.isHittable {
-            save.tap()
-        }
         XCTAssertTrue(
-            app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 8),
-            "Saving should close the New Sneaker form"
+            app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 5),
+            "One tap on Save should close the form, even if the keyboard was open"
         )
         let saved = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "pairRow", "Photo Runners")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 5))

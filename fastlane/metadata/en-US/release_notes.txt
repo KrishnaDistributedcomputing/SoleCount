@@ -1,1 +1,1 @@
-Photos from your library save again. Pick a shoe type for each pair. Log what you did in a pair, such as a walk, a run, or the gym, and see those days in Stats. A small streak celebrates the days you write a wear down. About shows when this version was released.
+Each shoe's page now starts with its photo, name, and brand. You can save a size in US, UK, or EU, and the other sizes are shown. Each pair can be Men's, Women's, or Unisex.
