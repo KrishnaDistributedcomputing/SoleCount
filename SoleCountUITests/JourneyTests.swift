@@ -286,8 +286,21 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(runningType.isHittable, "The shoe type list should include Running")
         runningType.tap()
 
-        app.buttons["saveSneakerButton"].tap()
-        XCTAssertTrue(app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 5))
+        let save = app.buttons["saveSneakerButton"]
+        XCTAssertTrue(save.waitForExistence(timeout: 3))
+        if !save.isHittable {
+            app.swipeDown(velocity: .fast)
+        }
+        save.tap()
+        // A text keyboard can take the first tap. If the form is still open, tap Save again.
+        let closed = app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 3)
+        if !closed, save.exists, save.isHittable {
+            save.tap()
+        }
+        XCTAssertTrue(
+            app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 8),
+            "Saving should close the New Sneaker form"
+        )
         let saved = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "pairRow", "Photo Runners")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
         saved.tap()
