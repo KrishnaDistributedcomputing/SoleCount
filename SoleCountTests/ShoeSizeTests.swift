@@ -144,6 +144,26 @@ enum SizeShoeSchemaV1: VersionedSchema {
         var colorway: String = ""
         var shoeTypeRaw: String = "Other"
         var wearDates: [Date] = []
+
+        init(
+            name: String = "",
+            brand: String = "",
+            price: Double = 0,
+            size: String = "",
+            notes: String = "",
+            colorway: String = "",
+            shoeTypeRaw: String = "Other",
+            wearDates: [Date] = []
+        ) {
+            self.name = name
+            self.brand = brand
+            self.price = price
+            self.size = size
+            self.notes = notes
+            self.colorway = colorway
+            self.shoeTypeRaw = shoeTypeRaw
+            self.wearDates = wearDates
+        }
     }
 }
 
@@ -163,6 +183,30 @@ enum SizeShoeSchemaV2: VersionedSchema {
         var wearDates: [Date] = []
         var sizeSystemRaw: String = ""
         var fitRaw: String = ""
+
+        init(
+            name: String = "",
+            brand: String = "",
+            price: Double = 0,
+            size: String = "",
+            notes: String = "",
+            colorway: String = "",
+            shoeTypeRaw: String = "Other",
+            wearDates: [Date] = [],
+            sizeSystemRaw: String = "",
+            fitRaw: String = ""
+        ) {
+            self.name = name
+            self.brand = brand
+            self.price = price
+            self.size = size
+            self.notes = notes
+            self.colorway = colorway
+            self.shoeTypeRaw = shoeTypeRaw
+            self.wearDates = wearDates
+            self.sizeSystemRaw = sizeSystemRaw
+            self.fitRaw = fitRaw
+        }
     }
 }
 
