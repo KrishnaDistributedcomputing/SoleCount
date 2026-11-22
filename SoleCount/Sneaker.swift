@@ -27,6 +27,10 @@ final class Sneaker {
     var shoeTypeRaw: String = ShoeType.other.rawValue
     var notes: String = ""
     var size: String = ""
+    /// "US", "UK", or "EU". Empty on pairs saved before size systems. Those read as US.
+    var sizeSystemRaw: String = ""
+    /// "Men's", "Women's", or "Unisex". Empty on older pairs. Those read as Unisex.
+    var fitRaw: String = ""
     var colorway: String = ""
     var conditionRaw: String = ShoeCondition.good.rawValue
 
@@ -70,7 +74,9 @@ final class Sneaker {
          notes: String = "",
          replaceAtKilometers: Double = 0,
          startingWears: Int = 0,
-         startingKilometers: Double = 0) {
+         startingKilometers: Double = 0,
+         sizeSystem: SizeSystem = .us,
+         fit: ShoeFit = .unisex) {
         self.name = name
         self.brand = brand
         self.price = price
@@ -82,6 +88,8 @@ final class Sneaker {
         self.wearLimit = wearLimit
         self.shoeTypeRaw = shoeType.rawValue
         self.size = size
+        self.sizeSystemRaw = sizeSystem.rawValue
+        self.fitRaw = fit.rawValue
         self.colorway = colorway
         self.conditionRaw = condition.rawValue
         self.notes = notes
@@ -93,6 +101,28 @@ final class Sneaker {
     var shoeType: ShoeType {
         get { ShoeType(rawValue: shoeTypeRaw) ?? .other }
         set { shoeTypeRaw = newValue.rawValue }
+    }
+
+    /// Missing or unknown text is US, so a pair from an older version of the app keeps its size.
+    var sizeSystem: SizeSystem {
+        get { SizeSystem(rawValue: sizeSystemRaw) ?? .us }
+        set { sizeSystemRaw = newValue.rawValue }
+    }
+
+    /// Missing or unknown text is Unisex. Unisex uses the men's size chart.
+    var fit: ShoeFit {
+        get { ShoeFit(rawValue: fitRaw) ?? .unisex }
+        set { fitRaw = newValue.rawValue }
+    }
+
+    /// "US 10", or empty when no size was typed.
+    var sizeLabel: String {
+        ShoeSizeChart.label(size: size, system: sizeSystem)
+    }
+
+    /// "Also UK 9 and EU 44", or nil when the size is not on the chart.
+    var sizeEquivalentLine: String? {
+        ShoeSizeChart.equivalentLine(size: size, system: sizeSystem, fit: fit)
     }
 
     var condition: ShoeCondition {
@@ -226,7 +256,7 @@ final class Sneaker {
             name: name,
             brand: brand,
             type: shoeType.rawValue,
-            size: size,
+            size: sizeLabel,
             colorway: colorway,
             condition: condition.rawValue,
             price: price,

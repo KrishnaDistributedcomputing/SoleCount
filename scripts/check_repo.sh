@@ -107,7 +107,7 @@ check_identity() {
   require_contains "fastlane/iap.json" "\"product_id\": \"$product\"" "fastlane IAP product ID stays $product"
   require_contains "project.yml" "PRODUCT_BUNDLE_IDENTIFIER: $bundle" "App bundle ID stays $bundle"
   require_contains "project.yml" "PRODUCT_BUNDLE_IDENTIFIER: $bundle.widget" "Widget bundle ID stays $bundle.widget"
-  require_contains "project.yml" "MARKETING_VERSION: \"1.1\"" "Marketing version stays 1.1"
+  require_contains "project.yml" "MARKETING_VERSION: \"1.2\"" "Marketing version stays 1.2"
   require_contains "project.yml" "CURRENT_PROJECT_VERSION: \"1\"" "Committed build number stays 1 (fastlane picks the next TestFlight number)"
   require_contains "fastlane/Fastfile" "APP_IDENTIFIER = \"$bundle\"" "Fastlane app identifier stays $bundle"
   require_contains "fastlane/Appfile" "app_identifier(\"$bundle\")" "Appfile identifier stays $bundle"

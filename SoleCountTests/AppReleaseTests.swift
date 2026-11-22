@@ -91,8 +91,10 @@ struct AppReleaseTests {
         let expected = try #require(AppRelease.parseReleaseInstant("2026-11-06T19:17:40Z"))
         #expect(released == expected)
         #expect(AppRelease.status(for: "1.1", json: data) == .notYetReleased)
+        #expect(AppRelease.status(for: "1.2", json: data) == .notYetReleased)
         let text = String(decoding: data, as: UTF8.self)
         #expect(!text.contains("1.1") || text.contains("\"unreleased\": true"))
+        #expect(text.contains("\"1.2\"") && text.contains("\"unreleased\": true"))
     }
 }
 

@@ -17,8 +17,8 @@ A few words used below:
 | Written | 7 November 2026 |
 | Branch | `cursor/about-release-a2e5` |
 | App-code baseline | GitHub `main` commit `d41209a` (4 November 2026), plus the foundation and logging-streak branches under it |
-| Extra app behavior on this branch | About screen, logging streak, shoe activities, and the shipped sole check, levels, and feedback. Version 1.0's release instant is the App Store `currentVersionReleaseDate`. Version 1.1 is explicitly not released yet. |
-| Marketing version in `project.yml` | `1.1` |
+| Extra app behavior on this branch | About screen, logging streak, shoe activities, and the shipped sole check, levels, and feedback. Version 1.0's release instant is the App Store `currentVersionReleaseDate`. Versions 1.1 and 1.2 are explicitly not released yet. |
+| Marketing version in `project.yml` | `1.2` |
 | Committed build number | `1` |
 
 Three labels are used on purpose:
@@ -155,6 +155,7 @@ Pure rules take numbers and dates and return numbers. They do not import HealthK
 | `SoleCount/SoleCountApp.swift` | `@main` entry. |
 | `SoleCount/RootTabView.swift` | Four tabs. Refreshes Health when the app becomes active. |
 | `SoleCount/Sneaker.swift` | Pair model and wear/health cache. |
+| `SoleCount/ShoeSize.swift` | US, UK, and EU sizes, fit, and the Nike conversion chart. |
 | `SoleCount/SneakerPhotoItem.swift` | Extra photos. |
 | `SoleCount/WishlistItem.swift` | Not-yet-bought pairs. |
 | `SoleCount/SneakerDatabase.swift` | One container, CloudKit off. |
@@ -201,6 +202,7 @@ flowchart TD
 - Collection uses `NavigationStack` and `navigationDestination(for: Sneaker.self)` to the detail screen (`SoleCount/SneakerListView.swift`).
 - Add, edit, settings, wishlist, paywall, and the retirement send-off are sheets.
 - Detail's toolbar menu edits the pair, retires it, or brings it back (`SoleCount/SneakerDetailView.swift`). The list section for retired pairs is titled "Retired". The detail label and the send-off button say "Hall of Fame".
+- The detail screen leads with the photo, or the same shoe placeholder when there is no photo, as a large hero. The name, the brand, and the fit sit under that photo. Size, shoe type, wears, activities, and the other stats follow. Text on that header wraps, so a large Dynamic Type size stays readable. The photo keeps the accessibility identifier `detailPhoto`.
 - Settings is a sheet from Collection, not its own tab (`SoleCount/SettingsView.swift`).
 
 State ownership:
@@ -221,11 +223,15 @@ State ownership:
 
 **Implemented.** Three models, registered together in `SneakerDatabase.makeContainer`:
 
-`Sneaker` (`SoleCount/Sneaker.swift`). Defaults are on the properties so older rows can open. There is no `VersionedSchema` and no custom migration stage in this tree. A future field still needs a default, or SwiftData may fail to open the store. The open failure path is `fatalError` in `SneakerDatabase`.
+`Sneaker` (`SoleCount/Sneaker.swift`). Defaults are on the properties so older rows can open. There is no `VersionedSchema` and no custom migration stage on the app container. A future field still needs a default, or SwiftData may fail to open the store. The open failure path is `fatalError` in `SneakerDatabase`.
+
+`sizeSystemRaw` and `fitRaw` are new strings with the default `""`. Adding them is a lightweight migration. SwiftData fills the new columns with `""` when it opens a store saved by an older version. The app does not rewrite the size text. Empty `sizeSystemRaw` is read as US. Empty `fitRaw` is read as Unisex. A unit test writes a store that does not have those two columns, opens it with a lightweight migration, and checks that the name, brand, price, size text, notes, colorway, type, and wear dates are still there (`SoleCountTests/ShoeSizeTests.swift`). That test model is not the app's `Sneaker`. The app store stays on the unversioned container, which is what existing phones already have.
 
 | Property | Default | Role |
 |---|---|---|
-| `name`, `brand`, `notes`, `size`, `colorway` | `""` | Text the person typed |
+| `name`, `brand`, `notes`, `size`, `colorway` | `""` | Text the person typed. `size` stays the number they typed, such as `10` or `44` |
+| `sizeSystemRaw` | `""` | `US`, `UK`, or `EU`. Empty or unknown reads as US |
+| `fitRaw` | `""` | `Men's`, `Women's`, or `Unisex`. Empty or unknown reads as Unisex. This is also the size-chart column |
 | `price` | `0` | Money paid |
 | `purchaseDate`, `createdAt` | `Date.now` | Purchase day, and when the row was created |
 | `photoData` | `nil` | Original photo. `@Attribute(.externalStorage)` |
@@ -305,7 +311,10 @@ Stored distance is metres. Replacement goals and the weekly goal are kilometres.
 | Badges | `MotivationEngine.badges` | Thresholds are kilometres of collection distance (10, 50, 100, 500), a 42.195 km week, streaks of 7 and 30, a 10,000-step day, full rotation, a pair at its target, wear counts 1, 50, and 100, cost per wear under 1, and 10 pairs |
 | Step goal clamp | `MotivationStore.setStepGoal` | 1,000 through 100,000. Missing stored goal defaults to 8,000. Weekly kilometres default to 20 |
 | Money display | `Double.asCurrency` | The phone's currency, or USD if the locale has none |
-| CSV distance | `CollectionExport` | Header says `Distance km`. Values are metres / 1000, two decimal places, POSIX locale. Dates are `yyyy-MM-dd` |
+| Size label | `ShoeSizeChart.label` | `US 10`, `UK 9`, or `EU 44`. Empty when the size text is empty |
+| Size equivalents | `ShoeSizeChart` | Nike's published men's chart. Women's US is 1.5 sizes above men's on the same row. Unisex uses the men's column. A size that is not on the chart is still saved, and no equivalent is invented. UK 6 is listed twice; the app uses the row men's US 7, women's US 8.5, EU 40. The chart runs from men's US 3.5 to 22 (women's US 5 to 23.5) |
+| Default size system | `ShoeSizeDefaults` | `UserDefaults` key `defaultSizeSystem`. Missing or unknown is US. Settings has the picker. It applies to a new pair, not to a pair that was already saved |
+| CSV distance | `CollectionExport` | Header says `Distance km`. Values are metres / 1000, two decimal places, POSIX locale. Dates are `yyyy-MM-dd`. The Size column is the labeled size (`US 10`), so the system is in the file. An older pair exports as US |
 
 Logging a wear appends a `Date`. It does not reject a second tap on the same day at the model layer. `woreToday` is true if any stored date is today, and undo removes only the last today entry (`Sneaker.undoTodayWear`).
 
@@ -331,7 +340,7 @@ Health attribution builds a fresh `UUID` per pair per refresh and throws it away
 
 ### Add a pair and log a wear
 
-**Implemented.** Collection, Add, form in `AddSneakerView`, save into SwiftData. "Wore today" on the detail screen calls `logWear`. Cost per wear updates from the wear count. The first-launch UI test covers add, catalog brand choice, and a wear (`SoleCountUITests/JourneyTests.swift`) with Health forced off.
+**Implemented.** Collection, Add, form in `AddSneakerView`, save into SwiftData. The form asks for fit (Men's, Women's, or Unisex) and a size system (US, UK, or EU), then the size number. A new pair starts in the size system chosen in Settings, and its fit starts at Unisex. Save is a toolbar control that runs on the first tap while the keyboard is open. A SwiftUI toolbar button was using that tap only to close the keyboard. "Wore today" on the detail screen calls `logWear`. Cost per wear updates from the wear count. The first-launch UI test covers add, catalog brand choice, and a wear (`SoleCountUITests/JourneyTests.swift`) with Health forced off. Another UI test checks the hero order and a women's US 10. The photo UI test taps Save once after typing a name.
 
 ### Health refresh
 
@@ -393,7 +402,7 @@ App Group entitlements are on the Release configuration only (`project.yml` sets
 |---|---|---|
 | Pairs, wears, wishlist | SwiftData store, CloudKit off | Only if the person shares a CSV or a card |
 | Photos | External storage blobs, JPEG at most 1024 px, quality 0.8 (`ImageHelper.downsized`) | Same. The picker copy is the app's copy. Library photos are read as images, not as raw `Data`, because an iPhone picture is usually HEIC |
-| Goals, streak, reminder switches, recent brands, Health-asked flag, seen badges | `UserDefaults.standard` | No |
+| Goals, streak, reminder switches, recent brands, Health-asked flag, seen badges, default size system | `UserDefaults.standard` | No |
 | Widget snapshot | App Group `UserDefaults` in Release | No. The widget reads it on device |
 | Day totals for Today | JSON in `UserDefaults` key `motionDays` | No |
 | Pro flag | `UserDefaults` key `isPro` | Unused while the free flag is false |
@@ -507,13 +516,14 @@ Local unsigned test lane: `fastlane` `run_tests` passes `CODE_SIGNING_ALLOWED=NO
 | `SoleCountTests/HealthAttributionTests.swift` | Even split, three pairs, six-month window |
 | `SoleCountTests/RoundFeaturesTests.swift` | Retirement bands, starting totals, forgotten pairs, gentle streak, wishlist buy mapping |
 | `SoleCountTests/CatalogAndMotivationTests.swift` | Catalog, streaks, badges, CSV escaping, miles |
-| `SoleCountUITests/JourneyTests.swift` | Add a pair, log a wear, retire, with Health unavailable |
+| `SoleCountTests/ShoeSizeTests.swift` | Size chart, US and Unisex defaults, lightweight migration of an older store |
+| `SoleCountUITests/JourneyTests.swift` | Add a pair, log a wear, retire, hero order, fit, and size, with Health unavailable |
 | `SoleCountUITests/ScreenshotTests.swift` | App Store screenshots. Skipped by the normal test lane |
 
 **Gaps (the tests are absent, not failing):**
 
 - No unit test opens `HealthKitActivityReader` against a real Health store.
-- No test of SwiftData migration across versions.
+- Lightweight migration for the size system and fit is covered. There is still no `VersionedSchema` on the app container for a model change that cannot use a default.
 - No test that deletes a sneaker, because the UI does not delete one.
 - No test of `LogTodayWearIntent` / `WearLogAction`.
 - No test of the widget timeline.
@@ -559,7 +569,7 @@ Signing material never belongs in the pull request. Upload signing uses the App 
 
 ## 16. Version and release path
 
-**Implemented numbers.** People see marketing version `1.1` from `project.yml`. The committed build number stays `1`. fastlane's beta lane sets the uploaded build to the latest TestFlight build for that version plus one. The owner must approve each upload. A merged pull request is not an upload.
+**Implemented numbers.** People see marketing version `1.2` from `project.yml`. The app and the widget both use that setting. Their Info.plists read `$(MARKETING_VERSION)`. The committed build number stays `1`. fastlane's beta lane sets the uploaded build to the latest TestFlight build for that version plus one. The owner must approve each upload. A merged pull request is not an upload.
 
 Human gates, in order:
 
@@ -583,7 +593,7 @@ The value comes from `SoleCount/ReleaseManifest.json`, keyed by marketing versio
 - `"unreleased": true`, with no instant, means **Not yet released**. Use that only when you know the marketing version has not gone on the store.
 - `releasedAt: null`, a missing instant, a missing version, a broken file, or a date that is not an instant with a timezone means **Release date unavailable**. That is unknown. It does not claim the version is unreleased.
 
-Version `1.0` is `2026-11-06T19:17:40Z`. That is the App Store `currentVersionReleaseDate` for the live version, not a compile time or an install time. Version `1.1` is marked unreleased, so About says **Not yet released**. Do not fill a 1.1 instant until that version is actually on the store.
+Version `1.0` is `2026-11-06T19:17:40Z`. That is the App Store `currentVersionReleaseDate` for the live version, not a compile time or an install time. Versions `1.1` and `1.2` are marked unreleased, so About on a 1.2 build says **Not yet released**. Do not fill a 1.1 or 1.2 instant until that version is actually on the store.
 
 **Unknown (Mac copy).** The approved binary may already be on the store. This GitHub tree still has no verified release instant, so About on a build made from this tree says **Release date unavailable** until someone records one.
 

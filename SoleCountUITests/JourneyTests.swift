@@ -36,7 +36,7 @@ final class JourneyTests: XCTestCase {
 
         var starting = app.descendants(matching: .any)["startingDistanceField"]
         var swipes = 0
-        while !starting.waitForExistence(timeout: 1), swipes < 4 {
+        while !starting.waitForExistence(timeout: 1), swipes < 8 {
             app.swipeUp()
             starting = app.descendants(matching: .any)["startingDistanceField"]
             swipes += 1
@@ -167,7 +167,7 @@ final class JourneyTests: XCTestCase {
     private func scrollUntilHittable(
         _ app: XCUIApplication,
         _ element: XCUIElement,
-        limit: Int = 8,
+        limit: Int = 12,
         swipeUp: Bool = true
     ) -> XCUIElement {
         var swipes = 0
@@ -227,8 +227,8 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(release.waitForExistence(timeout: 3), "About should show the last-update value")
         XCTAssertTrue(release.isHittable, "The release line should be readable at large text")
         let shown = "\(release.label) \(release.value as? String ?? "")"
-        XCTAssertTrue(shown.contains("Not yet released"), "Version 1.1 has not been released. Shown: \(shown)")
-        XCTAssertFalse(shown.contains("2026"), "Version 1.1 must not invent a release time")
+        XCTAssertTrue(shown.contains("Not yet released"), "Version 1.2 has not been released. Shown: \(shown)")
+        XCTAssertFalse(shown.contains("2026"), "Version 1.2 must not invent a release time")
         XCTAssertTrue(app.staticTexts["Last update"].exists)
         XCTAssertTrue(app.staticTexts["Version"].exists)
         XCTAssertTrue(app.staticTexts["Build"].exists)
@@ -286,8 +286,14 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(runningType.isHittable, "The shoe type list should include Running")
         runningType.tap()
 
-        app.buttons["saveSneakerButton"].tap()
-        XCTAssertTrue(app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 5))
+        let save = app.buttons["saveSneakerButton"]
+        XCTAssertTrue(save.waitForExistence(timeout: 3))
+        XCTAssertTrue(save.isHittable, "Save should be tappable while the keyboard is up")
+        save.tap()
+        XCTAssertTrue(
+            app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 5),
+            "One tap on Save should close the form, even if the keyboard was open"
+        )
         let saved = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "pairRow", "Photo Runners")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 5))
         saved.tap()
@@ -342,5 +348,87 @@ final class JourneyTests: XCTestCase {
         let breakdown = scrollUntilHittable(app, app.descendants(matching: .any)["activityBreakdown"])
         XCTAssertTrue(breakdown.waitForExistence(timeout: 5), "Stats should break wears down by activity")
         XCTAssertTrue(breakdown.label.contains("Running") || app.staticTexts["Running"].exists)
+    }
+
+    /// The photo is the hero. The name, brand, and fit sit under it.
+    /// A women's US 10 is UK 7.5 and EU 42.
+    @MainActor
+    func testDetailHeroShowsNameBrandFitAndSize() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-UITesting", "-HealthUnavailable"]
+        app.launch()
+        app.tabBars.buttons["Collection"].tap()
+        let add = app.buttons["Add a pair"]
+        XCTAssertTrue(add.waitForExistence(timeout: 10))
+        add.tap()
+
+        let name = app.textFields["Name (e.g. Air Max 90)"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("Size Runners")
+
+        let brand = app.textFields["Brand (e.g. Nike)"]
+        brand.tap()
+        brand.typeText("TestBrand")
+
+        chooseMenu(app, identifier: "shoeFitPicker", value: "Women's")
+
+        var sizeField = app.textFields["sizeField"]
+        if !sizeField.exists {
+            sizeField = app.descendants(matching: .any)["sizeField"]
+        }
+        sizeField = scrollUntilHittable(app, sizeField)
+        XCTAssertTrue(sizeField.isHittable, "The size field should be on the form")
+        sizeField.tap()
+        sizeField.typeText("10")
+
+        app.buttons["saveSneakerButton"].tap()
+        XCTAssertTrue(app.navigationBars["New Sneaker"].waitForNonExistence(timeout: 5))
+        let saved = app.buttons.matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "pairRow", "Size Runners")).firstMatch
+        XCTAssertTrue(saved.waitForExistence(timeout: 5))
+        saved.tap()
+
+        let photo = app.descendants(matching: .any)["detailPhoto"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 5))
+        XCTAssertEqual(photo.label, "No photo yet")
+        XCTAssertGreaterThan(photo.frame.height, 200, "The shoe should be a large hero")
+
+        let detailName = app.descendants(matching: .any)["detailName"]
+        let detailBrand = app.descendants(matching: .any)["detailBrand"]
+        let detailFit = app.descendants(matching: .any)["detailFit"]
+        XCTAssertTrue(detailName.waitForExistence(timeout: 3))
+        XCTAssertTrue(detailBrand.waitForExistence(timeout: 3))
+        XCTAssertTrue(detailFit.waitForExistence(timeout: 3))
+        XCTAssertLessThan(photo.frame.maxY, detailName.frame.minY + 1, "The photo should be above the name")
+        XCTAssertLessThan(detailName.frame.maxY, detailBrand.frame.minY + 1, "The name should be above the brand")
+        XCTAssertLessThan(detailBrand.frame.maxY, detailFit.frame.minY + 1, "The brand should be above the fit")
+        XCTAssertTrue(detailName.label.contains("Size Runners"))
+        XCTAssertTrue(detailBrand.label.contains("TestBrand"))
+        XCTAssertTrue(detailFit.label.contains("Women's"))
+
+        let sizeValue = scrollUntilHittable(app, app.descendants(matching: .any)["shoeSizeValue"])
+        let sizeShown = "\(sizeValue.label) \(sizeValue.value as? String ?? "")"
+        XCTAssertTrue(sizeShown.contains("US 10"), "The saved size should keep its system. Shown: \(sizeShown)")
+        let equivalents = app.descendants(matching: .any)["shoeSizeEquivalents"]
+        XCTAssertTrue(equivalents.waitForExistence(timeout: 3))
+        let shown = "\(equivalents.label) \(equivalents.value as? String ?? "")"
+        XCTAssertTrue(shown.contains("UK 7.5"), "Women's US 10 should show UK 7.5. Shown: \(shown)")
+        XCTAssertTrue(shown.contains("EU 42"), "Women's US 10 should show EU 42. Shown: \(shown)")
+
+        let type = app.descendants(matching: .any)["shoeTypeValue"]
+        XCTAssertTrue(type.waitForExistence(timeout: 3))
+        let typeShown = "\(type.label) \(type.value as? String ?? "")"
+        XCTAssertTrue(typeShown.contains("Other"), "The shoe type should still be on the page. Shown: \(typeShown)")
+    }
+
+    /// A menu picker on the add form. The choice is a button, or a text row.
+    @MainActor
+    private func chooseMenu(_ app: XCUIApplication, identifier: String, value: String) {
+        let picker = scrollUntilHittable(app, app.descendants(matching: .any)[identifier])
+        XCTAssertTrue(picker.isHittable, "\(identifier) should be on screen")
+        picker.tap()
+        let choice = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", value)).firstMatch
+        XCTAssertTrue(choice.waitForExistence(timeout: 3), "The menu should offer \(value)")
+        choice.tap()
     }
 }

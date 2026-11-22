@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftData
 import SwiftUI
+import UIKit
 
 // The form for a new pair, or for editing one you already saved.
 struct AddSneakerView: View {
@@ -23,6 +24,8 @@ struct AddSneakerView: View {
     @State private var photos: [Data]
     @State private var shoeType: ShoeType
     @State private var size: String
+    @State private var sizeSystem: SizeSystem
+    @State private var fit: ShoeFit
     @State private var colorway: String
     @State private var condition: ShoeCondition
     @State private var notes: String
@@ -31,6 +34,7 @@ struct AddSneakerView: View {
     @State private var replaceEdited: Bool
     @State private var startingWears: Int
     @State private var startingDisplay: Double
+    @State private var didSave = false
 
     init(existing: Sneaker? = nil) {
         self.existing = existing
@@ -43,6 +47,8 @@ struct AddSneakerView: View {
         _photos = State(initialValue: existing?.gallery ?? [])
         _shoeType = State(initialValue: existing?.shoeType ?? .other)
         _size = State(initialValue: existing?.size ?? "")
+        _sizeSystem = State(initialValue: existing?.sizeSystem ?? ShoeSizeDefaults.system())
+        _fit = State(initialValue: existing?.fit ?? .unisex)
         _colorway = State(initialValue: existing?.colorway ?? "")
         _condition = State(initialValue: existing?.condition ?? .good)
         _notes = State(initialValue: existing?.notes ?? "")
@@ -83,10 +89,8 @@ struct AddSneakerView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .font(.body.weight(.semibold))
-                        .disabled(!canSave)
-                        .accessibilityIdentifier("saveSneakerButton")
+                    SavePairButton(enabled: canSave) { save() }
+                        .fixedSize()
                 }
             }
             .photosPicker(isPresented: $showingLibrary, selection: $photoItem, matching: .images)
@@ -215,12 +219,15 @@ struct AddSneakerView: View {
                     HStack {
                         ForEach(ShoeType.allCases) { type in
                             Button {
-                                shoeType = type
+                                selectShoeType(type)
                             } label: {
                                 Label(type.rawValue, systemImage: type.symbolName)
                             }
                             .buttonStyle(.bordered)
                             .tint(shoeType == type ? Color.accentColor : Color.secondary)
+                            // The form can use the first tap only to close the keyboard.
+                            // This gesture still picks the type on that tap.
+                            .highPriorityGesture(TapGesture().onEnded { selectShoeType(type) })
                             .accessibilityIdentifier("shoeType-\(type.rawValue)")
                             .accessibilityAddTraits(shoeType == type ? .isSelected : AccessibilityTraits())
                         }
@@ -239,7 +246,29 @@ struct AddSneakerView: View {
                 }
                 .accessibilityLabel("Model ideas")
             }
-            TextField("Size (e.g. 10)", text: $size)
+            Picker("Fit", selection: $fit) {
+                ForEach(ShoeFit.allCases) { item in
+                    Text(item.rawValue).tag(item)
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("shoeFitPicker")
+            Picker("Size system", selection: $sizeSystem) {
+                ForEach(SizeSystem.allCases) { item in
+                    Text(item.rawValue).tag(item)
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("sizeSystemPicker")
+            TextField(sizePlaceholder, text: $size)
+                .keyboardType(.decimalPad)
+                .accessibilityIdentifier("sizeField")
+            if !sizeHint.isEmpty {
+                Text(sizeHint)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             TextField("Colorway (e.g. White/Black)", text: $colorway)
             Picker("Condition", selection: $condition) {
                 ForEach(ShoeCondition.allCases) { item in
@@ -251,7 +280,7 @@ struct AddSneakerView: View {
         } header: {
             Text("Shoe")
         } footer: {
-            Text("Type any brand. The list is only a shortcut. No logos are stored.")
+            Text("Type any brand. The list is only a shortcut. No logos are stored. Fit picks the men's or women's chart. Unisex uses the men's chart. Equivalents follow Nike's published sizes.")
         }
     }
 
@@ -316,6 +345,23 @@ struct AddSneakerView: View {
         }
     }
 
+    private var sizePlaceholder: String {
+        switch sizeSystem {
+        case .us: "Size (e.g. 10)"
+        case .uk: "Size (e.g. 9)"
+        case .eu: "Size (e.g. 44)"
+        }
+    }
+
+    private var sizeHint: String {
+        let trimmed = size.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        if let line = ShoeSizeChart.equivalentLine(size: trimmed, system: sizeSystem, fit: fit) {
+            return line
+        }
+        return "That size is saved as typed. It is not on the chart, so the other systems are not shown."
+    }
+
     private func labeledField(symbol: String, tint: Color, @ViewBuilder content: () -> some View) -> some View {
         HStack(spacing: 12) {
             Image(systemName: symbol)
@@ -370,7 +416,25 @@ struct AddSneakerView: View {
         photos = (main.map { [$0] } ?? []) + loaded
     }
 
+    /// Picks a shoe type and closes the keyboard in the same tap.
+    private func selectShoeType(_ type: ShoeType) {
+        shoeType = type
+        endTyping()
+    }
+
+    private func endTyping() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+    }
+
     private func save() {
+        guard !didSave, canSave else { return }
+        didSave = true
+        endTyping()
         let trimmedBrand = brand.trimmingCharacters(in: .whitespacesAndNewlines)
         let kilometers = hasReplaceTarget ? max(0, DistanceFormat.kilometers(fromDisplay: replaceDisplay)) : 0
         let startingKilometers = max(0, DistanceFormat.kilometers(fromDisplay: startingDisplay))
@@ -383,6 +447,8 @@ struct AddSneakerView: View {
             existing.wearLimit = hasWearLimit ? wearLimit : nil
             existing.shoeType = shoeType
             existing.size = size.trimmingCharacters(in: .whitespacesAndNewlines)
+            existing.sizeSystem = sizeSystem
+            existing.fit = fit
             existing.colorway = colorway.trimmingCharacters(in: .whitespacesAndNewlines)
             existing.condition = condition
             existing.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -410,7 +476,9 @@ struct AddSneakerView: View {
                 notes: notes.trimmingCharacters(in: .whitespacesAndNewlines),
                 replaceAtKilometers: kilometers,
                 startingWears: startingWears,
-                startingKilometers: startingKilometers
+                startingKilometers: startingKilometers,
+                sizeSystem: sizeSystem,
+                fit: fit
             )
             modelContext.insert(sneaker)
             sneaker.replacePhotos(photos, in: modelContext)
