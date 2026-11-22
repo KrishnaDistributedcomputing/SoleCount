@@ -12,7 +12,7 @@ struct SavePairButton: UIViewRepresentable {
         Coordinator(action: action)
     }
 
-    func makeUIView(context: Context) -> FirstTapUIButton {
+    func makeUIView(context: Context) -> UIButton {
         let button = FirstTapUIButton(type: .system)
         button.setTitle("Save", for: .normal)
         button.addTarget(context.coordinator, action: #selector(Coordinator.tapped), for: .touchUpInside)
@@ -29,7 +29,8 @@ struct SavePairButton: UIViewRepresentable {
         return button
     }
 
-    func updateUIView(_ button: FirstTapUIButton, context: Context) {
+    func updateUIView(_ uiView: UIButton, context: Context) {
+        guard let button = uiView as? FirstTapUIButton else { return }
         context.coordinator.action = action
         button.isEnabled = enabled
         let metrics = UIFontMetrics(forTextStyle: .body)
@@ -38,7 +39,7 @@ struct SavePairButton: UIViewRepresentable {
         button.setTitleColor(UIColor.tintColor.withAlphaComponent(0.35), for: .disabled)
     }
 
-    func sizeThatFits(_ proposal: ProposedViewSize, uiView: FirstTapUIButton, context: Context) -> CGSize? {
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIButton, context: Context) -> CGSize? {
         let fitted = uiView.intrinsicContentSize
         return CGSize(width: max(fitted.width, 44), height: max(fitted.height, 44))
     }
